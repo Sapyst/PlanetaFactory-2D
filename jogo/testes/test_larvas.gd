@@ -114,3 +114,101 @@ func test_chao_corroido() -> void:
 	var px := t - k * Grade.TAM_CHUNK + Vector2i.ONE
 	var cor := img.get_pixel(px.x, px.y)
 	verificar(cor.g > 0.5 and cor.r < 0.05, "canal G (corrosão), sem teia (%s)" % str(cor))
+
+
+func test_acido_consome_arvores() -> void:
+	var b := _base()
+	var m: MapaOcupacao = b[0]
+	var c: Colonia = b[2]
+	for x in range(-8, 9):
+		for y in range(-8, 9):
+			c.descobrir_chunk(Vector2i(x, y))
+	var inf := Infestacao.new(c)
+	var arvores_antes := {}                  # árvores no raio das crateras, antes do ácido
+	for id in c.ninhos:
+		if c.ninhos[id].especie != "larva":
+			continue
+		var ct: Vector2 = c.ninhos[id].centro
+		for y in range(int(ct.y) - 8, int(ct.y) + 9):
+			for x in range(int(ct.x) - 8, int(ct.x) + 9):
+				var t := Vector2i(x, y)
+				var o := m.gerador.distribuicao.obstaculo(t)
+				if not o.is_empty() and Distribuicao.eh_arvore(o.nome) and Vector2i(o.ancora) == t and not m.limpos.has(t):
+					arvores_antes[t] = true
+	verificar(arvores_antes.size() >= 3, "há árvores perto das crateras (%d)" % arvores_antes.size())
+	inf.tick(1.0)                            # crateras antigas do mapa: o perto já foi consumido, sem animação
+	var sumiram := 0
+	var mortas := 0
+	for t in arvores_antes:
+		if m.limpos.has(t): sumiram += 1
+		elif m.arvores.get(t, {}).get("e", "") == "corroida": mortas += 1
+	verificar(sumiram >= 1, "as do centro já sumiram (%d)" % sumiram)
+	for ev in inf.eventos:
+		if ev.tipo == "arvore_dissolvida":
+			verificar(ev.silencioso, "cratera antiga: some sem animação")
+	inf.eventos.clear()
+	var animadas := 0
+	for i in 120:
+		inf.tick(1.0)
+		for ev in inf.eventos:
+			if ev.tipo == "arvore_dissolvida" and not ev.silencioso: animadas += 1
+		inf.eventos.clear()
+	var de_pe := 0
+	for t in arvores_antes:
+		if not m.limpos.has(t) and inf.valor_larva(t) >= Infestacao.ARVORE_MIN * 1.8:
+			de_pe += 1
+	igual(de_pe, 0, "com o tempo, o ácido forte não deixa árvore de pé")
+	verificar(animadas + sumiram >= sumiram + mortas, "as mortas afundaram depois (%d animadas, %d mortas)" % [animadas, mortas])
+	# arbusto e cogumelo também afundam; pedra fica
+	var outras := 0
+	for id in c.ninhos:
+		if c.ninhos[id].especie != "larva":
+			continue
+		var ct: Vector2 = c.ninhos[id].centro
+		for y in range(int(ct.y) - 6, int(ct.y) + 7):
+			for x in range(int(ct.x) - 6, int(ct.x) + 7):
+				var t := Vector2i(x, y)
+				var o := m.gerador.distribuicao.obstaculo(t)
+				if o.is_empty() or Vector2i(o.ancora) != t or Distribuicao.eh_arvore(o.nome) or inf.valor_larva(t) < 0.7:
+					continue
+				if Registro.modelos.get(o.nome, {}).get("categoria", "") == "mapa/vegetacao":
+					outras += 1
+					verificar(m.limpos.has(t), "%s no ácido forte afundou" % o.nome)
+	verificar(outras >= 1, "havia arbusto/cogumelo no ácido (%d)" % outras)
+	# a beira (ácido fraco) não chega às raízes
+	for t in arvores_antes:
+		if inf.valor_larva(t) < Infestacao.ARVORE_MIN * 0.5:
+			verificar(not m.limpos.has(t) and not m.arvores.has(t), "árvore fora da mancha fica intacta")
+
+
+func test_cratera_antiga_nao_apressa_as_outras() -> void:
+	# cratera nova (jovem) com árvore em volta; outra antiga aparece longe: a jovem segue no seu ritmo (com animação)
+	var b := _base()
+	var m: MapaOcupacao = b[0]
+	var c: Colonia = b[2]
+	var inf := Infestacao.new(c)
+	var jovem := -1
+	var arv := Vector2i.ZERO
+	for y in range(-60, 61, 3):
+		for x in range(-60, 61, 3):
+			if jovem >= 0:
+				break
+			var p := Vector2i(x, y)
+			if m.motivo_bloqueio("cratera_larva", p, 0) != "":
+				continue
+			for dy in range(-2, 5):
+				for dx in range(-2, 5):
+					var t := p + Vector2i(dx, dy)
+					var o := m.gerador.distribuicao.obstaculo(t)
+					if jovem < 0 and not o.is_empty() and Distribuicao.eh_arvore(o.nome) and Vector2i(o.ancora) == t \
+							and (Vector2(t) + Vector2(0.5, 0.5)).distance_to(Vector2(p) + Vector2(1.5, 1.5)) < 2.6:
+						jovem = c._criar_ninho(p, 1.0, "larva")
+						arv = t
+	verificar(jovem >= 0, "achou lugar com árvore perto")
+	c.ninhos[jovem].idade = 0.0
+	inf.tick(1.0)
+	verificar(not m.limpos.has(arv), "cratera jovem: a árvore ainda está de pé")
+	var antiga := c._criar_ninho(Vector2i(200, 200), 1.0, "larva")
+	if antiga >= 0:
+		inf.tick(1.0)
+		verificar(not m.limpos.has(arv), "a cratera antiga longe não apressa a jovem")

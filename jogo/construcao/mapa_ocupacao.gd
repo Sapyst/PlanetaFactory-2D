@@ -14,7 +14,7 @@ var tiles: Dictionary = {}          ## Vector2i → id
 var cantos: Dictionary = {}         ## Vector2i (vértice) → id (estrutura que ocupa canto ou pilar)
 var estruturas: Dictionary = {}     ## id → {nome, minimo, rot, area}
 var limpos: Dictionary = {}         ## tiles cujo obstáculo natural já foi removido
-var arvores: Dictionary = {}        ## tile → {e: "queimada"} ou {e: "caida", dir: Vector2} (o fogo muda; some ao limpar)
+var arvores: Dictionary = {}        ## tile → {e: "queimada"}, {e: "caida", dir: Vector2} (fogo) ou {e: "corroida"} (ácido das larvas); some ao limpar
 var altos: Dictionary = {}          ## Vector3i(x, y, nível 1..2) → id (esteira elevada / rampa de cima)
 const NIVEIS := 2                   ## até 1,0 m
 const FOLGA := 0.25
@@ -233,7 +233,7 @@ func limpar_obstaculo(tile: Vector2i) -> Dictionary:
 static func drops_de(o: Dictionary) -> Dictionary:
 	var d: Dictionary = Registro.progressao.get("drops", {})
 	match o.get("estado", ""):
-		"queimada": return d.get("arvore_queimada", {})
+		"queimada", "corroida": return d.get("arvore_queimada", {})
 		"caida": return d.get("tronco_caido", {})
 	return d.get(o.nome, d.get(Distribuicao.especie(o.nome), {}))
 

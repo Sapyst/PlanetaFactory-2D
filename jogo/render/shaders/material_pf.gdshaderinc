@@ -14,6 +14,7 @@ uniform bool rolagem_uv2 = false;  // modelo texturizado: o UV da lona foi para 
 uniform bool por_trabalho = false;
 uniform int perfil_folha = -1;      // -1 não é folha; 0 perene, 1 caduca laranja, 2 salgueiro, 3 acácia, 4 caduca amarela
 uniform bool carbonizada = false;
+uniform bool corroida = false;          // árvore morta pelo ácido das larvas: madeira desbotada, pé encharcado, sem folha
 uniform bool seiva = false;         // poça de seiva: ondulação e reflexo no espaço do mundo, contínuos de uma poça para a outra
 #ifdef TRABALHO_POR_OBJETO
 instance uniform float trabalho = 1.0;   // 0 = parada (cristal quase apagado) .. 1 = trabalhando
@@ -144,6 +145,16 @@ void fragment() {
 		float fl = 0.6 + 0.4 * sin(TIME * 12.0 + v_mundo.x * 5.0 + v_mundo.z * 3.0);
 		EMISSION += vec3(1.0, 0.32, 0.04) * queima * smoothstep(0.25, 0.0, abs(h - (1.0 - fg.b))) * fl * 1.6;
 		folha_fogo = clamp(fg.a * 1.4 + smoothstep(0.15, 0.6, fg.b), 0.0, 1.0);   // a copa queima primeiro
+	}
+	if (corroida) {
+		float hc = clamp(v_alt / 2.2, 0.0, 1.0);
+		float rc = fract(sin(dot(floor(v_mundo.xz * 6.0) + floor(v_mundo.y * 5.0), vec2(7.1, 3.7))) * 143.7);
+		base = vec3(0.115, 0.102, 0.074) * (0.75 + 0.45 * rc);                      // madeira morta, cor da cratera
+		float pe = 1.0 - smoothstep(0.0, 0.35, hc + (rc - 0.5) * 0.15);              // o ácido sobe pelo pé
+		base = mix(base, vec3(0.06, 0.085, 0.02), pe * 0.75);
+		if (perfil_folha >= 0) {
+			discard;
+		}
 	}
 	if (carbonizada) {
 		base = vec3(0.06, 0.05, 0.045) * (0.8 + 0.4 * fract(sin(dot(floor(v_mundo.xz * 6.0), vec2(7.1, 3.7))) * 143.7));

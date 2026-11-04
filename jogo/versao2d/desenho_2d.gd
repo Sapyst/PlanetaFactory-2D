@@ -30,11 +30,14 @@ var _itens: Array[Sprite2D] = []
 var _moveis: Dictionary = {}       ## chave → par (trens, ninhos, drones)
 var _aranhas: Dictionary = {}      ## id → {p, fase, ult, rumo}: aranha viva (sprite "aranha_animada")
 var _mortas: Array[Dictionary] = [] ## aranha morrendo: {p, pos, linha, t}
+var _afundando: Dictionary = {}     ## nó 3D da árvore dissolvendo (mundo._dissolver) → par de sprites
+const ARVORE_MORTA := "arvore_morta"
+const COR_CORROIDA := Color(0.92, 0.86, 0.72)   ## madeira desbotada pelo ácido (puxa para a terra da cratera)
 const ARANHA := "aranha_animada"
 const PASSO_ARANHA := 1.1           ## m que o corpo anda num ciclo da marcha (os 2 trípodes; quadros 0..11)
 const MORTE_ARANHA := 1.2           ## s até a carcaça começar a sumir (queda 0,6 + parada 0,6, como no 3D)
 const LARVA := "larva_acida"
-const PASSO_LARVA := 0.5            ## m andados por ciclo de contração (como no 3D: Larva.CICLO_M)
+const PASSO_LARVA := 0.6            ## m andados por ciclo de contração (como no 3D: Larva.CICLO_M)
 var fantasmas := Node2D.new()
 var marcas := Node2D.new()
 var fios := Node2D.new()
@@ -106,6 +109,7 @@ func _process(delta: float) -> void:
 	_sincronizar_itens()
 	_sincronizar_moveis()
 	_sincronizar_aranhas(delta)
+	_sincronizar_afundando()
 	_sincronizar_fios()
 	_sincronizar_fantasma()
 	_sincronizar_portas()
@@ -284,6 +288,9 @@ func _sincronizar_natureza(c: Dictionary, d: Node3D) -> void:
 	for mmi: MultiMeshInstance3D in mmis:
 		var nome_no := String(mmi.get_meta("modelo", mmi.name))   # o chunk guarda o modelo (o nome o Godot pode trocar)
 		var nome := nome_no.get_slice("#", 0)
+		var corroida := nome_no.ends_with("#corroida")
+		if corroida and Distribuicao.eh_arvore(nome) and Catalogo2D.tem(ARVORE_MORTA):
+			nome = ARVORE_MORTA                                     # morta pelo ácido: tronco seco, sem copa
 		if not Catalogo2D.tem(nome):
 			continue
 		var mm := mmi.multimesh
@@ -296,6 +303,8 @@ func _sincronizar_natureza(c: Dictionary, d: Node3D) -> void:
 			_por(p, t.origin, 0, 0)
 			if nome_no.contains("queimada"):
 				(p.spr as Sprite2D).modulate = Color(0.25, 0.22, 0.2)
+			elif corroida:
+				(p.spr as Sprite2D).modulate = COR_CORROIDA
 			c.objs.append(p)
 
 
@@ -548,6 +557,41 @@ func _sincronizar_aranhas(delta: float) -> void:
 			(m.p.som as Sprite2D).scale = Vector2.ONE
 			_soltar(m.p)
 			_mortas.remove_at(i)
+
+
+## Árvore dissolvendo no chão corroído: o tronco morto afunda (a parte de baixo do sprite some no chão, como se
+## entrasse nele) acompanhando a cópia 3D que o mundo anima (grupo "pf_afundando").
+func _sincronizar_afundando() -> void:
+	if not Catalogo2D.tem(ARVORE_MORTA):
+		return
+	var vivos := {}
+	for no: Node3D in get_tree().get_nodes_in_group("pf_afundando"):
+		if not is_instance_valid(no):
+			continue
+		vivos[no] = true
+		if not _afundando.has(no):
+			var nome_v := String(no.get_meta("modelo", ARVORE_MORTA))
+			if Distribuicao.eh_arvore(nome_v) or not Catalogo2D.tem(nome_v):
+				nome_v = ARVORE_MORTA
+			var p := _par(nome_v)
+			if p.is_empty():
+				continue
+			(p.spr as Sprite2D).modulate = COR_CORROIDA
+			_afundando[no] = p
+		var pa: Dictionary = _afundando[no]
+		var origem: Vector3 = no.get_meta("origem")
+		var k := clampf((origem.y - no.global_position.y) / maxf(0.1, float(no.get_meta("alto", 3.0))), 0.0, 1.0)
+		_por(pa, origem, 0, 0)
+		var r: Rect2 = (pa.spr as Sprite2D).region_rect
+		var corte := floorf(r.size.y * k)
+		r.size.y -= corte
+		(pa.spr as Sprite2D).region_rect = r
+		(pa.spr as Sprite2D).offset.y += corte
+		(pa.som as Sprite2D).visible = k < 0.5
+	for no in _afundando.keys():
+		if not vivos.has(no):
+			_soltar(_afundando[no])
+			_afundando.erase(no)
 
 
 ## Drone de reparo trabalhando numa estrutura: feixe de solda vermelho e faíscas, de tempos em tempos.

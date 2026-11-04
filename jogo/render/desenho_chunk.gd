@@ -40,14 +40,14 @@ static func preparar(gerador: GeradorMundo) -> void:
 	_material_chao.set_shader_parameter("camada_rocha", float(_camadas.find("planalto_rochoso")))
 
 
-## `nome#queimada` = a mesma malha carbonizada (árvore queimada de pé ou caída).
+## `nome#queimada` = a mesma malha carbonizada (árvore queimada de pé ou caída); `nome#corroida` = morta pelo ácido.
 static func malha(nome: String, vento := 0.0, boiar := 0.0) -> Mesh:
 	if not _malhas.has(nome):
 		var base := nome.get_slice("#", 0)
 		var m: Dictionary = Registro.modelos.get(base, {})
 		if m.is_empty():
 			return null
-		_malhas[nome] = Materiais.malha_de(load(m.modelo), vento, boiar, nome.ends_with("#queimada"))
+		_malhas[nome] = Materiais.malha_de(load(m.modelo), vento, boiar, 2 if nome.ends_with("#corroida") else nome.ends_with("#queimada"))
 	return _malhas[nome]
 
 
@@ -553,6 +553,7 @@ func refazer_objetos() -> void:
 		match est.get("e", ""):
 			"queimada": _add(obst, o[0] + "#queimada", o[1])
 			"caida": _add(obst, o[0] + "#queimada", tombada(o[1], est.dir))
+			"corroida": _add(obst, o[0] + "#corroida", o[1])
 			_: _add(obst, o[0], o[1])
 	for nome in obst:
 		grupos[nome] = _buffer(obst[nome])

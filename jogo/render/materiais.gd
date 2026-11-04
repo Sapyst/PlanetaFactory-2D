@@ -24,8 +24,9 @@ const PERFIL_FOLHA := {"P_FolhaPerene": 0, "P_FolhaCaduca": 1, "P_FolhaSalgueiro
 
 
 ## `uv2` = a malha tem 2º canal de UV (modelo texturizado: a lona da esteira rola por ele).
-## `carbonizada` = versão queimada (árvore em pé carbonizada ou caída): tudo carvão, sem folha.
-static func material(origem: Material, vento := 0.0, boiar := 0.0, uv2 := false, carbonizada := false) -> Material:
+## `carbonizada` = versão queimada (árvore em pé carbonizada ou caída): tudo carvão, sem folha. 2 = corroída pelo
+## ácido das larvas: madeira morta desbotada (a cor da terra da cratera), pé encharcado de ácido, sem folha.
+static func material(origem: Material, vento := 0.0, boiar := 0.0, uv2 := false, carbonizada: Variant = false) -> Material:
 	if not (origem is BaseMaterial3D):
 		return origem
 	var nome := origem.resource_name
@@ -73,7 +74,9 @@ static func material(origem: Material, vento := 0.0, boiar := 0.0, uv2 := false,
 		m.set_shader_parameter("vento", vento)
 	if PERFIL_FOLHA.has(nome):
 		m.set_shader_parameter("perfil_folha", PERFIL_FOLHA[nome])
-	if carbonizada:
+	if int(carbonizada) == 2:
+		m.set_shader_parameter("corroida", true)
+	elif carbonizada:
 		m.set_shader_parameter("carbonizada", true)
 	m.set_shader_parameter("boiar", boiar)
 	if tex != null:
@@ -111,7 +114,7 @@ static func usa_trabalho(g: GeometryInstance3D) -> bool:
 
 ## Malha única de um .glb de uma parte só (para MultiMesh), já com materiais convertidos e no lugar que a cena dá a
 ## ela: o nó da parte pode ter translação compensando a malha (cano_reto: nó em x −20, vértices em x +19,84).
-static func malha_de(cena: PackedScene, vento := 0.0, boiar := 0.0, carbonizada := false) -> Mesh:
+static func malha_de(cena: PackedScene, vento := 0.0, boiar := 0.0, carbonizada: Variant = false) -> Mesh:
 	var inst := cena.instantiate()
 	var mis := inst.find_children("*", "MeshInstance3D", true, false)
 	if mis.is_empty():

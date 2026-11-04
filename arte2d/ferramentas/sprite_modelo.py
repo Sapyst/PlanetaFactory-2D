@@ -804,7 +804,23 @@ for i in range(len(SEQ)):
     viz = np.zeros_like(m)
     viz[1:] |= m[:-1]; viz[:-1] |= m[1:]; viz[:, 1:] |= m[:, :-1]; viz[:, :-1] |= m[:, 1:]
     borda = viz & ~m
-    out[borda, :3] = COR_BORDA; out[borda, 3] = 1.0
+    if NOME == 'cratera_larva':
+        # a cratera sai do chão: sem contorno escuro; a beira some em pontilhado (5 px) para o chão corroído aparecer
+        dist = np.zeros(m.shape, dtype=np.float32)
+        dentro = m.copy()
+        for passo in range(1, 6):
+            v = np.zeros_like(dentro)
+            v[1:] |= ~dentro[:-1]; v[:-1] |= ~dentro[1:]; v[:, 1:] |= ~dentro[:, :-1]; v[:, :-1] |= ~dentro[:, 1:]
+            anel = dentro & v
+            dist[anel] = passo
+            dentro = dentro & ~anel
+        dist[dentro] = 6
+        bayer = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]], dtype=np.float32) / 16.0
+        lim = np.tile(bayer, (H // 4 + 1, W // 4 + 1))[:H, :W]
+        some = m & (dist / 6.0 < lim + 0.05)
+        out[some, 3] = 0.0
+    else:
+        out[borda, :3] = COR_BORDA; out[borda, 3] = 1.0
     if m[0].any() or m[-1].any() or m[:, 0].any() or m[:, -1].any():
         avisos.append('cortado no quadro %d' % i)
     lum = S[..., :3].mean(axis=2)

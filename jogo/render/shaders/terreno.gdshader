@@ -250,25 +250,28 @@ void fragment() {
 		float teia = max(fio, fio2) * smoothstep(0.25, 0.85, inf) * tufos;
 		c_terra = mix(c_terra, vec3(0.50, 0.48, 0.45), clamp(teia, 0.0, 1.0) * 0.5);
 	}
-	// corrosão (cratera das larvas, canal G): terra queimada pelo ácido — crosta verde-escura rachada, rastros de baba
-	// brilhando e poças de ácido nas baixadas, que crescem perto da cratera
+	// corrosão (cratera das larvas, canal G): a mesma terra cinza-parda da cratera escorre dela para fora — perto, é a
+	// terra da cratera (cor da textura dela); no meio, terra queimada pelo ácido; na beira, mancha torta e manchada que
+	// se mistura ao chão. Veias de ácido esverdeadas correm pela terra e juntam poças nas baixadas, perto da cratera.
 	float cor_l = (texture(mapa_teia, (grade + w1 * 1.4 - origem_mapa) / 34.0).g
 			+ texture(mapa_teia, (grade + w2 * 2.0 - origem_mapa) / 34.0).g) * 0.5 * terra_firme;
 	float acido = 0.0;
 	if (cor_l > 0.002) {
-		float crosta = smoothstep(0.0, 0.5, cor_l) * (0.75 + 0.4 * grao);
-		c_terra = mix(c_terra, vec3(0.055, 0.065, 0.03) + c_terra * 0.15, clamp(crosta, 0.0, 0.92));
-		float racha = 1.0 - smoothstep(0.0, 0.06, abs(texture(detalhe, grade * 0.11 + w2 * 0.3).r - 0.5));
-		c_terra = mix(c_terra, vec3(0.16, 0.20, 0.05), racha * smoothstep(0.2, 0.7, cor_l) * 0.6);      // rachas amareladas
-		// rastros: faixas finas e tortas de baba (onde as larvas se arrastam)
-		float rastro = 1.0 - smoothstep(0.0, 0.035, abs(texture(detalhe, grade * 0.045 + w1 * 0.25 + vec2(0.71, 0.29)).r - 0.5));
-		rastro *= smoothstep(0.15, 0.6, cor_l);
-		c_terra = mix(c_terra, vec3(0.22, 0.30, 0.06), rastro * 0.55);
-		// poças de ácido nas baixadas do ruído (e do relevo), mais perto da cratera
+		float mancha = texture(detalhe, grade * 0.21 + vec2(0.27, 0.61)).r;
+		float k = smoothstep(0.0, 0.45, cor_l + (mancha - 0.5) * 0.35);              // beira torta e manchada
+		vec3 queimada = vec3(0.080, 0.070, 0.052) * (0.85 + 0.3 * grao);
+		vec3 da_cratera = vec3(0.135, 0.118, 0.084) * (0.82 + 0.36 * grao) * (0.9 + 0.2 * mancha);
+		vec3 terra_l = mix(queimada, da_cratera, smoothstep(0.35, 0.85, cor_l + (mancha - 0.5) * 0.25));
+		c_terra = mix(c_terra, terra_l, k);
+		// veias de ácido (linhas finas e tortas), mais densas perto da cratera
+		float veia = 1.0 - smoothstep(0.0, 0.022, abs(texture(detalhe, grade * 0.07 + w2 * 0.45 + vec2(0.71, 0.29)).r - 0.5));
+		veia *= smoothstep(0.3, 0.8, cor_l) * smoothstep(0.35, 0.6, mancha);
+		c_terra = mix(c_terra, vec3(0.12, 0.17, 0.03), veia * 0.7);
+		// poças de ácido nas baixadas, só perto da cratera
 		float fundo_a = texture(detalhe, grade * 0.09 + vec2(0.41, 0.13)).r + baixa * 0.15 + cor_l * 0.08;
-		acido = smoothstep(0.76, 0.80, fundo_a) * smoothstep(0.35, 0.8, cor_l);
-		c_terra = mix(c_terra, vec3(0.30, 0.45, 0.04) * (0.8 + 0.3 * grao), acido * 0.85);
-		acido = max(acido, rastro * 0.4);
+		acido = smoothstep(0.76, 0.80, fundo_a) * smoothstep(0.55, 0.9, cor_l);
+		c_terra = mix(c_terra, vec3(0.20, 0.32, 0.03) * (0.8 + 0.3 * grao), acido * 0.85);
+		acido = max(acido, veia * 0.3);
 	}
 	vec3 c = mix(c_terra, c_agua, agua);
 	c *= 0.88 + 0.24 * d;

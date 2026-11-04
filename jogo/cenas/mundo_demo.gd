@@ -617,6 +617,9 @@ func _atualizar_chunks() -> void:
 					or ambiente.dados.has(k + Vector2i(0, 1)) or ambiente.dados.has(k - Vector2i(0, 1)):
 				d.atualizar_ambiente(ambiente.imagem(k))   # já nasce suja/queimada (sem piscar o chão limpo)
 				ambiente.sujos.erase(k)
+			if infestacao != null and infestacao.chunks().has(k):
+				d.atualizar_teia(infestacao.imagem(k))     # já nasce com teia/corrosão (redesenho não pisca o chão limpo)
+				_teia_chunks[k] = d.get_instance_id()
 	# encomenda os que faltam, do centro para fora
 	if _em_preparo.size() >= TAREFAS:
 		return
@@ -673,6 +676,64 @@ func _derrubar(t: Vector2i, dir: Vector2, nome: String) -> void:
 		no.queue_free()
 		DesenhoChunk.ocultos.erase(t)
 		_refazer_arvores([t]))
+
+
+## Vegetação morta pelo ácido afunda no chão corroído: o chunk já não a desenha (o tile ficou limpo); uma cópia
+## desbotada afunda devagar, tombando um pouco e encolhendo (4 s), com a gosma borbulhando no pé.
+func _dissolver(t: Vector2i, nome: String, tiles: Array, silencioso: bool) -> void:
+	var o := gerador.distribuicao.obstaculo(t)
+	var rel := construtor._relatorio_vazio()
+	rel.limpos.append({"tile": t, "tiles": tiles})
+	if silencioso or o.is_empty():
+		sincronizar(rel)
+		return
+	var centro := Grade.centro_da_area(o.ancora, o.area, 0)
+	var t0 := Transform3D(Basis(Vector3.UP, Grade.angulo(o.rot)), Grade.ponto_mundo(centro, gerador.micro_em(centro - Vector2(0.5, 0.5))))
+	var no := MeshInstance3D.new()
+	no.mesh = DesenhoChunk.malha(nome + "#corroida", 1.0)
+	no.transform = t0
+	add_child(no)
+	sincronizar(rel)
+	no.add_to_group("pf_afundando")                    # a versão 2D desenha o tronco afundando junto
+	no.set_meta("origem", t0.origin)
+	no.set_meta("modelo", nome)
+	var alto := maxf(1.0, no.mesh.get_aabb().size.y) if no.mesh != null else 3.0
+	var lado := Vector3(randf_range(-1, 1), 0, randf_range(-1, 1)).normalized()
+	var eixo := Vector3.UP.cross(lado).normalized() if lado.length() > 0.1 else Vector3.RIGHT
+	var bolhas := CPUParticles3D.new()
+	bolhas.amount = 18
+	bolhas.lifetime = 0.9
+	bolhas.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	bolhas.emission_sphere_radius = 0.45
+	bolhas.direction = Vector3.UP
+	bolhas.spread = 25.0
+	bolhas.initial_velocity_min = 0.3
+	bolhas.initial_velocity_max = 0.8
+	bolhas.gravity = Vector3(0, -1.0, 0)
+	bolhas.scale_amount_min = 0.04
+	bolhas.scale_amount_max = 0.09
+	var esf := SphereMesh.new()
+	esf.radius = 0.5
+	esf.height = 1.0
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.32, 0.46, 0.08)
+	m.emission_enabled = true
+	m.emission = Color(0.25, 0.4, 0.05)
+	esf.material = m
+	bolhas.mesh = esf
+	bolhas.position = t0.origin + Vector3(0, 0.05, 0)
+	add_child(bolhas)
+	Som.tocar("acido_respingo", t0.origin, -12.0)
+	var tw := create_tween()
+	tw.tween_method(func(p: float):
+		var b := Basis(eixo, deg_to_rad(14.0) * p) * t0.basis
+		b = b.scaled(Vector3(1.0 - 0.25 * p, 1.0 - 0.35 * p, 1.0 - 0.25 * p))
+		no.transform = Transform3D(b, t0.origin - Vector3(0, alto * 0.95 * p * p, 0)), 0.0, 1.0, 4.0)
+	no.set_meta("alto", alto)
+	tw.tween_callback(func():
+		no.queue_free()
+		bolhas.emitting = false
+		get_tree().create_timer(1.0).timeout.connect(bolhas.queue_free))
 
 
 func _redesenhar_chunk(k: Vector2i) -> void:
@@ -1529,6 +1590,12 @@ func _tick_mundo(dt: float) -> void:
 	poluicao.tick(dt)
 	colonia.tick(dt, fontes_vivas)
 	infestacao.tick(dt)
+	for ev in infestacao.eventos:                       # o ácido das larvas consome as árvores do chão corroído
+		if ev.tipo == "arvores_mudaram":
+			_refazer_arvores(ev.tiles)
+		elif ev.tipo == "arvore_dissolvida":
+			_dissolver(ev.tile, ev.nome, ev.tiles, bool(ev.silencioso))
+	infestacao.eventos.clear()
 	_eventos.append_array(colonia.eventos)
 	varredura.tick(dt)                                  # sensores revelam chunks (e os ninhos deles) com energia
 	varredura.eventos.clear()

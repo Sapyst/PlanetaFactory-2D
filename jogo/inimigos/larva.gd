@@ -5,7 +5,7 @@ extends Node3D
 ## cospe (animação "cuspe") e, ao morrer, murcha e afunda. Mesma interface da Aranha para o DesenhoColonia.
 
 const VEL_MAX := 1.2              ## m/s que o desenho acompanha (a lógica anda ~0,75)
-const CICLO_M := 0.5              ## metros andados por ciclo da animação "andar"
+const CICLO_M := 0.6              ## metros andados por ciclo da animação "andar" (uma onda de contração)
 
 var destino := Vector3.ZERO
 var rumo_desejado := 0.0

@@ -13,12 +13,18 @@ const MADURA_S := 600.0            ## s de vida até o raio máximo (toca que j�
 const BORDA := 1.8                 ## tiles de degradê na borda
 const SOME_S := 90.0               ## s para o chão voltar depois que a toca cai
 const T := Grade.TAM_CHUNK
+const CORROI_S := 20.0             ## s de ácido forte (valor 1) até a árvore morrer de pé (desbotada, sem folha)
+const DISSOLVE_S := 60.0           ## s até ela afundar no chão corroído e sumir (o tile fica limpo)
+const ARVORE_MIN := 0.35           ## abaixo disso (beira da mancha) o ácido não chega às raízes
 
 var colonia: Colonia
 var versao := 0                    ## muda quando o desenho precisa refazer (toca nova, cresceu, sumindo)
 var _vivas: Dictionary = {}        ## id da toca → {centro: Vector2, raio: float, larva: bool}
 var _restos: Dictionary = {}       ## id → {centro, raio, t}: toca destruída, a infestação sumindo
 var _ruido := FastNoiseLite.new()
+var eventos: Array = []            ## {tipo: "arvores_mudaram", tiles} e {tipo: "arvore_dissolvida", tile, nome, tiles, silencioso}
+var _corroendo: Dictionary = {}    ## tile da árvore → s de ácido acumulados
+var _acc := 0.0
 
 
 func _init(p_colonia: Colonia = null, semente := 11) -> void:
@@ -41,7 +47,10 @@ func tick(dt: float) -> void:
 		var r := raio_de(n)
 		var v: Dictionary = _vivas.get(id, {})
 		if v.is_empty() or absf(float(v.raio) - r) > 0.05:
+			var nova := v.is_empty()
 			_vivas[id] = {"centro": n.centro, "raio": r, "larva": n.get("especie", "aranha") == "larva"}
+			if nova and _vivas[id].larva and float(n.get("idade", 0.0)) >= MADURA_S:
+				_consumir(DISSOLVE_S * 1.7, true, n.centro)   # cratera antiga do mapa: as árvores de perto já se foram
 			_restos.erase(id)
 			versao += 1
 	for id in _vivas.keys():
@@ -54,6 +63,59 @@ func tick(dt: float) -> void:
 		if _restos[id].t >= SOME_S:
 			_restos.erase(id)
 		versao += 1
+	_acc += dt
+	if _acc >= 1.0:
+		_consumir(_acc)
+		_acc = 0.0
+
+
+## O ácido das larvas consome a vegetação do chão corroído (arbusto e cogumelo afundam direto em CORROI_S): cada uma acumula o valor da corrosão por segundo; passou
+## CORROI_S morre de pé (estado "corroida" no mapa); passou DISSOLVE_S afunda e o tile fica limpo. `silencioso`: sem
+## animação (cratera que já nasce antiga no mapa); `so_centro`: só a mancha dessa cratera (as outras seguem no seu ritmo).
+func _consumir(passo: float, silencioso := false, so_centro := Vector2.INF) -> void:
+	if colonia == null or colonia.mapa == null or colonia.mapa.gerador == null:
+		return
+	var mapa: MapaOcupacao = colonia.mapa
+	var fs := fontes()
+	var mudaram: Array = []
+	for f in fs:
+		if not bool(f[3]):
+			continue
+		var c: Vector2 = f[0]
+		if so_centro != Vector2.INF and c != so_centro:
+			continue
+		var alcance := int(ceil(float(f[1]) * 1.3 + BORDA))
+		for y in range(int(c.y) - alcance, int(c.y) + alcance + 1):
+			for x in range(int(c.x) - alcance, int(c.x) + alcance + 1):
+				var t := Vector2i(x, y)
+				if mapa.limpos.has(t):
+					continue
+				var o := mapa.gerador.distribuicao.obstaculo(t)
+				if o.is_empty() or Vector2i(o.ancora) != t:
+					continue
+				var arvore := Distribuicao.eh_arvore(o.nome)
+				if not arvore and Registro.modelos.get(o.nome, {}).get("categoria", "") != "mapa/vegetacao":
+					continue                                 # pedra, cristal…: o ácido não come
+				var v := _valor(Vector2(t) + Vector2(0.5, 0.5), fs, true)
+				if v < ARVORE_MIN:
+					continue
+				var e: String = mapa.arvores.get(t, {}).get("e", "")
+				if e == "caida":
+					continue
+				var acc: float = float(_corroendo.get(t, 0.0)) + passo * v
+				if acc >= (DISSOLVE_S if arvore else CORROI_S):   # arbusto, cogumelo: sem fase de pé, só afunda
+					_corroendo.erase(t)
+					mapa.arvores.erase(t)
+					mapa.limpar_obstaculo(t)
+					eventos.append({"tipo": "arvore_dissolvida", "tile": t, "nome": o.nome, "silencioso": silencioso,
+							"tiles": Grade.tiles_da_area(o.ancora, o.area, 0)})
+					continue
+				_corroendo[t] = acc
+				if acc >= CORROI_S and e != "corroida":
+					mapa.arvores[t] = {"e": "corroida"}
+					mudaram.append(t)
+	if not mudaram.is_empty():
+		eventos.append({"tipo": "arvores_mudaram", "tiles": mudaram})
 
 
 ## (centro, raio, força, larva) de cada fonte: toca viva = força 1; resto sumindo = força caindo até 0.

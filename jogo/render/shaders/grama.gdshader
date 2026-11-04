@@ -23,6 +23,14 @@ varying float altura;
 varying float queimando;
 varying vec3 tom;
 
+float _h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float _ruido(vec2 p) {                                   // ruído de valor suave (borda orgânica da infestação)
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(_h(i), _h(i + vec2(1, 0)), f.x), mix(_h(i + vec2(0, 1)), _h(i + vec2(1, 1)), f.x), f.y);
+}
+
 void vertex() {
 	altura = UV.y;                                        // 0 = pé, 1 = ponta
 	tom = COLOR.rgb;
@@ -38,12 +46,18 @@ void vertex() {
 	some = max(some, smoothstep(0.1, 0.7, q));
 	tom *= mix(vec3(1.0), vec3(0.18, 0.12, 0.08), smoothstep(0.0, 0.25, q));
 	tom *= mix(vec3(1.0), vec3(0.72, 0.62, 0.42), smoothstep(0.1, 0.6, amb.r));   // suja: amarelada
-	float inf = texelFetch(mapa_teia, px, 0).r;
+	// infestação: amostra suave e torta (não o tile): a borda vira mancha orgânica, sem quadrados; cada tufo tem o
+	// seu limiar, então a beira fica rala aos poucos
+	vec2 g = vec2(o.x, -o.z);
+	vec2 torto = vec2(_ruido(g * 0.13), _ruido(g * 0.13 + vec2(17.3, 5.1))) - 0.5;
+	vec2 inf_rg = texture(mapa_teia, (g + torto * 3.0 - origem_mapa) / 34.0).rg;
+	float sorte = _h(g * 3.17) * 0.25 - 0.12;
+	float inf = inf_rg.r;
+	float cor_l = inf_rg.g;
 	tom *= mix(vec3(1.0), vec3(0.55, 0.52, 0.46), smoothstep(0.05, 0.4, inf));     // tomada pela teia: murcha
-	float cor_l = texelFetch(mapa_teia, px, 0).g;                                     // corroída pelo ácido das larvas
-	tom *= mix(vec3(1.0), vec3(0.30, 0.27, 0.13), smoothstep(0.02, 0.3, cor_l));       // queimada: seca e escura
-	some = max(some, smoothstep(0.35, 0.8, inf));
-	some = max(some, smoothstep(0.08, 0.45, cor_l));                                    // o ácido come a grama
+	tom *= mix(vec3(1.0), vec3(0.55, 0.47, 0.30), smoothstep(0.0, 0.35, cor_l + sorte));   // o ácido seca a grama
+	some = max(some, smoothstep(0.35, 0.8, inf + sorte));
+	some = max(some, smoothstep(0.15, 0.5, cor_l + sorte));                              // e come os tufos
 	float dist = distance(o.xz, alvo_camera.xz);
 	some = max(some, smoothstep(raio_vista - 6.0, raio_vista, dist));
 	some = max(some, smoothstep(raio_detalhe - 6.0, raio_detalhe, dist));
