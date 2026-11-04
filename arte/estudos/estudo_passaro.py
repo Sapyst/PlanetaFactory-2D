@@ -394,8 +394,9 @@ def montar_passaro(nome, especie, origem=Vector((0, 0, 0)), giro=0.0):
             pena(m, raiz, dd, comp, larg, {b2: 1.0}, I_PENA, curva=0.10 if not P.get('dedos') else 0.18,
                  assim=0.35, ponta_red=0.6 if P.get('dedos') else 1.0)
         # coberteiras: duas fileiras curtas por cima, cobrindo a raiz das grandes
-        for fila, (frac, alt) in enumerate(() if JOGO_Q else ((0.55, 0.004), (0.30, 0.0065))):
-            nc = int((ns + npr) * (0.75 if JOGO_Q else 1.3))
+        # (no jogo, uma fileira: cobre a raiz das primárias e secundárias — sem ela a pena parece solta da asa)
+        for fila, (frac, alt) in enumerate(((0.6, 0.004),) if JOGO_Q else ((0.55, 0.004), (0.30, 0.0065))):
+            nc = int((ns + npr) * (1.1 if JOGO_Q else 1.3))
             for k in range(nc):
                 y = meia * (0.04 + 0.86 * k / (nc - 1))
                 raiz = ombro_w + Vector((le(y) + 0.002 * s, y * sg, alt * s))

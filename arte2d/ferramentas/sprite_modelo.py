@@ -595,12 +595,14 @@ def pose(q, variante, linha):
     """q = quadro (0..QUADROS-1), linha = rotação/direção."""
     u = q / QUADROS                                             # 0..1 no laço
     if PASSARO:
-        PIVO.matrix_basis = Matrix.Rotation(2 * math.pi * linha / DIRECOES, 4, 'Z')
+        # o estudo monta o pássaro olhando para +X; no jogo a linha 0 é olhando para o norte (+Y aqui, para cima
+        # na tela): +90° (o 3D faz o mesmo girando o modelo)
+        PIVO.matrix_basis = Matrix.Rotation(2 * math.pi * linha / DIRECOES + math.pi / 2, 4, 'Z')
         {'voo': NS_P['pose_voo'], 'planar': NS_P['pose_planar'], 'parado': NS_P['pose_parado'],
          'bicando': NS_P['pose_bicar'], 'pousar': lambda a, u: NS_P['pose_pousar'](a, q / (QUADROS - 1))}[variante](ARM_P, q / QUADROS)
         return
-    if NOME == 'larva_acida':
-        PIVO.matrix_basis = Matrix.Rotation(2 * math.pi * linha / DIRECOES, 4, 'Z')
+    if NOME == 'larva_acida':                 # (o estudo também monta a larva olhando para +X: +90°, como o pássaro)
+        PIVO.matrix_basis = Matrix.Rotation(2 * math.pi * linha / DIRECOES + math.pi / 2, 4, 'Z')
         arm = bpy.data.objects['larva']
         if variante == 'andar':
             NS_LARVA['pose_rastejar'](arm, q / QUADROS, 1)

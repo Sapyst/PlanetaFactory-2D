@@ -5104,7 +5104,7 @@
   ],
   "ancora": [
    33.4,
-   37.0
+   36.6
   ],
   "quadros": 12,
   "linhas": 16,
@@ -5140,12 +5140,12 @@
  "passaro_pardelo": {
   "pasta": "sprites/fauna_passaros/passaro_pardelo",
   "quadro": [
-   30,
-   30
+   24,
+   22
   ],
   "ancora": [
-   15.0,
-   31.5
+   12.0,
+   14.8
   ],
   "quadros": 8,
   "linhas": 16,
