@@ -6,6 +6,22 @@ constrói, coleta, se modifica, se melhora e se espalha — e o planeta muda (po
 O planeta é vivo e o "sistema imunológico" dele reage. Mundo procedural infinito e contínuo; a grade 1×1 é só o
 sistema de construção. O jogo começa com o núcleo caindo do espaço.
 
+## Versão 2D (protótipo)
+
+Este repositório é a **versão 2D**: o mesmo jogo (simulação, interface, construção, clima, colônia), desenhado em
+sprites pixel art em vez de 3D. A versão 3D continua em [Sapyst/PlanetaFactory](https://github.com/Sapyst/PlanetaFactory).
+
+![Fábrica em 2D, à noite](arte2d/v2d_noite.png)
+
+- **Abrir:** `godot --path jogo res://versao2d/mundo_2d.tscn` (modo demonstração).
+- **Como funciona:** a cena `jogo/versao2d/mundo_2d.tscn` roda o mundo do jogo com o desenho 3D desligado, e um
+  espelho 2D (`desenho_2d.gd`) desenha os sprites por cima. A câmera vira ortográfica a 35° (a mesma projeção dos
+  sprites), então clique e construção funcionam como no 3D.
+- **Arte:** `jogo/assets2d/` traz os sprites dos 253 modelos (4 rotações, animação, sombra à parte), o chão e os
+  efeitos. As ferramentas que geram tudo a partir dos modelos 3D estão em [arte2d/](arte2d/LEIA-ME.md).
+- **Falta:** caminhada da aranha, fumaça das chaminés, grade e marcador de portas no modo construção, menu para
+  escolher 2D ou 3D, desempenho no celular.
+
 ![Voo sobre uma fábrica](docs/midia/voo.gif)
 
 **Como jogar:** [docs/COMO_JOGAR.md](docs/COMO_JOGAR.md) ·
