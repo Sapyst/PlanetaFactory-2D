@@ -174,7 +174,7 @@
                        "municao_especial": {"foguete_enxame": {"ogivas": 4, "ogiva_dano": 0.5, "ogiva_raio": 2.0, "abre": 3.0, "tiros": 1}},
                        "bonus_dano": "dano_foguete", "bonus_cadencia": "cadencia_foguete",
                        "_projetil": "lança-foguetes: cada foguete (item) = 1 disparo; voa a velocidade m/s e explode no ponto mirado, dano em área (metade na borda do raio); guarda até municao_max foguetes"},
- "artilharia":        {"grupo": "defesa", "alcance": 120, "alcance_min": 16, "alvo": "ninhos", "dano": 150, "cadencia": 0.25, "vida": 1200,
+ "artilharia":        {"grupo": "defesa", "alcance": 120, "alcance_min": 32, "alvo": "ninhos", "dano": 150, "cadencia": 0.25, "vida": 1200,
                        "municao_item": "granada", "tiros_por_item": 1, "municao_inicial": 0, "municao_max": 10,
                        "projetil": {"velocidade": 45, "raio": 4.0, "tempo_extra": 0.5}, "bonus_dano": "dano_artilharia", "bonus_alcance": "alcance_artilharia",
                        "_alvo": "artilharia: só mira ninhos, entre alcance_min e alcance; uma granada por disparo (a cada 4 s)"},

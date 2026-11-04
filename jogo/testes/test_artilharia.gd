@@ -1,6 +1,6 @@
 extends Caso
 ## Artilharia (artilharia, fase 2.4): modelo do estudo (estudo_artilharia.py; conv_combate_meio.py) com o obus elevado
-## a 55°; granada (2 liga leve + 1 foguete + 2 tijolos → 1) por esteira/braço pela boca sul; só mira ninhos, de 16 a
+## a 55°; granada (2 liga leve + 1 foguete + 2 tijolos → 1) por esteira/braço pela boca sul; só mira ninhos, de 32 a
 ## 120 m; a granada voa em arco e explode com dano em área (150, raio 4). A pesquisa pede a cartografia (Varredura
 ## profunda), que vem depois do sensor de varredura (lote 17): pesquisável pela árvore.
 
@@ -96,15 +96,15 @@ func test_so_ninhos_no_alcance() -> void:
 	var t := m.colocar("artilharia", Vector2i(-1, -1), 0)
 	verificar(t >= 0, "coube")
 	c.carregar_torre(t, 10)
-	var perto_n := _ninho(m, c, Vector2i(8, -1))          # ~8,5 m: perto demais
+	var perto_n := _ninho(m, c, Vector2i(22, -1))         # ~22 m: perto demais (mínimo 32 m: arma grande, de longe)
 	var a := c._nova_aranha(perto_n)
-	c.aranhas[a].pos = Vector2(10, 0)
+	c.aranhas[a].pos = Vector2(20, 0)
 	var tiros := []
 	for i in 30 * 5:
 		c.tick(1.0 / 30.0, [])
 		for e in c.eventos:
 			if e.tipo == "tiro": tiros.append(e)
-	igual(tiros.size(), 0, "não atira em aranha nem em ninho a menos de 16 m")
+	igual(tiros.size(), 0, "não atira em aranha nem em ninho a menos de 32 m")
 	var longe := _ninho(m, c, Vector2i(90, 30))          # ~95 m
 	var v0: float = c.ninhos[longe].vida
 	tiros.clear()

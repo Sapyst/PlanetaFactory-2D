@@ -149,13 +149,14 @@
    81.6,
    176.5
   ],
-  "quadros": 1,
+  "quadros": 6,
   "linhas": 16,
   "tipo_linha": "direcao",
   "variantes": [
-   "base"
+   "base",
+   "tiro"
   ],
-  "animacao": "parado",
+  "animacao": "pecas",
   "avisos": 0,
   "luz": null
  },
@@ -369,13 +370,14 @@
    38.2,
    58.7
   ],
-  "quadros": 1,
+  "quadros": 6,
   "linhas": 16,
   "tipo_linha": "direcao",
   "variantes": [
-   "base"
+   "base",
+   "tiro"
   ],
-  "animacao": "parado",
+  "animacao": "pecas",
   "avisos": 0,
   "luz": "cristal"
  },
@@ -389,13 +391,14 @@
    55.1,
    61.1
   ],
-  "quadros": 1,
+  "quadros": 6,
   "linhas": 16,
   "tipo_linha": "direcao",
   "variantes": [
-   "base"
+   "base",
+   "tiro"
   ],
-  "animacao": "parado",
+  "animacao": "pecas",
   "avisos": 0,
   "luz": null
  },
@@ -409,13 +412,14 @@
    37.5,
    61.3
   ],
-  "quadros": 1,
+  "quadros": 6,
   "linhas": 16,
   "tipo_linha": "direcao",
   "variantes": [
-   "base"
+   "base",
+   "tiro"
   ],
-  "animacao": "parado",
+  "animacao": "pecas",
   "avisos": 0,
   "luz": null
  },
@@ -433,7 +437,8 @@
   "linhas": 8,
   "tipo_linha": "direcao",
   "variantes": [
-   "base"
+   "base",
+   "tiro"
   ],
   "animacao": "pecas",
   "avisos": 0,

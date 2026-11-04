@@ -24,6 +24,10 @@ sprites pixel art em vez de 3D. A versão 3D continua em [Sapyst/PlanetaFactory]
   Os marcadores de porta do 3D (fantasma e porta solta) aparecem por cima do chão e das pedras.
 - **Aranhas:** andam, atacam e morrem com animação (16 direções). **Som:** os sons com posição (tiros, máquinas, aranhas)
   saem de um ouvido no lugar onde a câmera do 3D estaria, porque a câmera ortográfica fica longe demais.
+- **Combate (versao2d/efeitos_2d.gd):** disparo, projétil e impacto por arma, em pixel art por código: partículas
+  com altura (sobem, caem, quicam), cápsulas, sangue por bicho (aranha vermelho e lascas de metal; larva verde),
+  explosões, ácido com poça, luz curta. As torres e o drone de defesa têm quadros de tiro (o cano recua) e a ponta
+  do cano medida por direção (meta "boca"). Vitrine: `godot --path jogo res://versao2d/vitrine_efeitos.tscn`.
 - **Falta:** fumaça das chaminés, grade no modo construção, menu para escolher 2D ou 3D,
   desempenho no celular.
 

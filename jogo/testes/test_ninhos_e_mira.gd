@@ -27,7 +27,7 @@ func test_menos_grupos_de_ataque() -> void:
 	for reducao in [0.0, 0.25]:
 		var b := _base()
 		var c: Colonia = b[1]
-		var n := c._criar_ninho(Vector2i(30, 8), 1.0)
+		var n := c._criar_ninho(Vector2i(40, 8), 1.0)            # além do mínimo de 32 m
 		c.bonus = func(k: String) -> float: return reducao if k == "grupos_ataque" else 0.0
 		c.ninhos[n].raiva = float(c._n.get("custo_aranha", 16)) * 3.2
 		var k0 := c.aranhas_do_ninho(n).size()
@@ -43,7 +43,7 @@ func test_ninho_em_paz_nao_ataca() -> void:
 		var m: MapaOcupacao = b[0]
 		var c: Colonia = b[1]
 		var fonte := m.colocar("fornalha", Vector2i(10, 0), 0)
-		var n := c._criar_ninho(Vector2i(30, 8), 1.0)
+		var n := c._criar_ninho(Vector2i(40, 8), 1.0)            # além do mínimo de 32 m
 		for k in 6:
 			c._nova_aranha(n)
 		if paz:
@@ -88,7 +88,7 @@ func test_artilharia_so_com_ordem_ate_a_mira_automatica() -> void:
 	var m: MapaOcupacao = b[0]
 	var c: Colonia = b[1]
 	var t := m.colocar("artilharia", Vector2i(0, 0), 0)
-	var n := c._criar_ninho(Vector2i(30, 8), 1.0)
+	var n := c._criar_ninho(Vector2i(40, 8), 1.0)            # além do mínimo de 32 m
 	c.carregar_torre(t, 5)
 	var auto := [false]
 	c.artilharia_auto = func() -> bool: return auto[0]
@@ -103,7 +103,7 @@ func test_artilharia_so_com_ordem_ate_a_mira_automatica() -> void:
 	c.ninhos.erase(n)
 	c._torres(0.1)
 	verificar(not c.torres[t].has("ordem"), "sem ninho no alcance, a ordem acaba")
-	var n2 := c._criar_ninho(Vector2i(34, 8), 1.0)
+	var n2 := c._criar_ninho(Vector2i(44, 8), 1.0)
 	c.torres[t].recarga = 0.0
 	c._torres(0.1)
 	igual(int(c.torres[t].municao), 4, "ninho novo: espera outra ordem")

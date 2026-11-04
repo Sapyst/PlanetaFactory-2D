@@ -8,7 +8,12 @@ from mathutils import Vector, Matrix
 JOGO, NOME, SAIDA = sys.argv[sys.argv.index('--') + 1:][:3]
 TODOS = json.load(open(os.path.join(JOGO, 'dados', 'modelos.json')))
 ARANHA = NOME == 'aranha_animada'          # aranha do jogo: corpo + 6 pernas (fêmur, tíbia) posadas como no aranha.gd
-M = dict(TODOS['aranha_montada'], nome=NOME) if ARANHA else TODOS[NOME]
+LARVA = NOME in ('larva_acida', 'cratera_larva')   # larva e cratera: montadas pelo estudo (arte/estudos/estudo_larva.py)
+ESTUDO_LARVA = os.path.join(JOGO, '..', 'arte', 'estudos', 'estudo_larva.py')
+if LARVA:
+    M = {'nome': NOME, 'categoria': 'inimigos/larva', 'tipo': 'veiculo' if NOME == 'larva_acida' else 'estrutura', 'partes': []}
+else:
+    M = dict(TODOS['aranha_montada'], nome=NOME) if ARANHA else TODOS[NOME]
 CAT = M.get('categoria', '')
 GRUPO = CAT.split('/')[0]
 PX = 4.6 / 160                     # metros por pixel (igual em todo o jogo)
@@ -52,6 +57,28 @@ if ARANHA:
         for lista, rot in ((AR_FEMUR, 'ar_femur%d'), (AR_TIBIA, 'ar_tibia%d')):
             c = lista[0].copy(); c.data = lista[0].data.copy(); c.name = rot % k
             sc.collection.objects.link(c); lista.append(c)
+elif LARVA:
+    # o estudo monta a cena (materiais, esqueleto, poses); aqui fica só a peça pedida, na origem
+    _argv = sys.argv
+    sys.argv = [sys.argv[0], '--python', ESTUDO_LARVA, '--', 'nada']
+    sys.path.insert(0, os.path.dirname(ESTUDO_LARVA))
+    NS_LARVA = {'__name__': '__main__', '__file__': ESTUDO_LARVA}
+    exec(compile(open(ESTUDO_LARVA, encoding='utf-8').read(), ESTUDO_LARVA, 'exec'), NS_LARVA)
+    sys.argv = _argv
+    sc = bpy.context.scene
+    fica = (lambda n: n == 'larva' or (n.startswith('larva_') and not n.startswith('larva_cuspe'))) if NOME == 'larva_acida' \
+        else (lambda n: n.startswith('cratera_'))
+    for o in list(sc.objects):
+        if not fica(o.name):
+            bpy.data.objects.remove(o, do_unlink=True)
+    if NOME == 'cratera_larva':
+        for o in sc.objects:
+            if o.parent is None:
+                o.location.x -= NS_LARVA['CX']
+        bpy.context.view_layer.update()
+    else:
+        sc.objects['larva'].animation_data_clear()
+        OSSOS = list(sc.objects['larva'].pose.bones)
 else:
     bpy.ops.import_scene.gltf(filepath=os.path.join(JOGO, M['modelo'].replace('res://', '')))
 malhas = [o for o in sc.objects if o.type == 'MESH']
@@ -104,12 +131,20 @@ if acao is not None:
     QUADROS = 48
 if 'giro' in nomes_p and 'canhao' in nomes_p:                     # torre: a cabeça mira em 16 direções
     DIRECOES = 16; ROTS = [0]; QUADROS = 1
+    if GRUPO == 'defesa':                                          # e a animação do tiro: o cano recua e volta
+        QUADROS = 6; VARIANTES = ['base', 'tiro']
+RECUO = {'torre_metralhadora': 0.05, 'torre_defesa': 0.08, 'torre_foguetes': 0.06, 'artilharia': 0.28, 'drone_defesa': 0.04}.get(NOME, 0.06)
+PERFIL_RECUO = [1.0, 0.75, 0.5, 0.28, 0.12, 0.0, 0.0, 0.0]
 if NOME.startswith(('locomotiva', 'vagao')):                       # trem: 16 direções (curvas)
     DIRECOES = 16; ROTS = [0]
 if GRUPO == 'drones' and M.get('tipo') == 'veiculo':               # drone: 8 direções, hélices girando
     DIRECOES = 8; ROTS = [0]; QUADROS = 8
+    if 'canhao' in nomes_p:                                        # drone de defesa: e o tiro (o cano recua e volta)
+        VARIANTES = ['base', 'tiro']
 if NOME == 'aranha_montada':
     DIRECOES = 8; ROTS = [0]
+if NOME == 'larva_acida':                   # 16 direções; andar (laço: a massa contrai e estica) e cuspe, 12 quadros cada
+    DIRECOES = 16; ROTS = [0]; QUADROS = 12; VARIANTES = ['andar', 'cuspe']
 if ARANHA:                                  # 16 direções; andar (laço), ataque (laço) e morte (uma vez), 12 quadros cada
     DIRECOES = 16; ROTS = [0]; QUADROS = 12; VARIANTES = ['andar', 'ataque', 'morte']
 if {'rotor', 'helice', 'antena', 'cristal'} & nomes_p and QUADROS == 1:
@@ -163,7 +198,7 @@ for n in list(nt.nodes):
 em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Color'].default_value = (1, 0, 1, 1)
 nt.links.new(em.outputs[0], next(n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL').inputs['Surface'])
 CABOS = []
-for o in list(malhas) if NOME != 'ninho_aranha' else []:      # a toca: fio fino é seda clara, não cabo escuro
+for o in list(malhas) if NOME not in ('ninho_aranha', 'larva_acida', 'cratera_larva') else []:      # a toca: fio fino é seda clara, não cabo escuro
     bm = bmesh.new(); bm.from_mesh(o.data)
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
     bm.verts.ensure_lookup_table(); mw = o.matrix_world
@@ -249,6 +284,11 @@ def teia(m):
 
 
 def converter(m):
+    if LARVA:                                       # gosma translúcida (baba, escorrido, ovo melado): no sprite, cor opaca
+        pr = next((n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+        t = pr and (pr.inputs.get('Transmission Weight') or pr.inputs.get('Transmission'))
+        if t is not None:
+            t.default_value = 0.0
     if m.name.split('.')[0] in ('P_Teia', 'P_TeiaSuja'):
         teia(m)                                     # seda fica clara e com recorte (sem o escurecer dos modelos)
         return
@@ -325,7 +365,7 @@ def converter(m):
     s2g = nt.nodes.new('ShaderNodeShaderToRGB'); nt.links.new(gl.outputs[0], s2g.inputs[0])
     rg = nt.nodes.new('ShaderNodeValToRGB'); rg.color_ramp.interpolation = 'CONSTANT'
     rg.color_ramp.elements[0].color = (0, 0, 0, 1); rg.color_ramp.elements[1].position = 0.55
-    rg.color_ramp.elements[1].color = (0, 0, 0, 1) if GRUPO == 'mapa' else (0.32, 0.30, 0.27, 1)   # natureza não brilha como metal
+    rg.color_ramp.elements[1].color = (0, 0, 0, 1) if GRUPO == 'mapa' or LARVA else (0.32, 0.30, 0.27, 1)   # natureza não brilha como metal
     nt.links.new(s2g.outputs['Color'], rg.inputs['Fac'])
     soma = nt.nodes.new('ShaderNodeMix'); soma.data_type = 'RGBA'; soma.blend_type = 'ADD'; soma.inputs['Factor'].default_value = 1.0
     nt.links.new(mult.outputs['Result'], soma.inputs['A']); nt.links.new(rg.outputs['Color'], soma.inputs['B'])
@@ -529,6 +569,15 @@ def pose_aranha(q, variante, rumo):
 def pose(q, variante, linha):
     """q = quadro (0..QUADROS-1), linha = rotação/direção."""
     u = q / QUADROS                                             # 0..1 no laço
+    if NOME == 'larva_acida':
+        PIVO.matrix_basis = Matrix.Rotation(2 * math.pi * linha / DIRECOES, 4, 'Z')
+        arm = bpy.data.objects['larva']
+        if variante == 'andar':
+            NS_LARVA['pose_rastejar'](arm, q / QUADROS, 1)
+        else:                                   # cuspe: ergue e abre (0..0,5 s), segura, solta e volta
+            k = min(1.0, q / 5.0) if q < 8 else max(0.0, 1.0 - (q - 7) / 4.0)
+            NS_LARVA['pose_cuspe'](arm, None, k)
+        return
     if ARANHA:
         PIVO.matrix_basis = Matrix.Identity(4)
         pose_aranha(q, variante, 2 * math.pi * linha / DIRECOES)
@@ -541,6 +590,12 @@ def pose(q, variante, linha):
         pose_braco(u, variante)
     if 'rotor' in PARTES:
         pos_rot('rotor', 'Z', 2 * math.pi * 2 * u)
+    if variante == 'tiro' and 'canhao' in PARTES:
+        pos_desloca('canhao', (0, -RECUO * PERFIL_RECUO[q % len(PERFIL_RECUO)], 0))
+        if 'tambor' in PARTES:
+            pos_rot('tambor', 'Y', math.radians(60) * q)
+    elif 'canhao' in PARTES and variante == 'base' and DIRECOES:
+        pos_desloca('canhao', (0, 0, 0))
     for k in range(4):
         if 'rotor%d' % k in PARTES:
             pos_rot('rotor%d' % k, 'Z', 2 * math.pi * u * (1 if k % 2 else -1) + k)
@@ -614,6 +669,36 @@ sc.render.resolution_x, sc.render.resolution_y = W, H
 p0 = Vector((0, 0, 0)) - centro
 ANCORA = [round(W / 2 + p0.dot(ex) / PX, 1), round(H / 2 - p0.dot(ey) / PX, 1)]
 
+# ------------------------------------------------------------------ boca do cano por direção (torre, drone de defesa)
+# a ponta da peça "canhao" (e filhas) mais à frente na mira, em coordenadas do Godot relativas à origem do modelo:
+# os efeitos do 2D (clarão, traçante, cápsula) saem dali, e não do meio da torre
+BOCA = []
+if DIRECOES and 'canhao' in PARTES:
+    can = PARTES['canhao']
+    def _desce_de(o, pai):
+        while o is not None:
+            if o is pai:
+                return True
+            o = o.parent
+        return False
+    pecas_can = [o for o in malhas if _desce_de(o, can)]
+    for li in range(LINHAS):
+        pose(0, 'base', li); bpy.context.view_layer.update()
+        frente = Matrix.Rotation(2 * math.pi * li / DIRECOES, 3, 'Z') @ Vector((0, 1, 0))
+        dg = bpy.context.evaluated_depsgraph_get()
+        pts = []
+        for o in pecas_can:
+            oe = o.evaluated_get(dg); me = oe.to_mesh()
+            pts += [o.matrix_world @ v.co for v in me.vertices]
+            oe.to_mesh_clear()
+        if not pts:
+            break
+        dmax = max(p.dot(frente) for p in pts)
+        ponta = [p for p in pts if p.dot(frente) > dmax - 0.012]
+        c = sum(ponta, Vector()) / len(ponta)
+        BOCA.append([round(c.x, 3), round(c.z, 3), round(-c.y, 3)])
+    pose(0, VARIANTES[0], 0); bpy.context.view_layer.update()
+
 # ------------------------------------------------------------------ chão da sombra (só aparece no passe S)
 bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, 0.0))
 CHAO = bpy.context.object
@@ -635,6 +720,8 @@ for i, (var, li, q) in enumerate(SEQ):
     fr = 1000 + i
     for o in animados:
         o.keyframe_insert('location', frame=fr); o.keyframe_insert('rotation_quaternion', frame=fr); o.keyframe_insert('scale', frame=fr)
+    for pb in (OSSOS if NOME == 'larva_acida' else []):
+        pb.keyframe_insert('location', frame=fr); pb.keyframe_insert('rotation_euler', frame=fr); pb.keyframe_insert('scale', frame=fr)
     for no, _, _ in BRILHOS:
         no.inputs['Strength'].keyframe_insert('default_value', frame=fr)
     for off, _ in OFFSETS:
@@ -732,8 +819,10 @@ meta = {'nome': NOME, 'categoria': CAT, 'quadro': [W, H], 'ancora': ANCORA, 'fps
         'linhas': LINHAS, 'tipo_linha': ('direcao' if DIRECOES else 'rotacao'),
         'angulos_graus': [round(360 * li / DIRECOES, 2) for li in range(DIRECOES)] if DIRECOES else [90 * r for r in ROTS],
         'variantes': VARIANTES, 'metros_por_pixel': PX, 'camera_elevacao_graus': 35, 'cabos': len(CABOS),
-        'animacao': ('aranha' if ARANHA else 'trabalho' if acao is not None else 'braco' if BRACO else 'pecas' if QUADROS > 1 else 'parado'),
+        'animacao': ('larva' if NOME == 'larva_acida' else 'aranha' if ARANHA else 'trabalho' if acao is not None else 'braco' if BRACO else 'pecas' if QUADROS > 1 else 'parado'),
         'avisos': avisos}
+if BOCA:
+    meta['boca'] = BOCA
 for vi, var in enumerate(VARIANTES):
     for tipo, lista in (('', quadros_cor), ('_sombra', quadros_sombra)):
         folha = np.zeros((H * LINHAS, W * QUADROS, 4), dtype=np.float32)

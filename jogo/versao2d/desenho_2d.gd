@@ -42,6 +42,10 @@ var _fant_txt: Array[Label] = []
 var _fant_seta: Array[Polygon2D] = []
 var _assin_fios := ""
 var efeitos := Node2D.new()
+var ef := Efeitos2D.new()           ## efeitos de combate (disparo, projétil, impacto, sangue, cápsula, luz)
+var _tiro_t: Dictionary = {}        ## id da torre → instante do último tiro (toca a animação de recuo)
+var _linha_de: Dictionary = {}      ## id da estrutura/drone → linha (direção) desenhada agora: a boca sai dela
+var _t_solda: Dictionary = {}       ## id do drone de reparo → próximo feixe de solda
 var _portas: Array[Polygon2D] = []
 var _marcadores: Array = []         ## os MarcadorPortas do mundo 3D (procurados de tempos em tempos)
 var _mat_porta: Array[ShaderMaterial] = []
@@ -77,6 +81,8 @@ func _ready() -> void:
 	add_child(objetos)
 	add_child(fios)
 	add_child(efeitos)
+	ef.luz_tex = _textura_luz()
+	efeitos.add_child(ef)
 	add_child(fantasmas)
 	add_child(noite)
 
@@ -359,6 +365,13 @@ func _desenhar_estrutura(id: int, nome: String, t: Transform3D, n: Node3D, z_ord
 				q = int(a.tempo * FPS)
 	if String(m.get("tipo_linha", "")) == "direcao" and a != null and a.tem("giro"):
 		linha = Catalogo2D.linha_do_angulo(m, (a._partes["giro"] as Node3D).global_rotation.y)
+		_linha_de[id] = linha
+		var dt_tiro: float = _t - float(_tiro_t.get(id, -99.0))
+		if "tiro" in m.get("variantes", []) and dt_tiro < float(m.quadros) / 24.0:
+			variante = "tiro"                          # o cano recua e volta logo depois do tiro
+			q = int(dt_tiro * 24.0)
+		elif "tiro" in m.get("variantes", []):
+			q = 0
 	_por(p, t.origin, linha, q, variante, z_ordem)
 	(p.spr as Sprite2D).visible = n == null or n != ocultar
 	(p.som as Sprite2D).visible = (p.spr as Sprite2D).visible
@@ -443,7 +456,11 @@ func _sincronizar_moveis() -> void:
 			if raiz == null or not is_instance_valid(raiz) or raiz.get_child_count() == 0:
 				continue
 			var corpo := raiz.get_child(0) as Node3D
-			_movel("dr%d" % id, _nome_do_arquivo(corpo), corpo, int(_t * FPS), vistos)
+			var nome_dr := _nome_do_arquivo(corpo)
+			_movel("dr%d" % id, nome_dr, corpo, int(_t * FPS), vistos)
+			if Catalogo2D.tem(nome_dr):
+				_linha_de["dr%d" % id] = Catalogo2D.linha_do_angulo(Catalogo2D.meta(nome_dr), corpo.global_transform.basis.get_euler().y)
+				_solda(id, nome_dr, corpo)
 	for k in _moveis.keys():
 		if not vistos.has(k):
 			_soltar(_moveis[k])
@@ -509,6 +526,52 @@ func _sincronizar_aranhas(delta: float) -> void:
 		if alfa <= 0.0:
 			_soltar(m.p)
 			_mortas.remove_at(i)
+
+
+## Drone de reparo trabalhando numa estrutura: feixe de solda vermelho e faíscas, de tempos em tempos.
+func _solda(id: int, nome: String, corpo: Node3D) -> void:
+	if not nome.begins_with("drone_reparo"):
+		return
+	var dr = mundo.get("drones")
+	if dr == null or not dr.drones.has(id):
+		return
+	var d: Dictionary = dr.drones[id]
+	if int(d.e) != Drones.E.TRABALHANDO or int(d.get("alvo", -1)) < 0 or not mundo.mapa.estruturas.has(int(d.alvo)):
+		return
+	if _t < float(_t_solda.get(id, 0.0)):
+		return
+	_t_solda[id] = _t + 0.7
+	var e: Dictionary = mundo.mapa.estruturas[int(d.alvo)]
+	var alvo := Grade.ponto_mundo(Grade.centro_da_area(e.minimo, e.area, e.rot), 0.8)
+	ef.disparar("reparo", corpo.global_position + Vector3(0, -0.15, 0), alvo, "estrutura", 0.6)
+
+
+## Boca da arma pelo sprite (meta "boca", por direção desenhada); sem medida: a do 3D (Animador) ou o centro alto.
+func _boca_2d(chave, nome: String, origem: Vector3, reserva: Vector3) -> Vector3:
+	if not Catalogo2D.tem(nome):
+		return reserva
+	var m := Catalogo2D.meta(nome)
+	if not m.has("boca") or not _linha_de.has(chave):
+		return reserva
+	var b: Array = m.boca[posmod(int(_linha_de[chave]), (m.boca as Array).size())]
+	return origem + Vector3(b[0], b[1], b[2])
+
+
+## Qual efeito: torre + munição do evento → arma do Efeitos2D.
+static func arma_do_tiro(e: Dictionary) -> String:
+	var nome := String(e.get("nome", ""))
+	var mun := String(e.get("municao", ""))
+	if nome == "torre_metralhadora":
+		return "perfurante" if mun == "municao_perfurante" else ("carregada" if mun == "municao_carregada" else "metralhadora")
+	if nome == "torre_foguetes":
+		return "enxame" if mun.contains("enxame") else "foguete"
+	if nome == "artilharia":
+		return "artilharia"
+	if nome == "torre_defesa":
+		return "metralhadora" if bool(e.get("bala", false)) else "energia"   # sem energia, atira a munição
+	if nome == "torre_energia":
+		return "laser"
+	return "metralhadora"
 
 
 # ------------------------------------------------------------------ fios de energia (linha de 1 px com barriga)
@@ -721,16 +784,28 @@ func efeitos_de(eventos: Array) -> void:
 	for e in eventos:
 		match String(e.get("tipo", "")):
 			"tiro":
-				var de: Vector3 = dc._boca(e, 1.25) if dc != null else Grade.ponto_mundo(e.de, 1.25)
-				var para := Grade.ponto_mundo(e.para, 0.6)
-				_sprite_efeito("clarao", Camera2DJogo.projetar(de))
-				if not bool(e.get("projetil", false)):
-					var energia: bool = String(e.get("nome", "")) == "torre_energia"
-					_traco(de, para, Color(0.6, 0.95, 1.0) if energia else Color(1.0, 0.9, 0.55), 0.09)
+				var arma := arma_do_tiro(e)
+				var id_t := int(e.get("torre", -1))
+				_tiro_t[id_t] = _t
+				var no_t: Node3D = (mundo.get("_nos") as Dictionary).get(id_t)
+				var reserva: Vector3 = dc._boca(e, 1.25) if dc != null else Grade.ponto_mundo(e.de, 1.25)
+				var de: Vector3 = _boca_2d(id_t, String(e.get("nome", "")), no_t.global_position, reserva) if no_t != null else reserva
+				var alvo := "aranha" if int(e.get("aranha", -1)) >= 0 else ("estrutura" if int(e.get("ninho", -1)) >= 0 else "chao")
+				var alto := 0.6 if alvo != "chao" else 0.0
+				var projetil := bool(e.get("projetil", false))
+				ef.disparar(arma, de, Grade.ponto_mundo(e.para, alto), alvo, float(e.get("dur", 0.0)), not projetil)
+			"drone_tiro":
+				var chave := "dr%d" % int(e.get("id", -1))
+				var p_dr := Grade.ponto_mundo(e.de, float(e.get("alt", 2.4)))
+				var de_dr := _boca_2d(chave, "drone_defesa", p_dr, p_dr)
+				var ar_pos: Vector2 = e.para
+				ef.disparar("drone", de_dr, Grade.ponto_mundo(ar_pos, 0.6), "aranha")
 			"salto":
-				_traco(Grade.ponto_mundo(e.de, 0.6), Grade.ponto_mundo(e.para, 0.6), Color(0.7, 0.9, 1.0) if bool(e.get("eletrico", false)) else Color(1.0, 0.85, 0.5), 0.12)
+				ef.arco(Grade.ponto_mundo(e.de, 0.6), Grade.ponto_mundo(e.para, 0.6))
+			"aranha_morta":
+				ef.morte(Grade.ponto_mundo(e.pos, 0.5), String(e.get("especie", "aranha")))
 			"explosao":
-				_sprite_efeito("explosao", Camera2DJogo.projetar(Grade.ponto_mundo(e.pos, 0.0)), clampi(int(round(float(e.raio) / 1.6)), 1, 3))
+				ef.explosao(Grade.ponto_mundo(e.pos, 0.0), clampf(float(e.raio) / 2.5, 0.5, 1.6))
 			"pulso":
 				_anel(Grade.ponto_mundo(e.pos, 0.05), float(e.raio), Color(0.75, 0.55, 1.0))
 

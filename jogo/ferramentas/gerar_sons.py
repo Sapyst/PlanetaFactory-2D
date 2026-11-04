@@ -409,12 +409,36 @@ def tiro_artilharia(rng):
 
 
 def tiro_drone(rng):
-    """Drone: disparo pequeno e elétrico, curtinho."""
-    d = 0.14
-    n = int(d * TAXA)
-    f = varre(1400, 500, d, 2)
-    s = osc(f, 'tri') * env(n, 0.001, 0.035)
-    return reverb(junta((s, 0.7, 0), (estalo(0.03, rng, 2500, 9000, 0.002), 0.6, 0), (baque(220, 110, 0.08, 0.02), 0.5, 0)), 0.3, 0.12)
+    """Drone de defesa: tiro de calibre pequeno (estalo seco, cano curto), o ferrolho miúdo e o eco curto do campo."""
+    n = int(0.12 * TAXA)
+    corpo = banda(ruido(n, rng), 500, 3000) * env(n, 0.0005, 0.022)
+    x = junta((estalo(0.02, rng, 3000, 12000, 0.0018), 1.0, 0), (corpo, 1.8, 0.0005),
+              (ressoa(rosa(n, rng), 300, 2.5) * env(n, 0.0006, 0.02), 1.3, 0),
+              (metal([(2600, 0.008, 1), (4100, 0.006, 0.5)], 0.04, rng), 0.1, 0.02))
+    return reverb(satura(x, 2.0), 0.3, 0.16, 5000)
+
+
+def cuspe_acido(rng):
+    """Larva cuspindo: pigarro molhado na garganta (gorgolejo), o "ptu" da gosma saindo e gotas espirrando."""
+    n = int(0.22 * TAXA)
+    t = tempo(0.22)
+    gorgolejo = banda(rosa(n, rng), 250, 1600) * (0.5 + 0.5 * np.sin(2 * np.pi * 38 * t + 2 * np.sin(2 * np.pi * 7 * t))) ** 2
+    gorgolejo = ressoa(gorgolejo, 520, 2.5) * env(n, 0.03, 0.06, 0.08)
+    m = int(0.14 * TAXA)
+    ptu = banda(ruido(m, rng), 700, 4500) * env(m, 0.002, 0.03) + ressoa(rosa(m, rng), 180, 3) * env(m, 0.002, 0.03) * 0.8
+    gotas = graos(rng, 0.25, 40, 900, 4500, 6.0, (0.0004, 0.0015), lambda u: (1 - u) ** 1.5)
+    return reverb(junta((gorgolejo, 0.9, 0), (ptu, 1.2, 0.17), (gotas, 0.5, 0.2)), 0.35, 0.12)
+
+
+def acido_respingo(rng):
+    """Gosma ácida batendo: "splat" líquido, gotas caindo em volta e o chiado do ácido corroendo, sumindo."""
+    m = int(0.1 * TAXA)
+    splat = banda(rosa(m, rng), 300, 3500) * env(m, 0.001, 0.025) + ressoa(rosa(m, rng), 220, 2.5) * env(m, 0.001, 0.03)
+    gotas = graos(rng, 0.35, 70, 800, 5000, 7.0, (0.0004, 0.0016), lambda u: (1 - u) ** 2)
+    n = int(1.4 * TAXA)
+    chiado = pa(banda(ruido(n, rng), 2500, 11000), 2000) * env(n, 0.04, 0.45)
+    chiado *= 0.8 + 0.2 * graos(rng, 1.4, 300, 3000, 9000, 2.0)[:n] * 3
+    return reverb(junta((splat, 1.3, 0), (gotas, 0.6, 0.01), (chiado, 0.11, 0.03)), 0.3, 0.1)
 
 
 # ==============================================================================
@@ -796,7 +820,8 @@ SONS = [
     ('tiro_perfurante', tiro_perfurante, -13, 0, 0.0003), ('tiro_carregada', tiro_carregada, -13, 0, 0.0003),
     ('tiro_energia', tiro_energia, -13, 0, 0.0005), ('tiro_foguete', tiro_foguete, -12, 0, 0.0005),
     ('tiro_enxame', tiro_enxame, -12, 0, 0.0005), ('tiro_artilharia', tiro_artilharia, -8, 0, 0.0003),
-    ('tiro_drone', tiro_drone, -15, 0, 0.0005),
+    ('tiro_drone', tiro_drone, -15, 0, 0.0003), ('cuspe_acido', cuspe_acido, -14, 0, 0.002),
+    ('acido_respingo', acido_respingo, -15, 0, 0.0005),
     ('impacto_aranha', impacto_aranha_a, -17, 0, 0.0003), ('impacto_chao', impacto_chao, -16, 0, 0.0003),
     ('impacto_estrutura', impacto_estrutura_d, -15, 0, 0.0003), ('impacto', impacto, -9, 0, 0.0005),
     ('explosao', explosao, -9, 0, 0.0005), ('explosao_grande', explosao_grande, -6.5, 0, 0.0005),

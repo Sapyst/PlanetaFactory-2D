@@ -1077,6 +1077,7 @@ func _process(delta: float) -> void:
 	for ev in _eventos_drones:
 		if ev.tipo == "drone_sem_placa" and is_instance_valid(controle):
 			controle._avisar("Drones de reparo sem placas de ferro no núcleo")
+	eventos_desenho.emit(_eventos_drones)             # versão 2D: tiro dos drones
 	_desenho_drones.atualizar(_eventos_drones, delta)
 	_eventos_drones.clear()
 	_t_hud -= delta
