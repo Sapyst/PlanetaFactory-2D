@@ -479,6 +479,7 @@ func _torres(dt: float) -> void:
 		var chave := "dano_torre_energia"                     # melhoria que vale para este tiro
 		var cadencia := float(regra.get("cadencia", 3))
 		var bala := false
+		var municao := ""                                     # munição especial usada (vazio = a comum)
 		var efeito := {}                                       # munição especial deste tiro (regra municao_especial)
 		if regra.has("carga_mj") and torre_energia.is_valid() and torre_energia.call(id, tiro_mj()):
 			cadencia *= 1.0 + _bonus("cadencia_torre_energia")
@@ -489,6 +490,7 @@ func _torres(dt: float) -> void:
 			else:
 				t.especial[esp] = int(t.especial[esp]) - 1
 				efeito = regra.municao_especial[esp]
+				municao = esp
 			chave = String(regra.get("bonus_dano", "dano_bala"))
 			bala = true
 			if not regra.has("carga_mj"):
@@ -497,7 +499,7 @@ func _torres(dt: float) -> void:
 			continue
 		t.recarga = maxf(t.recarga, -dt) + 1.0 / cadencia   # sobra do tick conta: 10 tiros/s mesmo a 30 quadros/s
 		var dano: float = float(regra.get("dano", 8)) * (1.0 + _bonus(chave)) * float(efeito.get("dano", 1.0))
-		var ev := {"tipo": "tiro", "torre": id, "nome": e.nome, "bala": bala, "de": c, "para": t.mira, "aranha": alvo, "ninho": ninho}
+		var ev := {"tipo": "tiro", "torre": id, "nome": e.nome, "bala": bala, "municao": municao, "de": c, "para": t.mira, "aranha": alvo, "ninho": ninho}
 		if regra.has("projetil"):                       # foguete/granada: voa e explode no ponto mirado
 			var pj: Dictionary = regra.projetil
 			var dur := c.distance_to(t.mira) / float(pj.get("velocidade", 25.0)) + float(pj.get("tempo_extra", 0.0))

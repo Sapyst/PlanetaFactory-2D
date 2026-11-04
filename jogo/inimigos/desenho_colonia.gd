@@ -96,7 +96,7 @@ func atualizar(eventos: Array[Dictionary], delta: float) -> void:
 				else:
 					var eh_energia: bool = (nome_torre == "torre_energia")
 					var arma_dir: String = "torre_energia" if eh_energia else "metralhadora"
-					var bala_tipo: String = String(e.get("bala", ""))
+					var bala_tipo: String = String(e.get("municao", ""))      # "bala" é só sim/não
 					var som_dir: String = "tiro_energia" if eh_energia else ("tiro_perfurante" if bala_tipo == "municao_perfurante" else ("tiro_carregada" if bala_tipo == "municao_carregada" else "tiro_metralhadora"))
 					Som.tocar(som_dir, de, -5.0)
 					pool_efeitos.disparar_rastro(arma_dir, de, para)

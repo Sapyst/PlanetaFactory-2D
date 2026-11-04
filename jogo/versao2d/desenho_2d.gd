@@ -27,7 +27,12 @@ var _mat_base: ShaderMaterial
 var _chunks: Dictionary = {}       ## k → {mi3, mi2, assin, objs: Array}
 var _est: Dictionary = {}          ## id → {spr, som, nome, variante}
 var _itens: Array[Sprite2D] = []
-var _moveis: Dictionary = {}       ## chave → par (trens, aranhas, ninhos, drones)
+var _moveis: Dictionary = {}       ## chave → par (trens, ninhos, drones)
+var _aranhas: Dictionary = {}      ## id → {p, fase, ult, rumo}: aranha viva (sprite "aranha_animada")
+var _mortas: Array[Dictionary] = [] ## aranha morrendo: {p, pos, linha, t}
+const ARANHA := "aranha_animada"
+const PASSO_ARANHA := 1.1           ## m que o corpo anda num ciclo da marcha (os 2 trípodes; quadros 0..11)
+const MORTE_ARANHA := 1.2           ## s até a carcaça começar a sumir (queda 0,6 + parada 0,6, como no 3D)
 var fantasmas := Node2D.new()
 var marcas := Node2D.new()
 var fios := Node2D.new()
@@ -92,6 +97,7 @@ func _process(delta: float) -> void:
 	_sincronizar_estruturas()
 	_sincronizar_itens()
 	_sincronizar_moveis()
+	_sincronizar_aranhas(delta)
 	_sincronizar_fios()
 	_sincronizar_fantasma()
 	_sincronizar_portas()
@@ -425,10 +431,6 @@ func _sincronizar_moveis() -> void:
 					_movel("trem%d_%d" % [id, i], _nome_do_arquivo(no), no, 0, vistos)
 	var dc = mundo.get("_desenho_colonia")
 	if dc != null:
-		for id in dc._aranhas:
-			var no: Node3D = dc._aranhas[id]
-			if is_instance_valid(no) and no.visible:
-				_movel("ar%d" % id, "aranha_montada", no, 0, vistos)
 		for id in dc._ninhos:
 			var no: Node3D = dc._ninhos[id]
 			if is_instance_valid(no) and no.visible:
@@ -460,6 +462,53 @@ func _movel(chave: String, nome: String, no: Node3D, q: int, vistos: Dictionary)
 	var p: Dictionary = _moveis[chave]
 	var g := no.global_transform
 	_por(p, g.origin, Catalogo2D.linha_do_angulo(p.m, g.basis.get_euler().y), q)
+
+
+# ------------------------------------------------------------------ aranhas: andar (pela distância), ataque e morte
+func _sincronizar_aranhas(delta: float) -> void:
+	var dc = mundo.get("_desenho_colonia")
+	if dc == null or not Catalogo2D.tem(ARANHA):
+		return
+	for id in dc._aranhas:
+		var no: Aranha = dc._aranhas[id]
+		if not is_instance_valid(no):
+			continue
+		var a: Dictionary = _aranhas.get(id, {})
+		if a.is_empty():
+			var p := _par(ARANHA)
+			if p.is_empty():
+				return
+			a = {"p": p, "fase": randf(), "ult": no.global_position, "rumo": no.rotation.y}
+			_aranhas[id] = a
+		var pos := no.global_position
+		# a marcha avança com o chão percorrido (e com o giro no lugar): o pé plantado não escorrega
+		var anda := Vector2(pos.x - a.ult.x, pos.z - a.ult.z).length() + absf(angle_difference(float(a.rumo), no.rotation.y)) * 0.6
+		a.ult = pos
+		a.rumo = no.rotation.y
+		var linha := Catalogo2D.linha_do_angulo(a.p.m, no.rotation.y)
+		if no.atacando:
+			_por(a.p, pos, linha, int(_t * FPS), "ataque")
+		else:
+			a.fase = fposmod(float(a.fase) + anda / PASSO_ARANHA, 1.0)
+			_por(a.p, pos, linha, int(float(a.fase) * 12.0), "andar")
+		(a.p.spr as Sprite2D).visible = no.visible
+		(a.p.som as Sprite2D).visible = no.visible
+	for id in _aranhas.keys():
+		if dc._aranhas.has(id):
+			continue
+		var a: Dictionary = _aranhas[id]               # saiu da lista do 3D = morreu (o nó 3D segue a própria morte)
+		_aranhas.erase(id)
+		_mortas.append({"p": a.p, "pos": a.ult, "linha": Catalogo2D.linha_do_angulo(a.p.m, float(a.rumo)), "t": 0.0})
+	for i in range(_mortas.size() - 1, -1, -1):
+		var m: Dictionary = _mortas[i]
+		m.t += delta
+		_por(m.p, m.pos, m.linha, mini(int(m.t * FPS), 11), "morte")
+		var alfa := clampf(1.0 - (m.t - MORTE_ARANHA) / 0.8, 0.0, 1.0)
+		(m.p.spr as Sprite2D).modulate.a = alfa
+		(m.p.som as Sprite2D).modulate.a = alfa
+		if alfa <= 0.0:
+			_soltar(m.p)
+			_mortas.remove_at(i)
 
 
 # ------------------------------------------------------------------ fios de energia (linha de 1 px com barriga)

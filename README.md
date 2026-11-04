@@ -22,7 +22,9 @@ sprites pixel art em vez de 3D. A versão 3D continua em [Sapyst/PlanetaFactory]
 - **Ordem de desenho:** esteira e trilho rentes ao chão ficam numa camada embaixo de tudo, com os itens da esteira
   por cima delas. Construção maior que um tile se ordena pela fileira sul, então o trem passa por baixo do telhado.
   Os marcadores de porta do 3D (fantasma e porta solta) aparecem por cima do chão e das pedras.
-- **Falta:** caminhada da aranha, fumaça das chaminés, grade no modo construção, menu para escolher 2D ou 3D,
+- **Aranhas:** andam, atacam e morrem com animação (16 direções). **Som:** os sons com posição (tiros, máquinas, aranhas)
+  saem de um ouvido no lugar onde a câmera do 3D estaria, porque a câmera ortográfica fica longe demais.
+- **Falta:** fumaça das chaminés, grade no modo construção, menu para escolher 2D ou 3D,
   desempenho no celular.
 
 ![Voo sobre uma fábrica](docs/midia/voo.gif)

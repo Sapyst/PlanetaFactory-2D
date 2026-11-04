@@ -13,6 +13,8 @@ var rumo_desejado := 0.0
 var atacando := false             ## golpeia com o par da frente (no ar: não conta como pé plantado)
 var alvo_golpe := Vector3.ZERO
 var _morta := false
+var _t_morte := 0.0
+var _pe_morte: Array[Vector3] = []   ## onde cada pé estava quando morreu (desliza para fora dali)
 var _corpo: Node3D
 var _femures: Array[Node3D] = []
 var _tibias: Array[Node3D] = []
@@ -84,21 +86,54 @@ func encarar(p: Vector3) -> void:
 		rumo_desejado = atan2(-d.x, -d.z)
 
 
-## Morte: as pernas cedem, o corpo afunda e some (faíscas ficam por conta de quem chamou).
+const MORTE_QUEDA := 0.6          ## s: o corpo cai até a barriga encostar no chão e as pernas se abrem
+const MORTE_FICA := 0.6           ## s: a carcaça fica parada antes de sumir
+const MORTE_DESCE := 0.2          ## m: a barriga (0,225 m do chão) encosta no chão
+const MORTE_TOMBA := 0.22         ## rad: tomba de lado
+const MORTE_ABRE := 0.35          ## m: os pés escorregam para fora
+
+
+## Morte: as pernas cedem e se abrem, o corpo cai na barriga e tomba de lado, fica um instante e some
+## (faíscas ficam por conta de quem chamou). A versão 2D desenha a mesma pose (sprite "morte").
 func morrer() -> void:
 	if _morta:
 		return
 	_morta = true
-	set_process(false)
-	var tw := create_tween().set_parallel(true)
-	tw.tween_property(_corpo, "position:y", -0.45, 0.6).set_ease(Tween.EASE_IN)
-	tw.tween_property(_corpo, "rotation:z", 0.5, 0.6)
-	for n in _femures + _tibias:
-		tw.tween_property(n, "global_position:y", 0.05, 0.5)
-	tw.chain().tween_callback(queue_free)
+	atacando = false
+	_t_morte = 0.0
+	_pe_morte.clear()
+	for i in 6:
+		_pe_morte.append(marcha.pes[i])
+
+
+func _morrendo(delta: float) -> void:
+	_t_morte += delta
+	if _t_morte >= MORTE_QUEDA + MORTE_FICA:
+		queue_free()
+		return
+	var k := minf(_t_morte / MORTE_QUEDA, 1.0)
+	var g := k * k                                             # cai acelerando
+	if _corpo != null:
+		_corpo.position.y = -MORTE_DESCE * g
+		_corpo.rotation.z = MORTE_TOMBA * g
+	if not is_inside_tree():
+		return
+	for i in _femures.size():
+		var q := marcha.quadril(i) + Vector3.DOWN * MORTE_DESCE * g
+		var fora := marcha.casa(i) - marcha.quadril(i)
+		fora.y = 0.0
+		var ini := _pe_morte[i]
+		var chao := Grade.altura_em(Vector2(ini.x, -ini.z))
+		var pe := ini.lerp(Vector3(ini.x, chao, ini.z), k) + fora.normalized() * MORTE_ABRE * k
+		var ik := MarchaAranha.resolver_ik(q, pe)
+		_femures[i].global_transform = _segmento(q, ik.joelho)
+		_tibias[i].global_transform = _segmento(ik.joelho, pe)
 
 
 func _process(delta: float) -> void:
+	if _morta:
+		_morrendo(delta)
+		return
 	marcha.tick(delta, destino, rumo_desejado)
 	if marcha.passo_pousou:
 		marcha.passo_pousou = false

@@ -57,7 +57,7 @@ Ficaram de fora as 4 propostas antigas e o tufo de grama.
 - **Prévia:** `ferramentas/noite2d.py` gera o "dia | noite" (exemplo em `previas/noite.mp4`).
 
 ## Limites conhecidos
-- **Aranha:** a caminhada é feita por código no jogo, então o sprite dela fica parado. As pernas soltas, fêmur e tíbia, também têm sprite.
+- **Aranha:** o jogo monta a aranha com IK; o sprite `aranha_animada` refaz a mesma conta (corpo + 6 pernas) em 16 direções, com 3 folhas de 12 quadros: `andar` (trípode alternado; o 2D avança o quadro pela distância andada, 1,1 m por ciclo, para o pé não escorregar), `ataque` (o par da frente golpeia, 2 por segundo) e `morte` (a barriga cai no chão, tomba e as pernas se abrem). A `aranha_montada` parada continua como prévia.
 - **Metralhadora:** o tambor não gira.
 - **Turbina:** a nacele aponta sempre para o mesmo lado e só a hélice gira.
 - **Lona da esteira:** anda mais devagar que no jogo, para caber num laço curto. No 2D, o ideal é o motor do jogo rolar a lona.

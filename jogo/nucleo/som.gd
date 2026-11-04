@@ -172,9 +172,11 @@ func tocar(nome: String, onde := Vector3.INF, volume_db := 0.0, bus_custom := ""
 func tocar_maquina(nome: String, onde: Vector3, volume_db := 0.0, distancia_max := 55.0) -> Variant:
 	if not _sons.has(nome) or DisplayServer.get_name() == "headless":
 		return null
-	var cam := get_viewport().get_camera_3d()
-	if cam != null:
-		if cam.global_position.distance_to(onde) > distancia_max:
+	var ouvido: Node3D = get_viewport().get_audio_listener_3d()      # versão 2D: o ouvido, não a câmera distante
+	if ouvido == null:
+		ouvido = get_viewport().get_camera_3d()
+	if ouvido != null:
+		if ouvido.global_position.distance_to(onde) > distancia_max:
 			return null
 	var agora := Time.get_ticks_msec() / 1000.0
 	var min_int: float = float(INTERVALO.get(nome, 0.25))

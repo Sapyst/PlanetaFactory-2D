@@ -5068,5 +5068,27 @@
   "animacao": "parado",
   "avisos": 0,
   "luz": null
+ },
+ "aranha_animada": {
+  "pasta": "sprites/inimigos_aranha/aranha_animada",
+  "quadro": [
+   152,
+   98
+  ],
+  "ancora": [
+   69.3,
+   56.4
+  ],
+  "quadros": 12,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "andar",
+   "ataque",
+   "morte"
+  ],
+  "animacao": "aranha",
+  "avisos": 0,
+  "luz": null
  }
 }

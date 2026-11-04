@@ -8,6 +8,9 @@ const ELEVACAO := deg_to_rad(35.0)
 const PX := 4.6 / 160.0                         ## metros por pixel do sprite
 const NIVEIS: Array[float] = [0.25, 0.5, 1.0, 2.0, 3.0, 4.0, 6.0]
 var zoom_px := 2.0                              ## pixels de tela por pixel de sprite
+## A câmera ortográfica fica a 200 m (fora do alcance dos sons): quem ouve é este ouvido, onde a câmera do 3D
+## estaria com o mesmo enquadramento (44 m ÷ zoom), com a mesma orientação (esquerda/direita certas).
+var ouvido := AudioListener3D.new()
 
 
 func _ready() -> void:
@@ -16,6 +19,9 @@ func _ready() -> void:
 	far = 900.0
 	angulo = 0.0
 	_ajustar_zoom()
+	add_child(ouvido)
+	ouvido.top_level = true
+	ouvido.make_current()
 	posicionar()
 
 
@@ -40,6 +46,7 @@ func posicionar() -> void:
 	look_at(alvo)
 	var h := maxf(get_viewport().get_visible_rect().size.y, 1.0) if is_inside_tree() else 720.0
 	size = h * PX / zoom_px
+	ouvido.global_transform = Transform3D(Basis.looking_at(-dir), alvo + dir * (44.0 / zoom_px))
 
 
 func zoom(fator: float) -> void:

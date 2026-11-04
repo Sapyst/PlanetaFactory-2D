@@ -7,7 +7,8 @@ from mathutils import Vector, Matrix
 
 JOGO, NOME, SAIDA = sys.argv[sys.argv.index('--') + 1:][:3]
 TODOS = json.load(open(os.path.join(JOGO, 'dados', 'modelos.json')))
-M = TODOS[NOME]
+ARANHA = NOME == 'aranha_animada'          # aranha do jogo: corpo + 6 pernas (fêmur, tíbia) posadas como no aranha.gd
+M = dict(TODOS['aranha_montada'], nome=NOME) if ARANHA else TODOS[NOME]
 CAT = M.get('categoria', '')
 GRUPO = CAT.split('/')[0]
 PX = 4.6 / 160                     # metros por pixel (igual em todo o jogo)
@@ -17,7 +18,42 @@ FPS = 12
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
-bpy.ops.import_scene.gltf(filepath=os.path.join(JOGO, M['modelo'].replace('res://', '')))
+
+
+def importar_peca(nome, rotulo):
+    """Importa um glb e deixa uma malha só, com a origem do modelo do jogo na origem do mundo."""
+    antes = set(sc.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(JOGO, TODOS[nome]['modelo'].replace('res://', '')))
+    novos = [o for o in sc.objects if o not in antes]
+    nomes_novos = [o.name for o in novos]
+    ms = [o for o in novos if o.type == 'MESH']
+    for o in ms:
+        mw = o.matrix_world.copy(); o.parent = None; o.matrix_world = mw
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in ms:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = ms[0]
+    if len(ms) > 1:
+        bpy.ops.object.join()
+    ob = bpy.context.view_layer.objects.active
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    resto = [n for n in nomes_novos if n != ob.name and n in bpy.data.objects]
+    for n in resto:
+        bpy.data.objects.remove(bpy.data.objects[n])
+    ob.name = rotulo
+    return ob
+
+
+if ARANHA:
+    AR_CORPO = importar_peca('aranha_corpo', 'ar_corpo')
+    AR_FEMUR = [importar_peca('aranha_femur', 'ar_femur0')]
+    AR_TIBIA = [importar_peca('aranha_tibia', 'ar_tibia0')]
+    for k in range(1, 6):
+        for lista, rot in ((AR_FEMUR, 'ar_femur%d'), (AR_TIBIA, 'ar_tibia%d')):
+            c = lista[0].copy(); c.data = lista[0].data.copy(); c.name = rot % k
+            sc.collection.objects.link(c); lista.append(c)
+else:
+    bpy.ops.import_scene.gltf(filepath=os.path.join(JOGO, M['modelo'].replace('res://', '')))
 malhas = [o for o in sc.objects if o.type == 'MESH']
 PARTES = {}
 for o in sc.objects:
@@ -74,6 +110,8 @@ if GRUPO == 'drones' and M.get('tipo') == 'veiculo':               # drone: 8 di
     DIRECOES = 8; ROTS = [0]; QUADROS = 8
 if NOME == 'aranha_montada':
     DIRECOES = 8; ROTS = [0]
+if ARANHA:                                  # 16 direções; andar (laço), ataque (laço) e morte (uma vez), 12 quadros cada
+    DIRECOES = 16; ROTS = [0]; QUADROS = 12; VARIANTES = ['andar', 'ataque', 'morte']
 if {'rotor', 'helice', 'antena', 'cristal'} & nomes_p and QUADROS == 1:
     QUADROS = 48
 LONA = {'P_Esteira': 1, 'P_EsteiraRapida': 2, 'P_EsteiraExpressa': 3, 'P_EsteiraQuantica': 4}
@@ -383,9 +421,90 @@ def pose_braco(fase, origem):
 animados = list({o.name: o for o in list(PARTES.values()) + [PIVO] + OBJS_ACAO + ([ITEM] if ITEM else [])}.values())
 
 
+# ------------------------------------------------------------------ aranha: a mesma conta do jogo (marcha_aranha.gd, aranha.gd)
+# Tudo no espaço do Godot (x, y para cima, z para o sul) e convertido para o Blender no fim (x, −z, y).
+G2B = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))
+QUADRIL_Z, FEMUR_L, TIBIA_L = 0.55, 0.70, 0.90
+QUADRIS = [(0.42, 0.35), (-0.42, 0.35), (0.42, 0.0), (-0.42, 0.0), (0.42, -0.35), (-0.42, -0.35)]
+TRIPODE = [0, 1, 1, 0, 0, 1]                # [[0, 3, 4], [1, 2, 5]]
+PASSO_FRENTE, PASSO_TRAS, ALTURA_PASSO = 0.26, 0.29, 0.25   # o pé pousa 0,26 m à frente da casa e sai 0,29 m atrás
+UP = Vector((0, 1, 0))
+
+
+def _no_blender(t):
+    return G2B @ t @ G2B.inverted()
+
+
+def _segmento(a, b):
+    x = (b - a).normalized()
+    z = x.cross(UP)
+    z = Vector((0, 0, 1)) if z.length < 1e-4 else z.normalized()
+    y = z.cross(x).normalized()
+    m = Matrix.Identity(4)
+    for r in range(3):
+        m[r][0], m[r][1], m[r][2], m[r][3] = x[r], y[r], z[r], a[r]
+    return m
+
+
+def _ik(qd, pe):
+    alvo = pe - qd
+    d = min(max(alvo.length, abs(FEMUR_L - TIBIA_L) + 0.001), FEMUR_L + TIBIA_L - 0.001)
+    hz = Vector((alvo.x, 0, alvo.z))
+    dh = hz.normalized() if hz.length > 1e-6 else Vector((1, 0, 0))
+    ca = min(1, max(-1, (FEMUR_L ** 2 + d * d - TIBIA_L ** 2) / (2 * FEMUR_L * d)))
+    el = math.atan2(alvo.y, hz.length) + math.acos(ca)
+    return qd + dh * FEMUR_L * math.cos(el) + UP * FEMUR_L * math.sin(el)
+
+
+def pose_aranha(q, variante, rumo):
+    R = Matrix.Rotation(rumo, 3, UP)
+    frente = R @ Vector((0, 0, -1))
+    quadril = [R @ Vector((x, QUADRIL_Z, -y)) for x, y in QUADRIS]
+    casa = [R @ (Vector((x, 0, -y)) + Vector((x, 0, -y)).normalized()) for x, y in QUADRIS]
+    u = q / QUADROS
+    t = q / FPS
+    pes = list(casa)
+    corpo_y, corpo_rz = 0.0, 0.0
+    if variante == 'andar':                 # trípode alternado: o pé plantado recua com o corpo, o outro trípode no ar
+        corpo_y = 0.02 * math.sin(4 * math.pi * u)
+        for i in range(6):
+            s_ = (u - 0.5 * TRIPODE[i]) % 1.0
+            fr, tr = casa[i] + frente * PASSO_FRENTE, casa[i] - frente * PASSO_TRAS
+            if s_ < 0.5:
+                f = s_ / 0.5; k = f * f * (3 - 2 * f)
+                pes[i] = tr.lerp(fr, k) + UP * math.sin(f * math.pi) * ALTURA_PASSO
+            else:
+                pes[i] = fr.lerp(tr, (s_ - 0.5) / 0.5)
+    elif variante == 'ataque':              # o par da frente golpeia alternado (2 golpes por segundo)
+        for i in (0, 1):
+            lado = (R @ Vector((QUADRIS[i][0], 0, 0))).normalized()
+            f = 0.5 + 0.5 * math.sin(4 * math.pi * t + i * math.pi)
+            pes[i] = Vector((quadril[i].x, 0, quadril[i].z)) + frente * (0.95 + 0.25 * f) + lado * 0.25 + UP * (0.15 + 0.55 * (1 - f))
+    if variante == 'morte':                 # morrer(): em 0,6 s a barriga cai no chão (0,2 m), tomba 0,22 rad e os pés abrem 0,35 m
+        k = min(t / 0.6, 1.0); g = k * k
+        corpo_y, corpo_rz = -0.2 * g, 0.22 * g
+        for i in range(6):
+            fora = Vector((casa[i].x - quadril[i].x, 0, casa[i].z - quadril[i].z)).normalized()
+            quadril[i] = quadril[i] + Vector((0, -0.2 * g, 0))
+            pes[i] = casa[i] + fora * 0.35 * k
+    segs = []
+    for i in range(6):
+        jo = _ik(quadril[i], pes[i])
+        segs.append((_segmento(quadril[i], jo), _segmento(jo, pes[i])))
+    corpo = Matrix.Rotation(rumo, 4, UP) @ Matrix.Translation((0, corpo_y, 0)) @ Matrix.Rotation(corpo_rz, 4, Vector((0, 0, 1)))
+    AR_CORPO.matrix_world = _no_blender(corpo)
+    for i in range(6):
+        AR_FEMUR[i].matrix_world = _no_blender(segs[i][0])
+        AR_TIBIA[i].matrix_world = _no_blender(segs[i][1])
+
+
 def pose(q, variante, linha):
     """q = quadro (0..QUADROS-1), linha = rotação/direção."""
     u = q / QUADROS                                             # 0..1 no laço
+    if ARANHA:
+        PIVO.matrix_basis = Matrix.Identity(4)
+        pose_aranha(q, variante, 2 * math.pi * linha / DIRECOES)
+        return
     if acao is not None:
         f0, f1 = acao.frame_range
         for nm, mb in CACHE[int(round(f0 + (f1 - f0) * u))].items():
@@ -428,7 +547,7 @@ LINHAS = DIRECOES if DIRECOES else len(ROTS)
 
 # o que está abaixo do chão (broca, bomba, base enterrada) não aparece: plano "holdout" no nível do chão
 # (só para o que fica no chão; drone e aranha voam ou andam e não são cortados)
-CORTA_CHAO = GRUPO not in ('drones', 'inimigos') and NOME != 'nucleo_queda'
+CORTA_CHAO = (GRUPO not in ('drones', 'inimigos') and NOME != 'nucleo_queda') or ARANHA   # a aranha morta afunda
 # ------------------------------------------------------------------ enquadramento: tudo de todas as linhas e quadros + sombra
 bpy.context.view_layer.update()
 R_cam = cam.rotation_euler.to_matrix()
@@ -585,7 +704,7 @@ meta = {'nome': NOME, 'categoria': CAT, 'quadro': [W, H], 'ancora': ANCORA, 'fps
         'linhas': LINHAS, 'tipo_linha': ('direcao' if DIRECOES else 'rotacao'),
         'angulos_graus': [round(360 * li / DIRECOES, 2) for li in range(DIRECOES)] if DIRECOES else [90 * r for r in ROTS],
         'variantes': VARIANTES, 'metros_por_pixel': PX, 'camera_elevacao_graus': 35, 'cabos': len(CABOS),
-        'animacao': ('trabalho' if acao is not None else 'braco' if BRACO else 'pecas' if QUADROS > 1 else 'parado'),
+        'animacao': ('aranha' if ARANHA else 'trabalho' if acao is not None else 'braco' if BRACO else 'pecas' if QUADROS > 1 else 'parado'),
         'avisos': avisos}
 for vi, var in enumerate(VARIANTES):
     for tipo, lista in (('', quadros_cor), ('_sombra', quadros_sombra)):
