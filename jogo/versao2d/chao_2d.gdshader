@@ -12,6 +12,8 @@ uniform sampler2D mapa_camadas : filter_nearest;
 uniform vec2 origem_mapa;
 uniform sampler2D mapa_ambiente : filter_linear, hint_default_transparent;
 uniform sampler2D mapa_fabrica : filter_nearest, hint_default_transparent;
+uniform sampler2D mapa_teia : filter_linear, hint_default_black;   // R = infestação da toca das aranhas (Infestacao)
+uniform sampler2D tex_teia : filter_linear_mipmap, repeat_enable, hint_default_transparent;   // fios de seda (alfa)
 uniform float camada_piso = 9.0;
 uniform float camada_jazida = 7.0;
 uniform float camada_praia = 10.0;
@@ -88,6 +90,12 @@ void fragment() {
 		if (amb.r + (b - 0.5) * 0.3 > 0.3) { cor = mix(cor, vec3(0.16, 0.11, 0.07), 0.55 * amb.r + 0.2); }  // sujeira
 		if (amb.g + (b - 0.5) * 0.3 > 0.3) { cor = mix(cor, vec3(0.03, 0.03, 0.035), 0.7); }              // óleo
 		if (amb.b < 0.5 && amb.b + (b - 0.5) * 0.2 > 0.2) { cor = mix(cor, vec3(0.20, 0.22, 0.12), 0.6); } // água suja
+		// infestação da toca: terra escura e orgânica com fios de teia por cima, fechando perto da toca
+		float inf = (texture(mapa_teia, ap).r + texture(mapa_teia, bp).r) * 0.5;
+		if (inf + (b - 0.5) * 0.3 > 0.12) { cor = mix(cor, vec3(0.09, 0.08, 0.07), 0.55 + 0.25 * inf); }
+		float tufos = texture(detalhe, grade * 0.08 + vec2(0.13, 0.57)).r + inf * 0.3;              // teia em tufos
+		float fio = max(texture(tex_teia, grade * 0.21).a, texture(tex_teia, grade * 0.09 + vec2(0.31, 0.77)).a * step(0.6, inf));
+		if (fio > 0.25 && tufos + (b - 0.5) * 0.15 > 0.62 && inf + (b - 0.5) * 0.4 > 0.3) { cor = mix(cor, vec3(0.56, 0.54, 0.50), 0.45 + 0.3 * inf); }
 		if (amb.b >= 0.5) {                                                                                 // brasa
 			float br = (amb.b - 0.5) * 2.0 * (0.7 + 0.3 * sin(TIME * 7.0 + grade.x * 3.1));
 			if (br + (b - 0.5) * 0.4 > 0.35) { cor = mix(vec3(0.55, 0.10, 0.02), vec3(1.0, 0.55, 0.12), step(0.7, br)); }

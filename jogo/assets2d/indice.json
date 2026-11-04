@@ -922,12 +922,12 @@
  "ninho_aranha": {
   "pasta": "sprites/inimigos_aranha/ninho_aranha",
   "quadro": [
-   176,
-   122
+   150,
+   102
   ],
   "ancora": [
-   51.8,
-   90.6
+   53.6,
+   68.8
   ],
   "quadros": 48,
   "linhas": 4,

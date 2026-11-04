@@ -37,6 +37,18 @@ static func material(origem: Material, vento := 0.0, boiar := 0.0, uv2 := false,
 	var chave := "%s|%s|%.2f|%.2f|%s|%d|%s" % [cor_nome, b.albedo_color.to_html(), vento, boiar, uv2, tex.get_instance_id() if tex != null else 0, carbonizada]
 	if _cache.has(chave):
 		return _cache[chave]
+	if nome in ["P_Teia", "P_TeiaSuja"]:
+		# véu de seda da toca: fios opacos e buracos (recorte de alfa da textura teia.png), visto dos dois lados
+		var t := StandardMaterial3D.new()
+		t.resource_name = cor_nome
+		t.albedo_texture = load("res://assets/texturas/teia.png")
+		t.albedo_color = b.albedo_color
+		t.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		t.alpha_scissor_threshold = 0.3
+		t.cull_mode = BaseMaterial3D.CULL_DISABLED
+		t.roughness = 0.75
+		_cache[chave] = t
+		return t
 	var m := ShaderMaterial.new()
 	m.shader = SHADER_CRISTAL if nome == "P_Cristal" else SHADER
 	m.resource_name = cor_nome

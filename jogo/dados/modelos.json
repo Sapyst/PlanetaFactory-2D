@@ -2402,14 +2402,14 @@
    }
   ],
   "portas": [],
-  "tris": 1336,
+  "tris": 4471,
   "dims": [
-   2.8,
-   2.8,
-   2.733
+   2.807,
+   2.88,
+   2.198
   ],
   "anima": true,
-  "estudo": "estudo_ninho_aranha.py",
+  "estudo": "estudo_toca_aranha.py",
   "modelo": "res://assets/modelos/inimigos/aranha/ninho_aranha.glb"
  },
  "celula_energia": {

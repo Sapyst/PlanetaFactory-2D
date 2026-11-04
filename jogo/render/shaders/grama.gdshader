@@ -11,6 +11,7 @@ uniform float forca = 0.35;
 uniform sampler2D mapa_fabrica : filter_nearest, hint_default_black;   // do chunk: R = piso, B = aplainado
 uniform vec2 origem_mapa;
 uniform sampler2D mapa_ambiente : filter_linear, hint_default_transparent;   // A = queimado, R = sujeira
+uniform sampler2D mapa_teia : filter_linear, hint_default_black;           // R = infestação da toca: a teia abafa a grama
 uniform float raio_vista = 38.0;
 uniform float raio_detalhe = 1.0e6;   // camada de detalhe: some em degradê a partir daqui
 uniform bool compensa = false;
@@ -37,6 +38,9 @@ void vertex() {
 	some = max(some, smoothstep(0.1, 0.7, q));
 	tom *= mix(vec3(1.0), vec3(0.18, 0.12, 0.08), smoothstep(0.0, 0.25, q));
 	tom *= mix(vec3(1.0), vec3(0.72, 0.62, 0.42), smoothstep(0.1, 0.6, amb.r));   // suja: amarelada
+	float inf = texelFetch(mapa_teia, px, 0).r;
+	tom *= mix(vec3(1.0), vec3(0.55, 0.52, 0.46), smoothstep(0.05, 0.4, inf));     // tomada pela teia: murcha
+	some = max(some, smoothstep(0.35, 0.8, inf));
 	float dist = distance(o.xz, alvo_camera.xz);
 	some = max(some, smoothstep(raio_vista - 6.0, raio_vista, dist));
 	some = max(some, smoothstep(raio_detalhe - 6.0, raio_detalhe, dist));

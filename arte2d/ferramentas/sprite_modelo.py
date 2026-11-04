@@ -163,7 +163,7 @@ for n in list(nt.nodes):
 em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Color'].default_value = (1, 0, 1, 1)
 nt.links.new(em.outputs[0], next(n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL').inputs['Surface'])
 CABOS = []
-for o in list(malhas):
+for o in list(malhas) if NOME != 'ninho_aranha' else []:      # a toca: fio fino é seda clara, não cabo escuro
     bm = bmesh.new(); bm.from_mesh(o.data)
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
     bm.verts.ensure_lookup_table(); mw = o.matrix_world
@@ -223,7 +223,35 @@ BRILHOS = []          # (nó de emissão, força base, tipo)
 OFFSETS = []          # (nó valor, velocidade) da lona
 
 
+TEIA_PNG = os.path.join(JOGO, 'assets', 'texturas', 'teia.png')
+
+
+def teia(m):
+    """Véu de seda (P_Teia, P_TeiaSuja): a textura dos fios com recorte de alfa, como no jogo."""
+    nt = m.node_tree
+    p = next(n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED')
+    tx = nt.nodes.new('ShaderNodeTexImage')
+    tx.image = bpy.data.images.load(TEIA_PNG, check_existing=True)
+    tx.interpolation = 'Closest'
+    mx = nt.nodes.new('ShaderNodeMix'); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'
+    mx.inputs['Factor'].default_value = 1.0
+    mx.inputs['B'].default_value = tuple(p.inputs['Base Color'].default_value)
+    nt.links.new(tx.outputs['Color'], mx.inputs['A'])
+    nt.links.new(mx.outputs['Result'], p.inputs['Base Color'])
+    al = nt.nodes.new('ShaderNodeMath'); al.operation = 'GREATER_THAN'; al.inputs[1].default_value = 0.3
+    nt.links.new(tx.outputs['Alpha'], al.inputs[0])
+    nt.links.new(al.outputs[0], p.inputs['Alpha'])
+    if hasattr(m, 'surface_render_method'):
+        m.surface_render_method = 'DITHERED'
+    if hasattr(m, 'blend_method'):
+        m.blend_method = 'CLIP'
+    m.use_backface_culling = False
+
+
 def converter(m):
+    if m.name.split('.')[0] in ('P_Teia', 'P_TeiaSuja'):
+        teia(m)                                     # seda fica clara e com recorte (sem o escurecer dos modelos)
+        return
     nt = m.node_tree
     p = next((n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'), None)
     if not p:

@@ -36,6 +36,10 @@ var transportador: Transportador        ## transportadores quânticos (itens ent
 var silo: SiloLancamento                ## silos de lançamento (foguete de proliferação: fim da campanha)
 var agua: AguaJogo                     ## buracos/canais escavados que enchem a partir de rio/lago
 var colonia: Colonia
+var infestacao: Infestacao               ## teia e sujeira no chão em volta das tocas (cresce com a idade da toca)
+var _teia_versao := -1
+var _teia_chunks: Dictionary = {}        ## chunk → nó DesenhoChunk que já recebeu a infestação (o nó pode ser refeito)
+var _t_teia := 0.0
 var drones: Drones                      ## drones das estações (reparo, combate, logística)
 var _desenho_drones: DesenhoDrones
 var _eventos_drones: Array[Dictionary] = []
@@ -124,6 +128,7 @@ func _ready() -> void:
 	clima = Clima.new(semente)
 	clima.tempo_real = true                    # estações: 7 dias reais cada
 	colonia = Colonia.new(mapa, poluicao, semente)
+	infestacao = Infestacao.new(colonia, semente)
 	pesquisa = Pesquisa.new(modo == "demo")
 	fabrica = Fabrica.new(mapa)
 	ambiente = AmbienteVivo.new(gerador, mapa, semente)
@@ -1042,6 +1047,10 @@ func _process(delta: float) -> void:
 	for i in relogio.avancar(delta):
 		_tick_mundo(relogio.dt())
 	_animar_estruturas()
+	_t_teia -= delta
+	if _t_teia <= 0.0:
+		_t_teia = 1.0
+		_desenhar_teia()
 	# modo construção (peça na mão): caminho e sentido das esteiras em destaque
 	_fluxo.ligado = controle != null and controle.peca != ""
 	# grama: por quadrante, perto do ponto olhado e dentro do oval de visão (DesenhoVisao → DesenhoChunk.ajustar_grama)
@@ -1080,6 +1089,29 @@ func _process(delta: float) -> void:
 		_t_som_maquinas = 0.35
 		_atualizar_sons_mundo()
 	_atualizar_chunks()
+
+
+## Infestação no chão: refaz a imagem dos chunks que ela toca (e dos que ela deixou) quando muda ou o chunk é novo.
+func _desenhar_teia() -> void:
+	var atuais := infestacao.chunks()
+	var tocados := atuais.duplicate()
+	var mudou := infestacao.versao != _teia_versao
+	_teia_versao = infestacao.versao
+	for k in _teia_chunks.keys():
+		if not tocados.has(k):
+			tocados[k] = true                    # saiu da infestação: limpa uma vez
+	for k in tocados:
+		var d: DesenhoChunk = chunks.get(k)
+		if d == null or not is_instance_valid(d):
+			_teia_chunks.erase(k)
+			continue
+		if not mudou and _teia_chunks.get(k) == d.get_instance_id():
+			continue
+		d.atualizar_teia(infestacao.imagem(k))
+		_teia_chunks[k] = d.get_instance_id()
+	for k in _teia_chunks.keys():
+		if not atuais.has(k):
+			_teia_chunks.erase(k)            # já limpo acima
 
 
 ## Sons contínuos de máquinas trabalhando, da esteira e dos trens perto da câmera: cada um é um laço (Som.loop_maquina)
@@ -1495,6 +1527,7 @@ func _tick_mundo(dt: float) -> void:
 	ambiente.eventos.clear()
 	poluicao.tick(dt)
 	colonia.tick(dt, fontes_vivas)
+	infestacao.tick(dt)
 	_eventos.append_array(colonia.eventos)
 	varredura.tick(dt)                                  # sensores revelam chunks (e os ninhos deles) com energia
 	varredura.eventos.clear()

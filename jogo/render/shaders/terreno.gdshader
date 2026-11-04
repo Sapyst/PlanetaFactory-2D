@@ -14,6 +14,8 @@ uniform sampler2D detalhe : filter_linear_mipmap, repeat_enable;
 uniform sampler2D mapa_camadas : filter_nearest;
 uniform vec2 origem_mapa;          // tile (grade) do pixel (0, 0) do mapa de camadas
 uniform sampler2D mapa_ambiente : filter_linear, hint_default_transparent;   // R sujeira, G óleo, B água suja (0..0,45) ou brasa (0,5..1), A queimado
+uniform sampler2D mapa_teia : filter_linear, hint_default_black;   // R = infestação da toca das aranhas (Infestacao)
+uniform sampler2D tex_teia : filter_linear_mipmap, repeat_enable, hint_default_transparent;   // fios de seda (alfa)
 uniform sampler2D mapa_fabrica : filter_nearest, hint_default_transparent;   // R piso, G nível alvo, B aplainar, A água de jogo (buraco cheio)
 uniform float camada_piso = 9.0;
 uniform float camada_jazida = 7.0;  // zona de minério nunca vira piso
@@ -235,6 +237,19 @@ void fragment() {
 		brasa = max(brasa, brasa_fundo);
 	}
 	c_terra = mix(c_terra, vec3(0.05, 0.035, 0.03), smoothstep(0.47, 0.62, amb.b) * 0.85 * terra_firme);   // queimando: chão escuro
+	// infestação (toca das aranhas): terra escura e orgânica com a teia de fios por cima, fechando perto da toca
+	float inf = (texture(mapa_teia, (grade + w1 * 1.4 - origem_mapa) / 34.0).r
+			+ texture(mapa_teia, (grade + w2 * 2.0 - origem_mapa) / 34.0).r) * 0.5 * terra_firme;
+	if (inf > 0.002) {
+		float sujo_inf = smoothstep(0.0, 0.55, inf) * (0.7 + 0.5 * grao);
+		c_terra = mix(c_terra, vec3(0.05, 0.043, 0.038) + c_terra * 0.2, clamp(sujo_inf, 0.0, 0.9));
+		// teia em tufos (mancha de ruído), mais fechada perto da toca; entre os tufos, só a terra suja
+		float tufos = smoothstep(0.5, 0.8, texture(detalhe, grade * 0.08 + vec2(0.13, 0.57)).r + inf * 0.25);
+		float fio = texture(tex_teia, grade * 0.42).a * 0.8;
+		float fio2 = texture(tex_teia, grade * 0.17 + vec2(0.31, 0.77)).a * smoothstep(0.55, 0.95, inf);
+		float teia = max(fio, fio2) * smoothstep(0.25, 0.85, inf) * tufos;
+		c_terra = mix(c_terra, vec3(0.50, 0.48, 0.45), clamp(teia, 0.0, 1.0) * 0.5);
+	}
 	vec3 c = mix(c_terra, c_agua, agua);
 	c *= 0.88 + 0.24 * d;
 	float poca = 0.0;

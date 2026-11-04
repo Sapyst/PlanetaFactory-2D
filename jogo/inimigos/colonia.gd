@@ -118,7 +118,7 @@ func _criar_ninho(minimo: Vector2i, obra: float) -> int:
 	if id < 0:
 		return -1
 	ninhos[id] = {"id": id, "centro": Vector2(minimo) + Vector2(1.5, 1.5), "vida": float(_n.get("vida", 400)),
-			"raiva": 0.0, "obra": obra, "absorvido": 0.0}
+			"raiva": 0.0, "obra": obra, "absorvido": 0.0, "idade": Infestacao.MADURA_S if obra >= 1.0 else 0.0}
 	eventos.append({"tipo": "ninho_novo", "id": id, "obra": obra})
 	return id
 
@@ -176,6 +176,7 @@ func _ninhos(dt: float, fontes: Array[Dictionary]) -> void:
 			continue
 		if n.obra < 1.0:
 			continue
+		n.idade = float(n.get("idade", 0.0)) + dt          # a infestação do chão em volta cresce com ela (Infestacao)
 		n.t_furia = float(n.get("t_furia", 0.0)) - dt
 		if n.t_furia <= 0.0:
 			n.t_furia = float(_f.get("recalcula_s", 5.0))

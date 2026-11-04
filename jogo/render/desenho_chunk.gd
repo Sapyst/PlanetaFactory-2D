@@ -236,6 +236,9 @@ func _montar_grama(bufs: Array) -> void:
 	if not _grama_q.is_empty():
 		grama = _grama_q[0].esparsa if _grama_q[0].esparsa != null else _grama_q[0].detalhe
 	_mats_grama = [mat, mat_det]
+	if _tex_teia != null:
+		for mg in _mats_grama:
+			(mg as ShaderMaterial).set_shader_parameter("mapa_teia", _tex_teia)
 
 
 ## Liga cada quadrante de grama pela distância (na grade) do ponto olhado e pelo oval de visão; `sem` = nenhuma.
@@ -266,6 +269,25 @@ var _grama_q: Array = []
 var _mats_grama: Array = []
 var grama: MultiMeshInstance3D
 var _tex_amb: ImageTexture
+
+
+var _tex_teia: ImageTexture
+static var _fios_teia: Texture2D
+
+
+## Infestação da toca das aranhas neste chunk (Infestacao.imagem) → terreno e grama.
+func atualizar_teia(img: Image) -> void:
+	if _tex_teia == null:
+		_tex_teia = ImageTexture.create_from_image(img)
+		if _fios_teia == null:
+			_fios_teia = load("res://assets/texturas/teia.png")
+		var m := (get_node("chao") as MeshInstance3D).material_override as ShaderMaterial
+		m.set_shader_parameter("mapa_teia", _tex_teia)
+		m.set_shader_parameter("tex_teia", _fios_teia)
+		for mg in _mats_grama:
+			(mg as ShaderMaterial).set_shader_parameter("mapa_teia", _tex_teia)
+	else:
+		_tex_teia.update(img)
 
 
 ## Mapa do ambiente vivo deste chunk (sujeira, óleo, água suja, queimado) → chão e grama.
@@ -547,7 +569,6 @@ func refazer_objetos() -> void:
 		mm.buffer = buf
 		var mmi := MultiMeshInstance3D.new()
 		mmi.name = nome
-		mmi.set_meta("modelo", nome)               # o nome pode ser trocado pelo Godot (nó antigo ainda na árvore)
 		mmi.multimesh = mm
 		_objetos.append(mmi)
 		mmi.visible = _objetos_visiveis

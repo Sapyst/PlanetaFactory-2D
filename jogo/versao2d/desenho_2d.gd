@@ -243,7 +243,7 @@ func _sincronizar_chunks() -> void:
 			_chunks[k] = c
 		# mapas do 3D (a fábrica cresce, o ambiente suja): os mesmos objetos de textura, só repassar se trocou
 		var m3 := mi3.material_override as ShaderMaterial
-		for p in ["mapa_camadas", "origem_mapa", "mapa_fabrica", "mapa_ambiente"]:
+		for p in ["mapa_camadas", "origem_mapa", "mapa_fabrica", "mapa_ambiente", "mapa_teia", "tex_teia"]:
 			var v = m3.get_shader_parameter(p)
 			if v != null and (c.mat as ShaderMaterial).get_shader_parameter(p) != v:
 				(c.mat as ShaderMaterial).set_shader_parameter(p, v)
