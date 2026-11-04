@@ -1,0 +1,80 @@
+{
+ "nome": "semeador_bioma",
+ "categoria": "maquinas",
+ "quadro": [
+  224,
+  144
+ ],
+ "ancora": [
+  111.8,
+  78.3
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 22,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.7,
+  "raio_px": 156.5,
+  "pos_px": [
+   [
+    114.6,
+    35.6
+   ],
+   [
+    111.8,
+    34.0
+   ],
+   [
+    109.0,
+    35.6
+   ],
+   [
+    111.8,
+    37.2
+   ]
+  ],
+  "chao_px": [
+   [
+    114.6,
+    78.3
+   ],
+   [
+    111.8,
+    76.7
+   ],
+   [
+    109.0,
+    78.3
+   ],
+   [
+    111.8,
+    79.9
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

@@ -1,0 +1,80 @@
+{
+ "nome": "gerador_fluido",
+ "categoria": "energia",
+ "quadro": [
+  194,
+  136
+ ],
+ "ancora": [
+  53.5,
+  102.0
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 5,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.8,
+  "raio_px": 156.5,
+  "pos_px": [
+   [
+    75.1,
+    59.3
+   ],
+   [
+    53.5,
+    46.9
+   ],
+   [
+    31.9,
+    59.3
+   ],
+   [
+    53.5,
+    71.6
+   ]
+  ],
+  "chao_px": [
+   [
+    75.1,
+    102.0
+   ],
+   [
+    53.5,
+    89.6
+   ],
+   [
+    31.9,
+    102.0
+   ],
+   [
+    53.5,
+    114.4
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

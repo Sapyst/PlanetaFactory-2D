@@ -1,0 +1,80 @@
+{
+ "nome": "nucleo_singularidade",
+ "categoria": "energia",
+ "quadro": [
+  152,
+  98
+ ],
+ "ancora": [
+  58.4,
+  65.4
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 1.5,
+  "raio_px": 278.3,
+  "pos_px": [
+   [
+    58.4,
+    22.7
+   ],
+   [
+    58.4,
+    22.7
+   ],
+   [
+    58.4,
+    22.7
+   ],
+   [
+    58.4,
+    22.7
+   ]
+  ],
+  "chao_px": [
+   [
+    58.4,
+    65.4
+   ],
+   [
+    58.4,
+    65.4
+   ],
+   [
+    58.4,
+    65.4
+   ],
+   [
+    58.4,
+    65.4
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

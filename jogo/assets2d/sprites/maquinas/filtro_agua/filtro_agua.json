@@ -1,0 +1,80 @@
+{
+ "nome": "filtro_agua",
+ "categoria": "maquinas",
+ "quadro": [
+  152,
+  126
+ ],
+ "ancora": [
+  52.8,
+  68.1
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 26,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.5,
+  "raio_px": 121.7,
+  "pos_px": [
+   [
+    35.1,
+    36.2
+   ],
+   [
+    51.8,
+    46.9
+   ],
+   [
+    70.5,
+    37.4
+   ],
+   [
+    53.8,
+    26.6
+   ]
+  ],
+  "chao_px": [
+   [
+    35.1,
+    67.5
+   ],
+   [
+    51.8,
+    78.3
+   ],
+   [
+    70.5,
+    68.7
+   ],
+   [
+    53.8,
+    57.9
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

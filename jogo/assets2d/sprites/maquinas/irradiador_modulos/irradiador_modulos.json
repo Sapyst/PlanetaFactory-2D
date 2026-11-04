@@ -1,0 +1,80 @@
+{
+ "nome": "irradiador_modulos",
+ "categoria": "maquinas",
+ "quadro": [
+  176,
+  120
+ ],
+ "ancora": [
+  54.9,
+  86.8
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.9,
+  "raio_px": 173.9,
+  "pos_px": [
+   [
+    54.9,
+    15.9
+   ],
+   [
+    54.9,
+    15.9
+   ],
+   [
+    54.9,
+    15.9
+   ],
+   [
+    54.9,
+    15.9
+   ]
+  ],
+  "chao_px": [
+   [
+    54.9,
+    86.8
+   ],
+   [
+    54.9,
+    86.8
+   ],
+   [
+    54.9,
+    86.8
+   ],
+   [
+    54.9,
+    86.8
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

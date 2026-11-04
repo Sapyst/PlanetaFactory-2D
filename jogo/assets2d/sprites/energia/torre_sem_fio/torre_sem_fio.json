@@ -1,0 +1,76 @@
+{
+ "nome": "torre_sem_fio",
+ "categoria": "energia",
+ "quadro": [
+  134,
+  100
+ ],
+ "ancora": [
+  20.2,
+  85.8
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 8,
+ "animacao": "pecas",
+ "avisos": [],
+ "luz": {
+  "tipo": "poste",
+  "cor": "cor da rede de energia",
+  "forca": 0.55,
+  "raio_px": 121.7,
+  "pos_px": [
+   [
+    20.2,
+    7.2
+   ],
+   [
+    20.2,
+    7.2
+   ],
+   [
+    20.2,
+    7.2
+   ],
+   [
+    20.2,
+    7.2
+   ]
+  ],
+  "chao_px": [
+   [
+    20.2,
+    85.8
+   ],
+   [
+    20.2,
+    85.8
+   ],
+   [
+    20.2,
+    85.8
+   ],
+   [
+    20.2,
+    85.8
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

@@ -1,0 +1,32 @@
+{
+ "nome": "painel_solar_2",
+ "categoria": "energia",
+ "quadro": [
+  124,
+  84
+ ],
+ "ancora": [
+  37.3,
+  60.1
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 16,
+ "animacao": "trabalho",
+ "avisos": [],
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

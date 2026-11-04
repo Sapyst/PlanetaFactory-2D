@@ -1,0 +1,32 @@
+{
+ "nome": "broca_minerio",
+ "categoria": "maquinas",
+ "quadro": [
+  178,
+  180
+ ],
+ "ancora": [
+  44.7,
+  97.7
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

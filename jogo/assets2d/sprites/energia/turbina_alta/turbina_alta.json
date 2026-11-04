@@ -1,0 +1,32 @@
+{
+ "nome": "turbina_alta",
+ "categoria": "energia",
+ "quadro": [
+  342,
+  238
+ ],
+ "ancora": [
+  63.3,
+  204.8
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 2,
+ "animacao": "pecas",
+ "avisos": [],
+ "colunas": 24,
+ "fileiras_por_linha": 2
+}

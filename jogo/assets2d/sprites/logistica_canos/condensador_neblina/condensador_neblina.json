@@ -1,0 +1,80 @@
+{
+ "nome": "condensador_neblina",
+ "categoria": "logistica/canos",
+ "quadro": [
+  162,
+  110
+ ],
+ "ancora": [
+  38.5,
+  87.3
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 37,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.6,
+  "raio_px": 139.1,
+  "pos_px": [
+   [
+    38.5,
+    50.3
+   ],
+   [
+    51.0,
+    43.1
+   ],
+   [
+    38.5,
+    36.0
+   ],
+   [
+    26.0,
+    43.1
+   ]
+  ],
+  "chao_px": [
+   [
+    38.5,
+    94.5
+   ],
+   [
+    51.0,
+    87.3
+   ],
+   [
+    38.5,
+    80.1
+   ],
+   [
+    26.0,
+    87.3
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

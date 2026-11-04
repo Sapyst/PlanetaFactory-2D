@@ -1,0 +1,80 @@
+{
+ "nome": "fundicao_cristal",
+ "categoria": "maquinas",
+ "quadro": [
+  184,
+  122
+ ],
+ "ancora": [
+  59.1,
+  87.2
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "fogo",
+  "cor": [
+   1.0,
+   0.56,
+   0.18
+  ],
+  "forca": 1.1,
+  "raio_px": 191.3,
+  "pos_px": [
+   [
+    59.1,
+    58.7
+   ],
+   [
+    59.1,
+    58.7
+   ],
+   [
+    59.1,
+    58.7
+   ],
+   [
+    59.1,
+    58.7
+   ]
+  ],
+  "chao_px": [
+   [
+    59.1,
+    87.2
+   ],
+   [
+    59.1,
+    87.2
+   ],
+   [
+    59.1,
+    87.2
+   ],
+   [
+    59.1,
+    87.2
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

@@ -1,0 +1,5072 @@
+{
+ "captador_carga": {
+  "pasta": "sprites/clima/captador_carga",
+  "quadro": [
+   210,
+   146
+  ],
+  "ancora": [
+   38.1,
+   123.4
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "choque"
+ },
+ "cupula_raios": {
+  "pasta": "sprites/clima/cupula_raios",
+  "quadro": [
+   380,
+   278
+  ],
+  "ancora": [
+   55.4,
+   244.4
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "choque"
+ },
+ "defletor_vento": {
+  "pasta": "sprites/clima/defletor_vento",
+  "quadro": [
+   220,
+   156
+  ],
+  "ancora": [
+   38.4,
+   132.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "para_raios": {
+  "pasta": "sprites/clima/para_raios",
+  "quadro": [
+   172,
+   128
+  ],
+  "ancora": [
+   20.9,
+   114.3
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": "choque"
+ },
+ "para_raios_2": {
+  "pasta": "sprites/clima/para_raios_2",
+  "quadro": [
+   196,
+   146
+  ],
+  "ancora": [
+   20.9,
+   132.3
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": "choque"
+ },
+ "regulador_clima": {
+  "pasta": "sprites/clima/regulador_clima",
+  "quadro": [
+   222,
+   158
+  ],
+  "ancora": [
+   55.7,
+   125.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "semeador_nuvens": {
+  "pasta": "sprites/clima/semeador_nuvens",
+  "quadro": [
+   182,
+   130
+  ],
+  "ancora": [
+   38.1,
+   106.7
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "choque"
+ },
+ "artilharia": {
+  "pasta": "sprites/defesa/artilharia",
+  "quadro": [
+   334,
+   210
+  ],
+  "ancora": [
+   81.6,
+   176.5
+  ],
+  "quadros": 1,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "gerador_escudo": {
+  "pasta": "sprites/defesa/gerador_escudo",
+  "quadro": [
+   122,
+   86
+  ],
+  "ancora": [
+   38.2,
+   62.5
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "mina_pulso": {
+  "pasta": "sprites/defesa/mina_pulso",
+  "quadro": [
+   38,
+   28
+  ],
+  "ancora": [
+   18.0,
+   15.6
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "muro_centro": {
+  "pasta": "sprites/defesa/muro_centro",
+  "quadro": [
+   84,
+   60
+  ],
+  "ancora": [
+   15.0,
+   50.5
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "muro_escudo": {
+  "pasta": "sprites/defesa/muro_escudo",
+  "quadro": [
+   82,
+   60
+  ],
+  "ancora": [
+   15.0,
+   50.0
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "muro_escudo_lado": {
+  "pasta": "sprites/defesa/muro_escudo_lado",
+  "quadro": [
+   46,
+   30
+  ],
+  "ancora": [
+   21.4,
+   16.3
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "muro_lado": {
+  "pasta": "sprites/defesa/muro_lado",
+  "quadro": [
+   90,
+   62
+  ],
+  "ancora": [
+   21.3,
+   48.7
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "muro_liga": {
+  "pasta": "sprites/defesa/muro_liga",
+  "quadro": [
+   84,
+   60
+  ],
+  "ancora": [
+   16.0,
+   50.0
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "muro_liga_lado": {
+  "pasta": "sprites/defesa/muro_liga_lado",
+  "quadro": [
+   88,
+   60
+  ],
+  "ancora": [
+   21.3,
+   47.0
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "muro_tijolo": {
+  "pasta": "sprites/defesa/muro_tijolo",
+  "quadro": [
+   86,
+   62
+  ],
+  "ancora": [
+   15.1,
+   51.9
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "muro_tijolo_lado": {
+  "pasta": "sprites/defesa/muro_tijolo_lado",
+  "quadro": [
+   88,
+   62
+  ],
+  "ancora": [
+   21.3,
+   48.1
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "torre_defesa": {
+  "pasta": "sprites/defesa/torre_defesa",
+  "quadro": [
+   122,
+   82
+  ],
+  "ancora": [
+   38.2,
+   58.7
+  ],
+  "quadros": 1,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "torre_foguetes": {
+  "pasta": "sprites/defesa/torre_foguetes",
+  "quadro": [
+   140,
+   94
+  ],
+  "ancora": [
+   55.1,
+   61.1
+  ],
+  "quadros": 1,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "torre_metralhadora": {
+  "pasta": "sprites/defesa/torre_metralhadora",
+  "quadro": [
+   126,
+   84
+  ],
+  "ancora": [
+   37.5,
+   61.3
+  ],
+  "quadros": 1,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "drone_defesa": {
+  "pasta": "sprites/drones/drone_defesa",
+  "quadro": [
+   34,
+   24
+  ],
+  "ancora": [
+   16.5,
+   12.3
+  ],
+  "quadros": 8,
+  "linhas": 8,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "drone_logistico": {
+  "pasta": "sprites/drones/drone_logistico",
+  "quadro": [
+   34,
+   26
+  ],
+  "ancora": [
+   16.4,
+   12.0
+  ],
+  "quadros": 8,
+  "linhas": 8,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "drone_reparo": {
+  "pasta": "sprites/drones/drone_reparo",
+  "quadro": [
+   34,
+   24
+  ],
+  "ancora": [
+   16.4,
+   12.3
+  ],
+  "quadros": 8,
+  "linhas": 8,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "estacao_drones": {
+  "pasta": "sprites/drones/estacao_drones",
+  "quadro": [
+   126,
+   84
+  ],
+  "ancora": [
+   38.1,
+   60.9
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": "lampada"
+ },
+ "acumulador": {
+  "pasta": "sprites/energia/acumulador",
+  "quadro": [
+   118,
+   80
+  ],
+  "ancora": [
+   38.1,
+   56.7
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "acumulador_2": {
+  "pasta": "sprites/energia/acumulador_2",
+  "quadro": [
+   96,
+   66
+  ],
+  "ancora": [
+   36.6,
+   41.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "acumulador_cristal": {
+  "pasta": "sprites/energia/acumulador_cristal",
+  "quadro": [
+   124,
+   82
+  ],
+  "ancora": [
+   39.6,
+   59.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "gerador": {
+  "pasta": "sprites/energia/gerador",
+  "quadro": [
+   188,
+   128
+  ],
+  "ancora": [
+   50.9,
+   100.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "fogo"
+ },
+ "gerador_fluido": {
+  "pasta": "sprites/energia/gerador_fluido",
+  "quadro": [
+   194,
+   136
+  ],
+  "ancora": [
+   53.5,
+   102.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "nucleo_singularidade": {
+  "pasta": "sprites/energia/nucleo_singularidade",
+  "quadro": [
+   152,
+   98
+  ],
+  "ancora": [
+   58.4,
+   65.4
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "painel_solar": {
+  "pasta": "sprites/energia/painel_solar",
+  "quadro": [
+   110,
+   74
+  ],
+  "ancora": [
+   36.4,
+   51.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "painel_solar_2": {
+  "pasta": "sprites/energia/painel_solar_2",
+  "quadro": [
+   124,
+   84
+  ],
+  "ancora": [
+   37.3,
+   60.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "poste_alto": {
+  "pasta": "sprites/energia/poste_alto",
+  "quadro": [
+   250,
+   180
+  ],
+  "ancora": [
+   29.8,
+   165.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "poste"
+ },
+ "poste_energia": {
+  "pasta": "sprites/energia/poste_energia",
+  "quadro": [
+   112,
+   80
+  ],
+  "ancora": [
+   17.7,
+   69.7
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": "poste"
+ },
+ "reator_cristal": {
+  "pasta": "sprites/energia/reator_cristal",
+  "quadro": [
+   154,
+   106
+  ],
+  "ancora": [
+   58.6,
+   71.5
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "reator_fusao": {
+  "pasta": "sprites/energia/reator_fusao",
+  "quadro": [
+   138,
+   90
+  ],
+  "ancora": [
+   55.2,
+   57.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "tanque": {
+  "pasta": "sprites/energia/tanque",
+  "quadro": [
+   122,
+   84
+  ],
+  "ancora": [
+   38.4,
+   60.8
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "torre_sem_fio": {
+  "pasta": "sprites/energia/torre_sem_fio",
+  "quadro": [
+   134,
+   100
+  ],
+  "ancora": [
+   20.2,
+   85.8
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": "poste"
+ },
+ "turbina_alta": {
+  "pasta": "sprites/energia/turbina_alta",
+  "quadro": [
+   342,
+   238
+  ],
+  "ancora": [
+   63.3,
+   204.8
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "turbina_correnteza": {
+  "pasta": "sprites/energia/turbina_correnteza",
+  "quadro": [
+   84,
+   74
+  ],
+  "ancora": [
+   38.6,
+   34.4
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "turbina_eolica": {
+  "pasta": "sprites/energia/turbina_eolica",
+  "quadro": [
+   202,
+   144
+  ],
+  "ancora": [
+   37.7,
+   121.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "aranha_corpo": {
+  "pasta": "sprites/inimigos_aranha/aranha_corpo",
+  "quadro": [
+   66,
+   54
+  ],
+  "ancora": [
+   20.9,
+   37.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "aranha_femur": {
+  "pasta": "sprites/inimigos_aranha/aranha_femur",
+  "quadro": [
+   38,
+   14
+  ],
+  "ancora": [
+   6.5,
+   7.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "aranha_montada": {
+  "pasta": "sprites/inimigos_aranha/aranha_montada",
+  "quadro": [
+   136,
+   88
+  ],
+  "ancora": [
+   56.9,
+   53.3
+  ],
+  "quadros": 1,
+  "linhas": 8,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "aranha_tibia": {
+  "pasta": "sprites/inimigos_aranha/aranha_tibia",
+  "quadro": [
+   40,
+   12
+  ],
+  "ancora": [
+   5.3,
+   6.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "ninho_aranha": {
+  "pasta": "sprites/inimigos_aranha/ninho_aranha",
+  "quadro": [
+   176,
+   122
+  ],
+  "ancora": [
+   51.8,
+   90.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "celula_energia": {
+  "pasta": "sprites/itens_avancados/celula_energia",
+  "quadro": [
+   20,
+   12
+  ],
+  "ancora": [
+   7.3,
+   8.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "modulo_controle": {
+  "pasta": "sprites/itens_avancados/modulo_controle",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   7.4,
+   8.6
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "motor": {
+  "pasta": "sprites/itens_avancados/motor",
+  "quadro": [
+   20,
+   14
+  ],
+  "ancora": [
+   7.0,
+   9.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "municao": {
+  "pasta": "sprites/itens_avancados/municao",
+  "quadro": [
+   20,
+   14
+  ],
+  "ancora": [
+   7.4,
+   8.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "pacote_pesquisa": {
+  "pasta": "sprites/itens_avancados/pacote_pesquisa",
+  "quadro": [
+   20,
+   16
+  ],
+  "ancora": [
+   6.5,
+   10.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "barra_aco": {
+  "pasta": "sprites/itens_intermediarios/barra_aco",
+  "quadro": [
+   14,
+   10
+  ],
+  "ancora": [
+   6.0,
+   5.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "bateria": {
+  "pasta": "sprites/itens_intermediarios/bateria",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   5.6,
+   9.6
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "circuito": {
+  "pasta": "sprites/itens_intermediarios/circuito",
+  "quadro": [
+   16,
+   10
+  ],
+  "ancora": [
+   7.6,
+   5.3
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cristal_lapidado": {
+  "pasta": "sprites/itens_intermediarios/cristal_lapidado",
+  "quadro": [
+   18,
+   12
+  ],
+  "ancora": [
+   6.4,
+   9.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "engrenagem": {
+  "pasta": "sprites/itens_intermediarios/engrenagem",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   7.7,
+   8.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "fio_cobre": {
+  "pasta": "sprites/itens_intermediarios/fio_cobre",
+  "quadro": [
+   22,
+   14
+  ],
+  "ancora": [
+   6.8,
+   10.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "nucleo_cristal": {
+  "pasta": "sprites/itens_intermediarios/nucleo_cristal",
+  "quadro": [
+   20,
+   16
+  ],
+  "ancora": [
+   7.1,
+   10.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "placa_cobre": {
+  "pasta": "sprites/itens_intermediarios/placa_cobre",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   7.1,
+   8.4
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "placa_ferro": {
+  "pasta": "sprites/itens_intermediarios/placa_ferro",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   7.1,
+   8.4
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "tijolo": {
+  "pasta": "sprites/itens_intermediarios/tijolo",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   7.5,
+   9.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "tubo": {
+  "pasta": "sprites/itens_intermediarios/tubo",
+  "quadro": [
+   20,
+   12
+  ],
+  "ancora": [
+   7.5,
+   7.8
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "vidro": {
+  "pasta": "sprites/itens_intermediarios/vidro",
+  "quadro": [
+   16,
+   12
+  ],
+  "ancora": [
+   7.6,
+   6.3
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "areia": {
+  "pasta": "sprites/itens_recursos/areia",
+  "quadro": [
+   16,
+   12
+  ],
+  "ancora": [
+   7.2,
+   7.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "biomassa": {
+  "pasta": "sprites/itens_recursos/biomassa",
+  "quadro": [
+   18,
+   12
+  ],
+  "ancora": [
+   6.8,
+   8.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "carvao": {
+  "pasta": "sprites/itens_recursos/carvao",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   7.1,
+   8.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cristal_bruto": {
+  "pasta": "sprites/itens_recursos/cristal_bruto",
+  "quadro": [
+   20,
+   16
+  ],
+  "ancora": [
+   7.0,
+   10.4
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "minerio_cobre": {
+  "pasta": "sprites/itens_recursos/minerio_cobre",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   7.1,
+   8.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "minerio_ferro": {
+  "pasta": "sprites/itens_recursos/minerio_ferro",
+  "quadro": [
+   20,
+   14
+  ],
+  "ancora": [
+   7.5,
+   8.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "pedra": {
+  "pasta": "sprites/itens_recursos/pedra",
+  "quadro": [
+   18,
+   14
+  ],
+  "ancora": [
+   7.2,
+   9.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "silex": {
+  "pasta": "sprites/itens_recursos/silex",
+  "quadro": [
+   18,
+   12
+  ],
+  "ancora": [
+   6.7,
+   7.6
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "comparador": {
+  "pasta": "sprites/logica/comparador",
+  "quadro": [
+   68,
+   48
+  ],
+  "ancora": [
+   20.5,
+   35.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "sensor_esteira": {
+  "pasta": "sprites/logica/sensor_esteira",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.3,
+   30.9
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "sensor_tanque": {
+  "pasta": "sprites/logica/sensor_tanque",
+  "quadro": [
+   76,
+   52
+  ],
+  "ancora": [
+   21.3,
+   39.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "valvula": {
+  "pasta": "sprites/logica/valvula",
+  "quadro": [
+   68,
+   48
+  ],
+  "ancora": [
+   20.6,
+   35.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "plataforma_agua": {
+  "pasta": "sprites/logistica_apoio/plataforma_agua",
+  "quadro": [
+   114,
+   80
+  ],
+  "ancora": [
+   20.8,
+   67.2
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "ponte_agua": {
+  "pasta": "sprites/logistica_apoio/ponte_agua",
+  "quadro": [
+   116,
+   82
+  ],
+  "ancora": [
+   21.8,
+   68.2
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "bau": {
+  "pasta": "sprites/logistica_armazenagem/bau",
+  "quadro": [
+   78,
+   46
+  ],
+  "ancora": [
+   31.7,
+   32.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "bau_estoque": {
+  "pasta": "sprites/logistica_armazenagem/bau_estoque",
+  "quadro": [
+   78,
+   46
+  ],
+  "ancora": [
+   31.7,
+   32.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "bau_grande": {
+  "pasta": "sprites/logistica_armazenagem/bau_grande",
+  "quadro": [
+   126,
+   74
+  ],
+  "ancora": [
+   49.9,
+   50.5
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "silo_granel": {
+  "pasta": "sprites/logistica_armazenagem/silo_granel",
+  "quadro": [
+   262,
+   180
+  ],
+  "ancora": [
+   55.2,
+   147.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "braco": {
+  "pasta": "sprites/logistica_bracos/braco",
+  "quadro": [
+   102,
+   62
+  ],
+  "ancora": [
+   40.2,
+   41.2
+  ],
+  "quadros": 28,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "atras",
+   "esquerda",
+   "direita"
+  ],
+  "animacao": "braco",
+  "avisos": 0,
+  "luz": null
+ },
+ "braco_empilhador": {
+  "pasta": "sprites/logistica_bracos/braco_empilhador",
+  "quadro": [
+   112,
+   68
+  ],
+  "ancora": [
+   41.8,
+   46.7
+  ],
+  "quadros": 28,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "atras",
+   "esquerda",
+   "direita"
+  ],
+  "animacao": "braco",
+  "avisos": 0,
+  "luz": null
+ },
+ "braco_filtro": {
+  "pasta": "sprites/logistica_bracos/braco_filtro",
+  "quadro": [
+   104,
+   62
+  ],
+  "ancora": [
+   41.4,
+   41.4
+  ],
+  "quadros": 28,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "atras",
+   "esquerda",
+   "direita"
+  ],
+  "animacao": "braco",
+  "avisos": 0,
+  "luz": null
+ },
+ "braco_longo": {
+  "pasta": "sprites/logistica_bracos/braco_longo",
+  "quadro": [
+   172,
+   102
+  ],
+  "ancora": [
+   75.6,
+   60.9
+  ],
+  "quadros": 28,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "atras",
+   "esquerda",
+   "direita"
+  ],
+  "animacao": "braco",
+  "avisos": 0,
+  "luz": null
+ },
+ "braco_quantico": {
+  "pasta": "sprites/logistica_bracos/braco_quantico",
+  "quadro": [
+   132,
+   74
+  ],
+  "ancora": [
+   42.0,
+   61.9
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "braco_rapido": {
+  "pasta": "sprites/logistica_bracos/braco_rapido",
+  "quadro": [
+   104,
+   62
+  ],
+  "ancora": [
+   41.2,
+   41.2
+  ],
+  "quadros": 28,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "atras",
+   "esquerda",
+   "direita"
+  ],
+  "animacao": "braco",
+  "avisos": 0,
+  "luz": null
+ },
+ "bomba": {
+  "pasta": "sprites/logistica_canos/bomba",
+  "quadro": [
+   76,
+   54
+  ],
+  "ancora": [
+   21.5,
+   40.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "bomba_agua": {
+  "pasta": "sprites/logistica_canos/bomba_agua",
+  "quadro": [
+   168,
+   138
+  ],
+  "ancora": [
+   54.8,
+   80.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "cano_cruz": {
+  "pasta": "sprites/logistica_canos/cano_cruz",
+  "quadro": [
+   60,
+   38
+  ],
+  "ancora": [
+   20.5,
+   27.7
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cano_curva": {
+  "pasta": "sprites/logistica_canos/cano_curva",
+  "quadro": [
+   60,
+   38
+  ],
+  "ancora": [
+   20.5,
+   27.5
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cano_reto": {
+  "pasta": "sprites/logistica_canos/cano_reto",
+  "quadro": [
+   60,
+   38
+  ],
+  "ancora": [
+   20.6,
+   27.7
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cano_subterraneo_entrada": {
+  "pasta": "sprites/logistica_canos/cano_subterraneo_entrada",
+  "quadro": [
+   78,
+   56
+  ],
+  "ancora": [
+   20.7,
+   41.7
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cano_subterraneo_saida": {
+  "pasta": "sprites/logistica_canos/cano_subterraneo_saida",
+  "quadro": [
+   78,
+   56
+  ],
+  "ancora": [
+   20.7,
+   41.7
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cano_t": {
+  "pasta": "sprites/logistica_canos/cano_t",
+  "quadro": [
+   60,
+   40
+  ],
+  "ancora": [
+   20.5,
+   27.6
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "coletor_chuva": {
+  "pasta": "sprites/logistica_canos/coletor_chuva",
+  "quadro": [
+   210,
+   146
+  ],
+  "ancora": [
+   40.1,
+   122.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "condensador_neblina": {
+  "pasta": "sprites/logistica_canos/condensador_neblina",
+  "quadro": [
+   162,
+   110
+  ],
+  "ancora": [
+   38.5,
+   87.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "divisor": {
+  "pasta": "sprites/logistica_esteira/divisor",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.4,
+   28.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "divisor_filtro": {
+  "pasta": "sprites/logistica_esteira/divisor_filtro",
+  "quadro": [
+   66,
+   46
+  ],
+  "ancora": [
+   20.9,
+   32.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_curva_dir": {
+  "pasta": "sprites/logistica_esteira/esteira_curva_dir",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.4
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_curva_dir_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_curva_dir_expressa",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.4
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_curva_dir_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_curva_dir_quantica",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.4
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_curva_dir_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_curva_dir_rapida",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.4
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_curva_esq": {
+  "pasta": "sprites/logistica_esteira/esteira_curva_esq",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.4
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_curva_esq_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_curva_esq_expressa",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.4
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_curva_esq_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_curva_esq_quantica",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.4
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_curva_esq_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_curva_esq_rapida",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.4
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_fim": {
+  "pasta": "sprites/logistica_esteira/esteira_fim",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.6
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_fim_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_fim_expressa",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.6
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_fim_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_fim_quantica",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.6
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_fim_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_fim_rapida",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.6
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_inicio": {
+  "pasta": "sprites/logistica_esteira/esteira_inicio",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.5
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_inicio_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_inicio_expressa",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.5
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_inicio_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_inicio_quantica",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.5
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_inicio_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_inicio_rapida",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   20.8,
+   18.5
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_juncao": {
+  "pasta": "sprites/logistica_esteira/esteira_juncao",
+  "quadro": [
+   68,
+   40
+  ],
+  "ancora": [
+   29.4,
+   24.9
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_juncao_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_juncao_expressa",
+  "quadro": [
+   68,
+   40
+  ],
+  "ancora": [
+   29.4,
+   24.9
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_juncao_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_juncao_quantica",
+  "quadro": [
+   68,
+   40
+  ],
+  "ancora": [
+   29.4,
+   24.9
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_juncao_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_juncao_rapida",
+  "quadro": [
+   68,
+   40
+  ],
+  "ancora": [
+   29.4,
+   24.9
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_rampa": {
+  "pasta": "sprites/logistica_esteira/esteira_rampa",
+  "quadro": [
+   68,
+   46
+  ],
+  "ancora": [
+   22.3,
+   32.5
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_rampa_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_rampa_expressa",
+  "quadro": [
+   68,
+   46
+  ],
+  "ancora": [
+   22.3,
+   32.5
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_rampa_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_rampa_quantica",
+  "quadro": [
+   68,
+   46
+  ],
+  "ancora": [
+   22.3,
+   32.5
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_rampa_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_rampa_rapida",
+  "quadro": [
+   68,
+   46
+  ],
+  "ancora": [
+   22.3,
+   32.5
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_reta": {
+  "pasta": "sprites/logistica_esteira/esteira_reta",
+  "quadro": [
+   48,
+   30
+  ],
+  "ancora": [
+   20.8,
+   17.8
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_reta_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_reta_expressa",
+  "quadro": [
+   48,
+   30
+  ],
+  "ancora": [
+   20.8,
+   17.8
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_reta_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_reta_quantica",
+  "quadro": [
+   48,
+   30
+  ],
+  "ancora": [
+   20.8,
+   17.8
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_reta_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_reta_rapida",
+  "quadro": [
+   48,
+   30
+  ],
+  "ancora": [
+   20.8,
+   17.8
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_tunel_entrada": {
+  "pasta": "sprites/logistica_esteira/esteira_tunel_entrada",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.2,
+   28.6
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_tunel_entrada_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_tunel_entrada_expressa",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.2,
+   28.6
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_tunel_entrada_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_tunel_entrada_quantica",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.2,
+   28.6
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_tunel_entrada_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_tunel_entrada_rapida",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.2,
+   28.6
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_tunel_saida": {
+  "pasta": "sprites/logistica_esteira/esteira_tunel_saida",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.1,
+   28.7
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_tunel_saida_expressa": {
+  "pasta": "sprites/logistica_esteira/esteira_tunel_saida_expressa",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.1,
+   28.7
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_tunel_saida_quantica": {
+  "pasta": "sprites/logistica_esteira/esteira_tunel_saida_quantica",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.1,
+   28.7
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "esteira_tunel_saida_rapida": {
+  "pasta": "sprites/logistica_esteira/esteira_tunel_saida_rapida",
+  "quadro": [
+   62,
+   42
+  ],
+  "ancora": [
+   21.1,
+   28.7
+  ],
+  "quadros": 16,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "pecas",
+  "avisos": 0,
+  "luz": null
+ },
+ "juncao": {
+  "pasta": "sprites/logistica_esteira/juncao",
+  "quadro": [
+   60,
+   40
+  ],
+  "ancora": [
+   21.4,
+   26.7
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "pilar_base": {
+  "pasta": "sprites/logistica_esteira/pilar_base",
+  "quadro": [
+   10,
+   10
+  ],
+  "ancora": [
+   4.2,
+   5.6
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "pilar_segmento": {
+  "pasta": "sprites/logistica_esteira/pilar_segmento",
+  "quadro": [
+   28,
+   22
+  ],
+  "ancora": [
+   4.5,
+   18.1
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "pilar_topo": {
+  "pasta": "sprites/logistica_esteira/pilar_topo",
+  "quadro": [
+   36,
+   24
+  ],
+  "ancora": [
+   8.5,
+   20.3
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "vitoria_regia": {
+  "pasta": "sprites/mapa_agua/vitoria_regia",
+  "quadro": [
+   26,
+   18
+  ],
+  "ancora": [
+   12.8,
+   9.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "jazida_areia": {
+  "pasta": "sprites/mapa_jazidas/jazida_areia",
+  "quadro": [
+   38,
+   22
+  ],
+  "ancora": [
+   17.6,
+   12.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "jazida_carvao": {
+  "pasta": "sprites/mapa_jazidas/jazida_carvao",
+  "quadro": [
+   36,
+   24
+  ],
+  "ancora": [
+   16.6,
+   12.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "jazida_cobre": {
+  "pasta": "sprites/mapa_jazidas/jazida_cobre",
+  "quadro": [
+   38,
+   22
+  ],
+  "ancora": [
+   18.9,
+   11.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "jazida_cristal": {
+  "pasta": "sprites/mapa_jazidas/jazida_cristal",
+  "quadro": [
+   34,
+   24
+  ],
+  "ancora": [
+   14.9,
+   13.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "jazida_ferro": {
+  "pasta": "sprites/mapa_jazidas/jazida_ferro",
+  "quadro": [
+   36,
+   24
+  ],
+  "ancora": [
+   17.3,
+   12.5
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "jazida_pedra": {
+  "pasta": "sprites/mapa_jazidas/jazida_pedra",
+  "quadro": [
+   38,
+   24
+  ],
+  "ancora": [
+   17.8,
+   12.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "jazida_silex": {
+  "pasta": "sprites/mapa_jazidas/jazida_silex",
+  "quadro": [
+   38,
+   24
+  ],
+  "ancora": [
+   17.4,
+   13.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "poca_seiva": {
+  "pasta": "sprites/mapa_jazidas/poca_seiva",
+  "quadro": [
+   36,
+   24
+  ],
+  "ancora": [
+   17.4,
+   11.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "montanha_3x3": {
+  "pasta": "sprites/mapa_rochas/montanha_3x3",
+  "quadro": [
+   170,
+   116
+  ],
+  "ancora": [
+   50.4,
+   86.8
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "montanha_5x5": {
+  "pasta": "sprites/mapa_rochas/montanha_5x5",
+  "quadro": [
+   280,
+   182
+  ],
+  "ancora": [
+   85.8,
+   135.4
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "pedregulho": {
+  "pasta": "sprites/mapa_rochas/pedregulho",
+  "quadro": [
+   34,
+   26
+  ],
+  "ancora": [
+   12.5,
+   16.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "rocha_agua": {
+  "pasta": "sprites/mapa_rochas/rocha_agua",
+  "quadro": [
+   36,
+   24
+  ],
+  "ancora": [
+   15.0,
+   16.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "rocha_grande": {
+  "pasta": "sprites/mapa_rochas/rocha_grande",
+  "quadro": [
+   88,
+   60
+  ],
+  "ancora": [
+   30.1,
+   42.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "seixos": {
+  "pasta": "sprites/mapa_rochas/seixos",
+  "quadro": [
+   24,
+   18
+  ],
+  "ancora": [
+   11.4,
+   9.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arbusto": {
+  "pasta": "sprites/mapa_vegetacao/arbusto",
+  "quadro": [
+   38,
+   22
+  ],
+  "ancora": [
+   14.4,
+   16.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_acacia_1": {
+  "pasta": "sprites/mapa_vegetacao/arv_acacia_1",
+  "quadro": [
+   102,
+   68
+  ],
+  "ancora": [
+   19.2,
+   61.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_acacia_2": {
+  "pasta": "sprites/mapa_vegetacao/arv_acacia_2",
+  "quadro": [
+   98,
+   62
+  ],
+  "ancora": [
+   20.0,
+   56.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_acacia_3": {
+  "pasta": "sprites/mapa_vegetacao/arv_acacia_3",
+  "quadro": [
+   98,
+   68
+  ],
+  "ancora": [
+   18.6,
+   62.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_acacia_4": {
+  "pasta": "sprites/mapa_vegetacao/arv_acacia_4",
+  "quadro": [
+   90,
+   60
+  ],
+  "ancora": [
+   18.1,
+   53.3
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_acacia_5": {
+  "pasta": "sprites/mapa_vegetacao/arv_acacia_5",
+  "quadro": [
+   108,
+   70
+  ],
+  "ancora": [
+   18.7,
+   64.3
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_acacia_6": {
+  "pasta": "sprites/mapa_vegetacao/arv_acacia_6",
+  "quadro": [
+   100,
+   62
+  ],
+  "ancora": [
+   20.6,
+   55.8
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_betula_1": {
+  "pasta": "sprites/mapa_vegetacao/arv_betula_1",
+  "quadro": [
+   120,
+   86
+  ],
+  "ancora": [
+   15.7,
+   79.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_betula_2": {
+  "pasta": "sprites/mapa_vegetacao/arv_betula_2",
+  "quadro": [
+   118,
+   82
+  ],
+  "ancora": [
+   16.4,
+   77.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_betula_3": {
+  "pasta": "sprites/mapa_vegetacao/arv_betula_3",
+  "quadro": [
+   114,
+   80
+  ],
+  "ancora": [
+   15.8,
+   73.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_betula_4": {
+  "pasta": "sprites/mapa_vegetacao/arv_betula_4",
+  "quadro": [
+   118,
+   80
+  ],
+  "ancora": [
+   14.5,
+   74.8
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_betula_5": {
+  "pasta": "sprites/mapa_vegetacao/arv_betula_5",
+  "quadro": [
+   120,
+   84
+  ],
+  "ancora": [
+   16.6,
+   78.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_betula_6": {
+  "pasta": "sprites/mapa_vegetacao/arv_betula_6",
+  "quadro": [
+   126,
+   90
+  ],
+  "ancora": [
+   16.3,
+   84.3
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_carvalho_1": {
+  "pasta": "sprites/mapa_vegetacao/arv_carvalho_1",
+  "quadro": [
+   104,
+   68
+  ],
+  "ancora": [
+   20.5,
+   61.3
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_carvalho_2": {
+  "pasta": "sprites/mapa_vegetacao/arv_carvalho_2",
+  "quadro": [
+   110,
+   72
+  ],
+  "ancora": [
+   19.0,
+   65.5
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_carvalho_3": {
+  "pasta": "sprites/mapa_vegetacao/arv_carvalho_3",
+  "quadro": [
+   102,
+   70
+  ],
+  "ancora": [
+   18.8,
+   62.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_carvalho_4": {
+  "pasta": "sprites/mapa_vegetacao/arv_carvalho_4",
+  "quadro": [
+   104,
+   70
+  ],
+  "ancora": [
+   19.0,
+   63.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_carvalho_5": {
+  "pasta": "sprites/mapa_vegetacao/arv_carvalho_5",
+  "quadro": [
+   100,
+   68
+  ],
+  "ancora": [
+   19.8,
+   61.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_carvalho_6": {
+  "pasta": "sprites/mapa_vegetacao/arv_carvalho_6",
+  "quadro": [
+   114,
+   76
+  ],
+  "ancora": [
+   19.7,
+   69.4
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_fungo_cristal_1": {
+  "pasta": "sprites/mapa_vegetacao/arv_fungo_cristal_1",
+  "quadro": [
+   102,
+   70
+  ],
+  "ancora": [
+   19.8,
+   62.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_fungo_cristal_2": {
+  "pasta": "sprites/mapa_vegetacao/arv_fungo_cristal_2",
+  "quadro": [
+   86,
+   62
+  ],
+  "ancora": [
+   17.6,
+   54.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_fungo_cristal_3": {
+  "pasta": "sprites/mapa_vegetacao/arv_fungo_cristal_3",
+  "quadro": [
+   100,
+   70
+  ],
+  "ancora": [
+   14.6,
+   61.6
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_fungo_cristal_4": {
+  "pasta": "sprites/mapa_vegetacao/arv_fungo_cristal_4",
+  "quadro": [
+   90,
+   62
+  ],
+  "ancora": [
+   20.1,
+   55.5
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_fungo_cristal_5": {
+  "pasta": "sprites/mapa_vegetacao/arv_fungo_cristal_5",
+  "quadro": [
+   100,
+   74
+  ],
+  "ancora": [
+   13.1,
+   65.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_fungo_cristal_6": {
+  "pasta": "sprites/mapa_vegetacao/arv_fungo_cristal_6",
+  "quadro": [
+   94,
+   66
+  ],
+  "ancora": [
+   15.3,
+   58.6
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_pinheiro_1": {
+  "pasta": "sprites/mapa_vegetacao/arv_pinheiro_1",
+  "quadro": [
+   122,
+   84
+  ],
+  "ancora": [
+   18.8,
+   77.5
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_pinheiro_2": {
+  "pasta": "sprites/mapa_vegetacao/arv_pinheiro_2",
+  "quadro": [
+   116,
+   82
+  ],
+  "ancora": [
+   17.1,
+   75.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_pinheiro_3": {
+  "pasta": "sprites/mapa_vegetacao/arv_pinheiro_3",
+  "quadro": [
+   130,
+   92
+  ],
+  "ancora": [
+   18.1,
+   85.3
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_pinheiro_4": {
+  "pasta": "sprites/mapa_vegetacao/arv_pinheiro_4",
+  "quadro": [
+   122,
+   82
+  ],
+  "ancora": [
+   20.6,
+   76.5
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_pinheiro_5": {
+  "pasta": "sprites/mapa_vegetacao/arv_pinheiro_5",
+  "quadro": [
+   128,
+   88
+  ],
+  "ancora": [
+   19.9,
+   81.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_pinheiro_6": {
+  "pasta": "sprites/mapa_vegetacao/arv_pinheiro_6",
+  "quadro": [
+   124,
+   86
+  ],
+  "ancora": [
+   20.6,
+   79.5
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_salgueiro_1": {
+  "pasta": "sprites/mapa_vegetacao/arv_salgueiro_1",
+  "quadro": [
+   84,
+   54
+  ],
+  "ancora": [
+   16.4,
+   47.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_salgueiro_2": {
+  "pasta": "sprites/mapa_vegetacao/arv_salgueiro_2",
+  "quadro": [
+   92,
+   58
+  ],
+  "ancora": [
+   20.5,
+   50.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_salgueiro_3": {
+  "pasta": "sprites/mapa_vegetacao/arv_salgueiro_3",
+  "quadro": [
+   84,
+   54
+  ],
+  "ancora": [
+   17.2,
+   47.2
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_salgueiro_4": {
+  "pasta": "sprites/mapa_vegetacao/arv_salgueiro_4",
+  "quadro": [
+   84,
+   54
+  ],
+  "ancora": [
+   19.6,
+   45.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_salgueiro_5": {
+  "pasta": "sprites/mapa_vegetacao/arv_salgueiro_5",
+  "quadro": [
+   84,
+   54
+  ],
+  "ancora": [
+   20.6,
+   46.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arv_salgueiro_6": {
+  "pasta": "sprites/mapa_vegetacao/arv_salgueiro_6",
+  "quadro": [
+   86,
+   58
+  ],
+  "ancora": [
+   19.6,
+   48.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arvore_campina_a": {
+  "pasta": "sprites/mapa_vegetacao/arvore_campina_a",
+  "quadro": [
+   78,
+   54
+  ],
+  "ancora": [
+   16.1,
+   47.8
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arvore_campina_b": {
+  "pasta": "sprites/mapa_vegetacao/arvore_campina_b",
+  "quadro": [
+   86,
+   58
+  ],
+  "ancora": [
+   14.7,
+   53.5
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "arvore_morta": {
+  "pasta": "sprites/mapa_vegetacao/arvore_morta",
+  "quadro": [
+   74,
+   52
+  ],
+  "ancora": [
+   12.6,
+   43.7
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cacto_cristal": {
+  "pasta": "sprites/mapa_vegetacao/cacto_cristal",
+  "quadro": [
+   56,
+   38
+  ],
+  "ancora": [
+   11.8,
+   32.9
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cogumelo_gigante_a": {
+  "pasta": "sprites/mapa_vegetacao/cogumelo_gigante_a",
+  "quadro": [
+   88,
+   58
+  ],
+  "ancora": [
+   19.4,
+   51.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "cogumelo_gigante_b": {
+  "pasta": "sprites/mapa_vegetacao/cogumelo_gigante_b",
+  "quadro": [
+   106,
+   72
+  ],
+  "ancora": [
+   20.2,
+   64.1
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "flor_luminosa": {
+  "pasta": "sprites/mapa_vegetacao/flor_luminosa",
+  "quadro": [
+   26,
+   18
+  ],
+  "ancora": [
+   6.6,
+   14.0
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "junco": {
+  "pasta": "sprites/mapa_vegetacao/junco",
+  "quadro": [
+   40,
+   30
+  ],
+  "ancora": [
+   7.8,
+   24.4
+  ],
+  "quadros": 1,
+  "linhas": 1,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "biodigestor": {
+  "pasta": "sprites/maquinas/biodigestor",
+  "quadro": [
+   188,
+   124
+  ],
+  "ancora": [
+   57.0,
+   91.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "fogo"
+ },
+ "broca_grande": {
+  "pasta": "sprites/maquinas/broca_grande",
+  "quadro": [
+   228,
+   204
+  ],
+  "ancora": [
+   54.6,
+   126.7
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "broca_minerio": {
+  "pasta": "sprites/maquinas/broca_minerio",
+  "quadro": [
+   178,
+   180
+  ],
+  "ancora": [
+   44.7,
+   97.7
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "broca_nucleo": {
+  "pasta": "sprites/maquinas/broca_nucleo",
+  "quadro": [
+   192,
+   132
+  ],
+  "ancora": [
+   55.9,
+   99.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "coletor_lixo": {
+  "pasta": "sprites/maquinas/coletor_lixo",
+  "quadro": [
+   154,
+   94
+  ],
+  "ancora": [
+   52.9,
+   70.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "coletor_lixo_2": {
+  "pasta": "sprites/maquinas/coletor_lixo_2",
+  "quadro": [
+   166,
+   94
+  ],
+  "ancora": [
+   59.7,
+   70.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "estacao_tratamento": {
+  "pasta": "sprites/maquinas/estacao_tratamento",
+  "quadro": [
+   164,
+   128
+  ],
+  "ancora": [
+   71.4,
+   59.8
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "extrator_cristal": {
+  "pasta": "sprites/maquinas/extrator_cristal",
+  "quadro": [
+   210,
+   142
+  ],
+  "ancora": [
+   59.0,
+   106.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "extrator_ressonante": {
+  "pasta": "sprites/maquinas/extrator_ressonante",
+  "quadro": [
+   162,
+   110
+  ],
+  "ancora": [
+   55.9,
+   76.8
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "filtro_agua": {
+  "pasta": "sprites/maquinas/filtro_agua",
+  "quadro": [
+   152,
+   126
+  ],
+  "ancora": [
+   52.8,
+   68.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "forja_quantica": {
+  "pasta": "sprites/maquinas/forja_quantica",
+  "quadro": [
+   148,
+   96
+  ],
+  "ancora": [
+   57.1,
+   63.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "fornalha": {
+  "pasta": "sprites/maquinas/fornalha",
+  "quadro": [
+   172,
+   120
+  ],
+  "ancora": [
+   40.8,
+   97.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "fogo"
+ },
+ "fornalha_aco": {
+  "pasta": "sprites/maquinas/fornalha_aco",
+  "quadro": [
+   198,
+   140
+  ],
+  "ancora": [
+   39.0,
+   116.7
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "fogo"
+ },
+ "fornalha_eletrica": {
+  "pasta": "sprites/maquinas/fornalha_eletrica",
+  "quadro": [
+   168,
+   118
+  ],
+  "ancora": [
+   37.8,
+   94.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "choque"
+ },
+ "fundicao_cristal": {
+  "pasta": "sprites/maquinas/fundicao_cristal",
+  "quadro": [
+   184,
+   122
+  ],
+  "ancora": [
+   59.1,
+   87.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "fogo"
+ },
+ "irradiador_modulos": {
+  "pasta": "sprites/maquinas/irradiador_modulos",
+  "quadro": [
+   176,
+   120
+  ],
+  "ancora": [
+   54.9,
+   86.8
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "laboratorio": {
+  "pasta": "sprites/maquinas/laboratorio",
+  "quadro": [
+   190,
+   126
+  ],
+  "ancora": [
+   56.3,
+   93.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "laboratorio_2": {
+  "pasta": "sprites/maquinas/laboratorio_2",
+  "quadro": [
+   166,
+   110
+  ],
+  "ancora": [
+   55.9,
+   77.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "laboratorio_quantico": {
+  "pasta": "sprites/maquinas/laboratorio_quantico",
+  "quadro": [
+   136,
+   92
+  ],
+  "ancora": [
+   55.3,
+   58.9
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "montadora": {
+  "pasta": "sprites/maquinas/montadora",
+  "quadro": [
+   206,
+   136
+  ],
+  "ancora": [
+   58.5,
+   102.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "lampada"
+ },
+ "montadora_2": {
+  "pasta": "sprites/maquinas/montadora_2",
+  "quadro": [
+   202,
+   136
+  ],
+  "ancora": [
+   58.3,
+   102.5
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "montadora_3": {
+  "pasta": "sprites/maquinas/montadora_3",
+  "quadro": [
+   164,
+   108
+  ],
+  "ancora": [
+   56.5,
+   75.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "montadora_quantica": {
+  "pasta": "sprites/maquinas/montadora_quantica",
+  "quadro": [
+   158,
+   106
+  ],
+  "ancora": [
+   55.8,
+   72.7
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "nucleo": {
+  "pasta": "sprites/maquinas/nucleo",
+  "quadro": [
+   188,
+   132
+  ],
+  "ancora": [
+   59.2,
+   91.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "nucleo_queda": {
+  "pasta": "sprites/maquinas/nucleo_queda",
+  "quadro": [
+   416,
+   250
+  ],
+  "ancora": [
+   115.1,
+   209.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "purificador_ar": {
+  "pasta": "sprites/maquinas/purificador_ar",
+  "quadro": [
+   192,
+   116
+  ],
+  "ancora": [
+   73.7,
+   84.7
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "purificador_ar_2": {
+  "pasta": "sprites/maquinas/purificador_ar_2",
+  "quadro": [
+   302,
+   212
+  ],
+  "ancora": [
+   61.5,
+   178.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "refinador": {
+  "pasta": "sprites/maquinas/refinador",
+  "quadro": [
+   232,
+   158
+  ],
+  "ancora": [
+   56.4,
+   124.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "fogo"
+ },
+ "refinador_2": {
+  "pasta": "sprites/maquinas/refinador_2",
+  "quadro": [
+   248,
+   168
+  ],
+  "ancora": [
+   57.5,
+   135.2
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "fogo"
+ },
+ "semeador_bioma": {
+  "pasta": "sprites/maquinas/semeador_bioma",
+  "quadro": [
+   224,
+   144
+  ],
+  "ancora": [
+   111.8,
+   78.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "supressor_fogo": {
+  "pasta": "sprites/maquinas/supressor_fogo",
+  "quadro": [
+   90,
+   64
+  ],
+  "ancora": [
+   21.0,
+   50.4
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "terraplenagem": {
+  "pasta": "sprites/maquinas/terraplenagem",
+  "quadro": [
+   202,
+   144
+  ],
+  "ancora": [
+   56.6,
+   104.9
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "viveiro": {
+  "pasta": "sprites/maquinas/viveiro",
+  "quadro": [
+   134,
+   88
+  ],
+  "ancora": [
+   42.4,
+   64.1
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "viveiro_2": {
+  "pasta": "sprites/maquinas/viveiro_2",
+  "quadro": [
+   158,
+   98
+  ],
+  "ancora": [
+   50.2,
+   74.4
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "farol_cristal": {
+  "pasta": "sprites/proliferacao/farol_cristal",
+  "quadro": [
+   134,
+   96
+  ],
+  "ancora": [
+   22.3,
+   83.9
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "lancador_sementes": {
+  "pasta": "sprites/proliferacao/lancador_sementes",
+  "quadro": [
+   292,
+   192
+  ],
+  "ancora": [
+   66.3,
+   159.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "posto_avancado": {
+  "pasta": "sprites/proliferacao/posto_avancado",
+  "quadro": [
+   172,
+   118
+  ],
+  "ancora": [
+   55.9,
+   85.3
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "receptor_capsulas": {
+  "pasta": "sprites/proliferacao/receptor_capsulas",
+  "quadro": [
+   140,
+   96
+  ],
+  "ancora": [
+   37.2,
+   73.6
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "sensor_varredura": {
+  "pasta": "sprites/proliferacao/sensor_varredura",
+  "quadro": [
+   136,
+   94
+  ],
+  "ancora": [
+   36.7,
+   71.5
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "silo_lancamento": {
+  "pasta": "sprites/proliferacao/silo_lancamento",
+  "quadro": [
+   232,
+   158
+  ],
+  "ancora": [
+   58.8,
+   125.0
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "transportador_quantico": {
+  "pasta": "sprites/proliferacao/transportador_quantico",
+  "quadro": [
+   180,
+   120
+  ],
+  "ancora": [
+   54.9,
+   87.5
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": "cristal"
+ },
+ "bomba_estacao": {
+  "pasta": "sprites/transporte_trilhos/bomba_estacao",
+  "quadro": [
+   64,
+   44
+  ],
+  "ancora": [
+   20.7,
+   30.8
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "estacao": {
+  "pasta": "sprites/transporte_trilhos/estacao",
+  "quadro": [
+   226,
+   136
+  ],
+  "ancora": [
+   73.8,
+   102.5
+  ],
+  "quadros": 48,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "trabalho",
+  "avisos": 0,
+  "luz": null
+ },
+ "sinal_cadeia": {
+  "pasta": "sprites/transporte_trilhos/sinal_cadeia",
+  "quadro": [
+   88,
+   64
+  ],
+  "ancora": [
+   21.3,
+   49.7
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "sinal_trem": {
+  "pasta": "sprites/transporte_trilhos/sinal_trem",
+  "quadro": [
+   88,
+   64
+  ],
+  "ancora": [
+   21.3,
+   49.7
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "trilho_curva": {
+  "pasta": "sprites/transporte_trilhos/trilho_curva",
+  "quadro": [
+   116,
+   70
+  ],
+  "ancora": [
+   55.3,
+   37.0
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "trilho_energizado": {
+  "pasta": "sprites/transporte_trilhos/trilho_energizado",
+  "quadro": [
+   52,
+   36
+  ],
+  "ancora": [
+   20.6,
+   21.8
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "trilho_fim": {
+  "pasta": "sprites/transporte_trilhos/trilho_fim",
+  "quadro": [
+   50,
+   34
+  ],
+  "ancora": [
+   21.0,
+   20.3
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "trilho_reto": {
+  "pasta": "sprites/transporte_trilhos/trilho_reto",
+  "quadro": [
+   48,
+   32
+  ],
+  "ancora": [
+   21.3,
+   18.0
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "locomotiva": {
+  "pasta": "sprites/transporte_veiculos/locomotiva",
+  "quadro": [
+   146,
+   90
+  ],
+  "ancora": [
+   58.2,
+   58.3
+  ],
+  "quadros": 1,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "locomotiva_eletrica": {
+  "pasta": "sprites/transporte_veiculos/locomotiva_eletrica",
+  "quadro": [
+   146,
+   90
+  ],
+  "ancora": [
+   58.2,
+   58.3
+  ],
+  "quadros": 1,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "vagao_carga": {
+  "pasta": "sprites/transporte_veiculos/vagao_carga",
+  "quadro": [
+   162,
+   100
+  ],
+  "ancora": [
+   58.5,
+   70.2
+  ],
+  "quadros": 1,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "vagao_tanque": {
+  "pasta": "sprites/transporte_veiculos/vagao_tanque",
+  "quadro": [
+   144,
+   88
+  ],
+  "ancora": [
+   56.1,
+   59.5
+  ],
+  "quadros": 1,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ }
+}

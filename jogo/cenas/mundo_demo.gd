@@ -11,6 +11,9 @@ const RAIO_MAX := 5
 const SEMENTE := 1337               ## demonstração e testes; jogo novo sorteia a sua
 const NUCLEO_EM := Vector2i(-1, -1)  ## núcleo 3×3 em volta do spawn (modo novo)
 
+## Eventos de combate do quadro (tiro, salto, explosão, pulso…), antes do desenho 3D: a versão 2D desenha os seus.
+signal eventos_desenho(eventos: Array)
+
 var gerador: GeradorMundo
 var mapa: MapaOcupacao
 var relogio := RelogioSim.new()
@@ -1051,6 +1054,7 @@ func _process(delta: float) -> void:
 				Som.tocar("aranha_morre", Grade.ponto_mundo(ev.pos))
 			"ataque":
 				Som.tocar("alerta")
+	eventos_desenho.emit(_eventos)                    # versão 2D: desenha os mesmos tiros/explosões
 	_desenho_colonia.atualizar(_eventos, delta)
 	_eventos.clear()
 	for ev in _eventos_drones:

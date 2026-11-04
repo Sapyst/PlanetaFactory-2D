@@ -1,0 +1,128 @@
+{
+ "nome": "gerador",
+ "categoria": "energia",
+ "quadro": [
+  188,
+  128
+ ],
+ "ancora": [
+  50.9,
+  100.1
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 2,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "fogo",
+  "cor": [
+   1.0,
+   0.56,
+   0.18
+  ],
+  "forca": 1.1,
+  "raio_px": 173.9,
+  "pos_px": [
+   [
+    80.8,
+    88.8
+   ],
+   [
+    56.1,
+    68.7
+   ],
+   [
+    21.0,
+    82.9
+   ],
+   [
+    45.7,
+    103.0
+   ]
+  ],
+  "chao_px": [
+   [
+    80.8,
+    103.1
+   ],
+   [
+    56.1,
+    82.9
+   ],
+   [
+    21.0,
+    97.1
+   ],
+   [
+    45.7,
+    117.3
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true,
+  "chamas": [
+   {
+    "pos_px": [
+     [
+      66.2,
+      6.8
+     ],
+     [
+      36.3,
+      6.4
+     ],
+     [
+      35.6,
+      23.6
+     ],
+     [
+      65.5,
+      24.0
+     ]
+    ],
+    "tamanho_m": 0.6,
+    "tamanho_px": 20.9,
+    "cresce": true
+   },
+   {
+    "pos_px": [
+     [
+      81.5,
+      97.4
+     ],
+     [
+      56.1,
+      76.8
+     ],
+     [
+      20.3,
+      91.4
+     ],
+     [
+      45.7,
+      112.0
+     ]
+    ],
+    "tamanho_m": 0.3,
+    "tamanho_px": 10.4,
+    "cresce": false
+   }
+  ]
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

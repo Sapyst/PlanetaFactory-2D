@@ -1,0 +1,80 @@
+{
+ "nome": "transportador_quantico",
+ "categoria": "proliferacao",
+ "quadro": [
+  180,
+  120
+ ],
+ "ancora": [
+  54.9,
+  87.5
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 1.1,
+  "raio_px": 191.3,
+  "pos_px": [
+   [
+    57.0,
+    46.2
+   ],
+   [
+    54.9,
+    45.0
+   ],
+   [
+    52.8,
+    46.2
+   ],
+   [
+    54.9,
+    47.4
+   ]
+  ],
+  "chao_px": [
+   [
+    57.0,
+    87.5
+   ],
+   [
+    54.9,
+    86.3
+   ],
+   [
+    52.8,
+    87.5
+   ],
+   [
+    54.9,
+    88.7
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

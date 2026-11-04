@@ -1,0 +1,120 @@
+{
+ "nome": "cupula_raios",
+ "categoria": "clima",
+ "quadro": [
+  380,
+  278
+ ],
+ "ancora": [
+  55.4,
+  244.4
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 8,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "choque",
+  "cor": [
+   0.62,
+   0.85,
+   1.0
+  ],
+  "forca": 1.1,
+  "raio_px": 208.7,
+  "pos_px": [
+   [
+    55.4,
+    13.6
+   ],
+   [
+    55.4,
+    13.6
+   ],
+   [
+    55.4,
+    13.6
+   ],
+   [
+    55.4,
+    13.6
+   ]
+  ],
+  "chao_px": [
+   [
+    55.4,
+    244.4
+   ],
+   [
+    55.4,
+    244.4
+   ],
+   [
+    55.4,
+    244.4
+   ],
+   [
+    55.4,
+    244.4
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true,
+  "arcos": [
+   [
+    [
+     [
+      55.4,
+      27.9
+     ],
+     [
+      55.4,
+      27.9
+     ],
+     [
+      55.4,
+      27.9
+     ],
+     [
+      55.4,
+      27.9
+     ]
+    ],
+    [
+     [
+      56.4,
+      6.2
+     ],
+     [
+      56.4,
+      5.0
+     ],
+     [
+      54.4,
+      5.0
+     ],
+     [
+      54.4,
+      6.2
+     ]
+    ]
+   ]
+  ]
+ },
+ "colunas": 24,
+ "fileiras_por_linha": 2
+}

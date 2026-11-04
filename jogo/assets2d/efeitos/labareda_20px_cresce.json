@@ -1,0 +1,15 @@
+{
+ "nome": "labareda_20px_cresce",
+ "quadro": [
+  22,
+  36
+ ],
+ "quadros": 12,
+ "fps": 12,
+ "ancora": [
+  11.0,
+  34
+ ],
+ "aditivo": false,
+ "nota": "desenhar por cima do sprite na posição luz.chamas.pos_px; a luz (luz.pos_px) faz o clarão"
+}

@@ -1,0 +1,128 @@
+{
+ "nome": "fornalha",
+ "categoria": "maquinas",
+ "quadro": [
+  172,
+  120
+ ],
+ "ancora": [
+  40.8,
+  97.1
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 12,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "fogo",
+  "cor": [
+   1.0,
+   0.56,
+   0.18
+  ],
+  "forca": 1.0,
+  "raio_px": 156.5,
+  "pos_px": [
+   [
+    66.9,
+    81.3
+   ],
+   [
+    35.6,
+    69.3
+   ],
+   [
+    14.7,
+    87.3
+   ],
+   [
+    46.0,
+    99.2
+   ]
+  ],
+  "chao_px": [
+   [
+    66.9,
+    94.1
+   ],
+   [
+    35.6,
+    82.1
+   ],
+   [
+    14.7,
+    100.1
+   ],
+   [
+    46.0,
+    112.1
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true,
+  "chamas": [
+   {
+    "pos_px": [
+     [
+      46.0,
+      8.3
+     ],
+     [
+      39.1,
+      6.4
+     ],
+     [
+      35.6,
+      10.3
+     ],
+     [
+      42.5,
+      12.3
+     ]
+    ],
+    "tamanho_m": 0.55,
+    "tamanho_px": 19.1,
+    "cresce": true
+   },
+   {
+    "pos_px": [
+     [
+      69.3,
+      89.5
+     ],
+     [
+      35.6,
+      76.2
+     ],
+     [
+      12.3,
+      95.5
+     ],
+     [
+      46.0,
+      108.9
+     ]
+    ],
+    "tamanho_m": 0.26,
+    "tamanho_px": 9.0,
+    "cresce": false
+   }
+  ]
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

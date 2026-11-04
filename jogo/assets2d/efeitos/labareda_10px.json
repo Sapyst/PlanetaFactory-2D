@@ -1,0 +1,15 @@
+{
+ "nome": "labareda_10px",
+ "quadro": [
+  12,
+  16
+ ],
+ "quadros": 12,
+ "fps": 12,
+ "ancora": [
+  6.0,
+  14
+ ],
+ "aditivo": false,
+ "nota": "desenhar por cima do sprite na posição luz.chamas.pos_px; a luz (luz.pos_px) faz o clarão"
+}

@@ -1,0 +1,80 @@
+{
+ "nome": "reator_fusao",
+ "categoria": "energia",
+ "quadro": [
+  138,
+  90
+ ],
+ "ancora": [
+  55.2,
+  57.2
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 1.3,
+  "raio_px": 243.5,
+  "pos_px": [
+   [
+    55.2,
+    23.0
+   ],
+   [
+    55.2,
+    23.0
+   ],
+   [
+    55.2,
+    23.0
+   ],
+   [
+    55.2,
+    23.0
+   ]
+  ],
+  "chao_px": [
+   [
+    55.2,
+    57.2
+   ],
+   [
+    55.2,
+    57.2
+   ],
+   [
+    55.2,
+    57.2
+   ],
+   [
+    55.2,
+    57.2
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

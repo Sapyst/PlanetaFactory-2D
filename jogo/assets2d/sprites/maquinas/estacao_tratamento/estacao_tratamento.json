@@ -1,0 +1,80 @@
+{
+ "nome": "estacao_tratamento",
+ "categoria": "maquinas",
+ "quadro": [
+  164,
+  128
+ ],
+ "ancora": [
+  71.4,
+  59.8
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 40,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.6,
+  "raio_px": 156.5,
+  "pos_px": [
+   [
+    71.4,
+    23.2
+   ],
+   [
+    52.3,
+    34.2
+   ],
+   [
+    71.4,
+    45.1
+   ],
+   [
+    90.5,
+    34.2
+   ]
+  ],
+  "chao_px": [
+   [
+    71.4,
+    48.8
+   ],
+   [
+    52.3,
+    59.8
+   ],
+   [
+    71.4,
+    70.8
+   ],
+   [
+    90.5,
+    59.8
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

@@ -1,0 +1,44 @@
+{
+ "nome": "locomotiva_eletrica",
+ "categoria": "transporte/veiculos",
+ "quadro": [
+  146,
+  90
+ ],
+ "ancora": [
+  58.2,
+  58.3
+ ],
+ "fps": 12,
+ "quadros": 1,
+ "linhas": 16,
+ "tipo_linha": "direcao",
+ "angulos_graus": [
+  0.0,
+  22.5,
+  45.0,
+  67.5,
+  90.0,
+  112.5,
+  135.0,
+  157.5,
+  180.0,
+  202.5,
+  225.0,
+  247.5,
+  270.0,
+  292.5,
+  315.0,
+  337.5
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 32,
+ "animacao": "parado",
+ "avisos": [],
+ "colunas": 1,
+ "fileiras_por_linha": 1
+}

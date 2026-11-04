@@ -1,0 +1,80 @@
+{
+ "nome": "viveiro",
+ "categoria": "maquinas",
+ "quadro": [
+  134,
+  88
+ ],
+ "ancora": [
+  42.4,
+  64.1
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 13,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.6,
+  "raio_px": 139.1,
+  "pos_px": [
+   [
+    44.1,
+    34.6
+   ],
+   [
+    40.7,
+    34.6
+   ],
+   [
+    40.7,
+    36.6
+   ],
+   [
+    44.1,
+    36.6
+   ]
+  ],
+  "chao_px": [
+   [
+    44.1,
+    63.1
+   ],
+   [
+    40.7,
+    63.1
+   ],
+   [
+    40.7,
+    65.1
+   ],
+   [
+    44.1,
+    65.1
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

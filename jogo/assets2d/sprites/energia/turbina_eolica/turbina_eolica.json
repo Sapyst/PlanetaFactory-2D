@@ -1,0 +1,32 @@
+{
+ "nome": "turbina_eolica",
+ "categoria": "energia",
+ "quadro": [
+  202,
+  144
+ ],
+ "ancora": [
+  37.7,
+  121.0
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 5,
+ "animacao": "pecas",
+ "avisos": [],
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

@@ -1,0 +1,80 @@
+{
+ "nome": "forja_quantica",
+ "categoria": "maquinas",
+ "quadro": [
+  148,
+  96
+ ],
+ "ancora": [
+  57.1,
+  63.1
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 1.0,
+  "raio_px": 173.9,
+  "pos_px": [
+   [
+    57.1,
+    9.2
+   ],
+   [
+    57.1,
+    9.2
+   ],
+   [
+    57.1,
+    9.2
+   ],
+   [
+    57.1,
+    9.2
+   ]
+  ],
+  "chao_px": [
+   [
+    57.1,
+    63.1
+   ],
+   [
+    57.1,
+    63.1
+   ],
+   [
+    57.1,
+    63.1
+   ],
+   [
+    57.1,
+    63.1
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

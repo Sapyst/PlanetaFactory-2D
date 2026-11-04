@@ -1,0 +1,105 @@
+{
+ "nome": "refinador",
+ "categoria": "maquinas",
+ "quadro": [
+  232,
+  158
+ ],
+ "ancora": [
+  56.4,
+  124.6
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 18,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "fogo",
+  "cor": [
+   1.0,
+   0.56,
+   0.18
+  ],
+  "forca": 1.0,
+  "raio_px": 208.7,
+  "pos_px": [
+   [
+    98.1,
+    6.6
+   ],
+   [
+    14.7,
+    6.6
+   ],
+   [
+    14.7,
+    54.5
+   ],
+   [
+    98.1,
+    54.5
+   ]
+  ],
+  "chao_px": [
+   [
+    98.1,
+    100.7
+   ],
+   [
+    14.7,
+    100.7
+   ],
+   [
+    14.7,
+    148.5
+   ],
+   [
+    98.1,
+    148.5
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true,
+  "chamas": [
+   {
+    "pos_px": [
+     [
+      98.1,
+      6.6
+     ],
+     [
+      14.7,
+      6.6
+     ],
+     [
+      14.7,
+      54.5
+     ],
+     [
+      98.1,
+      54.5
+     ]
+    ],
+    "tamanho_m": 0.5,
+    "tamanho_px": 17.4,
+    "cresce": false
+   }
+  ]
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

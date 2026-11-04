@@ -1,0 +1,80 @@
+{
+ "nome": "lancador_sementes",
+ "categoria": "proliferacao",
+ "quadro": [
+  292,
+  192
+ ],
+ "ancora": [
+  66.3,
+  159.6
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.8,
+  "raio_px": 173.9,
+  "pos_px": [
+   [
+    66.3,
+    74.8
+   ],
+   [
+    42.6,
+    88.4
+   ],
+   [
+    66.3,
+    101.9
+   ],
+   [
+    90.0,
+    88.4
+   ]
+  ],
+  "chao_px": [
+   [
+    66.3,
+    146.0
+   ],
+   [
+    42.6,
+    159.6
+   ],
+   [
+    66.3,
+    173.2
+   ],
+   [
+    90.0,
+    159.6
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

@@ -1,0 +1,105 @@
+{
+ "nome": "fornalha_aco",
+ "categoria": "maquinas",
+ "quadro": [
+  198,
+  140
+ ],
+ "ancora": [
+  39.0,
+  116.7
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "fogo",
+  "cor": [
+   1.0,
+   0.56,
+   0.18
+  ],
+  "forca": 1.0,
+  "raio_px": 156.5,
+  "pos_px": [
+   [
+    27.5,
+    95.1
+   ],
+   [
+    23.7,
+    110.5
+   ],
+   [
+    50.5,
+    112.7
+   ],
+   [
+    54.3,
+    97.3
+   ]
+  ],
+  "chao_px": [
+   [
+    27.5,
+    107.9
+   ],
+   [
+    23.7,
+    123.3
+   ],
+   [
+    50.5,
+    125.5
+   ],
+   [
+    54.3,
+    110.1
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true,
+  "chamas": [
+   {
+    "pos_px": [
+     [
+      27.5,
+      99.4
+     ],
+     [
+      23.7,
+      114.7
+     ],
+     [
+      50.5,
+      116.9
+     ],
+     [
+      54.3,
+      101.6
+     ]
+    ],
+    "tamanho_m": 0.24,
+    "tamanho_px": 8.3,
+    "cresce": false
+   }
+  ]
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

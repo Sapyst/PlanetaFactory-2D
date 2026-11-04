@@ -1,0 +1,80 @@
+{
+ "nome": "coletor_lixo",
+ "categoria": "maquinas",
+ "quadro": [
+  154,
+  94
+ ],
+ "ancora": [
+  52.9,
+  70.0
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 6,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.5,
+  "raio_px": 121.7,
+  "pos_px": [
+   [
+    52.9,
+    50.8
+   ],
+   [
+    56.7,
+    48.6
+   ],
+   [
+    52.9,
+    46.4
+   ],
+   [
+    49.1,
+    48.6
+   ]
+  ],
+  "chao_px": [
+   [
+    52.9,
+    72.2
+   ],
+   [
+    56.7,
+    70.0
+   ],
+   [
+    52.9,
+    67.8
+   ],
+   [
+    49.1,
+    70.0
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

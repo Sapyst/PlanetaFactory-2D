@@ -1,0 +1,80 @@
+{
+ "nome": "reator_cristal",
+ "categoria": "energia",
+ "quadro": [
+  154,
+  106
+ ],
+ "ancora": [
+  58.6,
+  71.5
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 4,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 1.3,
+  "raio_px": 243.5,
+  "pos_px": [
+   [
+    58.6,
+    17.4
+   ],
+   [
+    58.6,
+    17.4
+   ],
+   [
+    58.6,
+    17.4
+   ],
+   [
+    58.6,
+    17.4
+   ]
+  ],
+  "chao_px": [
+   [
+    58.6,
+    71.5
+   ],
+   [
+    58.6,
+    71.5
+   ],
+   [
+    58.6,
+    71.5
+   ],
+   [
+    58.6,
+    71.5
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

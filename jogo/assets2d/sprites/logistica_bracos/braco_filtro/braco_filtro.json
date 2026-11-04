@@ -1,0 +1,34 @@
+{
+ "nome": "braco_filtro",
+ "categoria": "logistica/bracos",
+ "quadro": [
+  104,
+  62
+ ],
+ "ancora": [
+  41.4,
+  41.4
+ ],
+ "fps": 12,
+ "quadros": 28,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "atras",
+  "esquerda",
+  "direita"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "braco",
+ "avisos": [],
+ "colunas": 28,
+ "fileiras_por_linha": 1
+}

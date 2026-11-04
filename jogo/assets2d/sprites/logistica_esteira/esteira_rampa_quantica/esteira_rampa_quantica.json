@@ -1,0 +1,32 @@
+{
+ "nome": "esteira_rampa_quantica",
+ "categoria": "logistica/esteira",
+ "quadro": [
+  68,
+  46
+ ],
+ "ancora": [
+  22.3,
+  32.5
+ ],
+ "fps": 12,
+ "quadros": 16,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "pecas",
+ "avisos": [],
+ "colunas": 16,
+ "fileiras_por_linha": 1
+}

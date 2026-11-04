@@ -1,0 +1,29 @@
+{
+ "nome": "areia",
+ "categoria": "itens/recursos",
+ "quadro": [
+  16,
+  12
+ ],
+ "ancora": [
+  7.2,
+  7.2
+ ],
+ "fps": 12,
+ "quadros": 1,
+ "linhas": 1,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "parado",
+ "avisos": [],
+ "colunas": 1,
+ "fileiras_por_linha": 1
+}

@@ -1,0 +1,80 @@
+{
+ "nome": "acumulador",
+ "categoria": "energia",
+ "quadro": [
+  118,
+  80
+ ],
+ "ancora": [
+  38.1,
+  56.7
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 19,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.8,
+  "raio_px": 139.1,
+  "pos_px": [
+   [
+    38.1,
+    9.7
+   ],
+   [
+    36.7,
+    10.5
+   ],
+   [
+    38.1,
+    11.3
+   ],
+   [
+    39.5,
+    10.5
+   ]
+  ],
+  "chao_px": [
+   [
+    38.1,
+    55.9
+   ],
+   [
+    36.7,
+    56.7
+   ],
+   [
+    38.1,
+    57.5
+   ],
+   [
+    39.5,
+    56.7
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

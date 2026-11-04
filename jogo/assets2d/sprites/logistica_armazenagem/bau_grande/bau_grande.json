@@ -1,0 +1,32 @@
+{
+ "nome": "bau_grande",
+ "categoria": "logistica/armazenagem",
+ "quadro": [
+  126,
+  74
+ ],
+ "ancora": [
+  49.9,
+  50.5
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 33,
+ "animacao": "trabalho",
+ "avisos": [],
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

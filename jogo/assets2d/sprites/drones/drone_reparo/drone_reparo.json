@@ -1,0 +1,36 @@
+{
+ "nome": "drone_reparo",
+ "categoria": "drones",
+ "quadro": [
+  34,
+  24
+ ],
+ "ancora": [
+  16.4,
+  12.3
+ ],
+ "fps": 12,
+ "quadros": 8,
+ "linhas": 8,
+ "tipo_linha": "direcao",
+ "angulos_graus": [
+  0.0,
+  45.0,
+  90.0,
+  135.0,
+  180.0,
+  225.0,
+  270.0,
+  315.0
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "pecas",
+ "avisos": [],
+ "colunas": 8,
+ "fileiras_por_linha": 1
+}

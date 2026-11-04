@@ -1,0 +1,80 @@
+{
+ "nome": "montadora_2",
+ "categoria": "maquinas",
+ "quadro": [
+  202,
+  136
+ ],
+ "ancora": [
+  58.3,
+  102.5
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 0.6,
+  "raio_px": 156.5,
+  "pos_px": [
+   [
+    58.3,
+    46.9
+   ],
+   [
+    58.3,
+    46.9
+   ],
+   [
+    58.3,
+    46.9
+   ],
+   [
+    58.3,
+    46.9
+   ]
+  ],
+  "chao_px": [
+   [
+    58.3,
+    102.5
+   ],
+   [
+    58.3,
+    102.5
+   ],
+   [
+    58.3,
+    102.5
+   ],
+   [
+    58.3,
+    102.5
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

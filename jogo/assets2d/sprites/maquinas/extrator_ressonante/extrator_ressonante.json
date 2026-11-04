@@ -1,0 +1,80 @@
+{
+ "nome": "extrator_ressonante",
+ "categoria": "maquinas",
+ "quadro": [
+  162,
+  110
+ ],
+ "ancora": [
+  55.9,
+  76.8
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "cristal",
+  "cor": [
+   0.66,
+   0.42,
+   1.0
+  ],
+  "forca": 1.0,
+  "raio_px": 173.9,
+  "pos_px": [
+   [
+    55.9,
+    48.3
+   ],
+   [
+    55.9,
+    48.3
+   ],
+   [
+    55.9,
+    48.3
+   ],
+   [
+    55.9,
+    48.3
+   ]
+  ],
+  "chao_px": [
+   [
+    55.9,
+    76.8
+   ],
+   [
+    55.9,
+    76.8
+   ],
+   [
+    55.9,
+    76.8
+   ],
+   [
+    55.9,
+    76.8
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}

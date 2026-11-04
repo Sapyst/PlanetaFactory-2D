@@ -1,0 +1,105 @@
+{
+ "nome": "biodigestor",
+ "categoria": "maquinas",
+ "quadro": [
+  188,
+  124
+ ],
+ "ancora": [
+  57.0,
+  91.1
+ ],
+ "fps": 12,
+ "quadros": 48,
+ "linhas": 4,
+ "tipo_linha": "rotacao",
+ "angulos_graus": [
+  0,
+  90,
+  180,
+  270
+ ],
+ "variantes": [
+  "base"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 29,
+ "animacao": "trabalho",
+ "avisos": [],
+ "luz": {
+  "tipo": "fogo",
+  "cor": [
+   1.0,
+   0.56,
+   0.18
+  ],
+  "forca": 0.9,
+  "raio_px": 173.9,
+  "pos_px": [
+   [
+    99.4,
+    6.3
+   ],
+   [
+    16.0,
+    5.5
+   ],
+   [
+    14.6,
+    53.4
+   ],
+   [
+    98.0,
+    54.2
+   ]
+  ],
+  "chao_px": [
+   [
+    99.4,
+    67.6
+   ],
+   [
+    16.0,
+    66.8
+   ],
+   [
+    14.6,
+    114.6
+   ],
+   [
+    98.0,
+    115.4
+   ]
+  ],
+  "so_ativa": true,
+  "so_noite": true,
+  "chamas": [
+   {
+    "pos_px": [
+     [
+      99.4,
+      6.0
+     ],
+     [
+      16.0,
+      5.2
+     ],
+     [
+      14.6,
+      53.1
+     ],
+     [
+      98.0,
+      53.9
+     ]
+    ],
+    "tamanho_m": 0.36,
+    "tamanho_px": 12.5,
+    "cresce": false
+   }
+  ]
+ },
+ "colunas": 48,
+ "fileiras_por_linha": 1
+}
