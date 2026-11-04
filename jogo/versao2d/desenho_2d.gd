@@ -37,6 +37,9 @@ var noite := CanvasModulate.new()
 var _luzes: Dictionary = {}         ## id → {luz: PointLight2D, chamas: Array[Sprite2D]}
 static var _tex_luz: Texture2D
 var _t := 0.0
+var ocultar: Node3D = null          ## estrutura que não se desenha agora (núcleo durante a abertura)
+var _tremor := 0.0
+var _tremor_forca := 0.0
 
 
 func _ready() -> void:
@@ -67,6 +70,9 @@ func _process(delta: float) -> void:
 	var vp := get_viewport_rect().size
 	scale = Vector2.ONE * camera.zoom_px
 	position = (vp * 0.5 - Camera2DJogo.projetar(camera.alvo) * camera.zoom_px).round()
+	if _tremor > 0.0:
+		_tremor -= delta
+		position += Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor_forca * camera.zoom_px
 	_sincronizar_chunks()
 	_sincronizar_estruturas()
 	_sincronizar_itens()
@@ -325,6 +331,8 @@ func _desenhar_estrutura(id: int, nome: String, t: Transform3D, n: Node3D) -> vo
 	if String(m.get("tipo_linha", "")) == "direcao" and a != null and a.tem("giro"):
 		linha = Catalogo2D.linha_do_angulo(m, (a._partes["giro"] as Node3D).global_rotation.y)
 	_por(p, t.origin, linha, q, variante)
+	(p.spr as Sprite2D).visible = n == null or n != ocultar
+	(p.som as Sprite2D).visible = (p.spr as Sprite2D).visible
 
 
 # ------------------------------------------------------------------ itens (esteira e garra)
@@ -752,3 +760,26 @@ func _sincronizar_noite() -> void:
 			for s in _luzes[id].chamas:
 				(s as Node).queue_free()
 			_luzes.erase(id)
+
+
+# ------------------------------------------------------------------ abertura do jogo novo e ajudas dela
+func abrir(nucleo: Node3D, fim: Callable) -> void:
+	var ab := Abertura2D.new()
+	ab.desenho = self
+	ab.nucleo = nucleo
+	ab.terminou.connect(fim)
+	add_child(ab)
+
+
+func tremer(dur: float, forca: float) -> void:
+	_tremor = dur
+	_tremor_forca = forca
+
+
+func fumacinha(pos: Vector2) -> void:
+	var f := Polygon2D.new()
+	f.polygon = PackedVector2Array([Vector2(-3, -2), Vector2(3, -2), Vector2(3, 2), Vector2(-3, 2)])
+	f.color = Color(0.5, 0.47, 0.45)
+	f.position = pos
+	efeitos.add_child(f)
+	_efs.append({"no": f, "vida": 0.0, "dur": 1.4, "tipo": "fumaca"})

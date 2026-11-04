@@ -3,6 +3,8 @@ config_version=5
 
 [application]
 config/name="PlanetaFactory"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="PlanetaFactory2D"
 config/description="Jogo de automação em planeta vivo (PC e celular)."
 config/version="0.14.0"
 run/main_scene="res://cenas/menu.tscn"

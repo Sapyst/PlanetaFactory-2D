@@ -3,7 +3,7 @@ extends Control
 ## Configurações, Sair. Foto real do jogo de fundo. Com argumentos de teste (roteiro/camera/relatorio/modo)
 ## vai direto para o jogo — os testes automáticos não passam por aqui.
 
-const JOGO := "res://cenas/mundo_demo.tscn"
+const JOGO := "res://versao2d/mundo_2d.tscn"          ## versão 2D (o mundo 3D roda dentro dela, sem desenho)
 const FundoAbstrato = preload("res://cenas/fundo_abstrato.gd")
 
 var _caixa: VBoxContainer
@@ -43,7 +43,7 @@ func _ready() -> void:
 	pilha.add_child(_config)
 
 	var titulo := Label.new()
-	titulo.text = "PlanetaFactory"
+	titulo.text = "PlanetaFactory 2D"
 	titulo.add_theme_font_size_override("font_size", Tema.n("f_menu_titulo"))
 	titulo.add_theme_color_override("font_color", BarraConstrucao.COR_DESTAQUE)
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

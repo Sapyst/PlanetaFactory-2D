@@ -119,7 +119,7 @@ func _soltar() -> void:
 func _trocar(modo: String) -> void:
 	Sessao.modo = modo
 	_soltar()
-	get_tree().change_scene_to_file("res://cenas/mundo_demo.tscn")
+	get_tree().change_scene_to_file("res://versao2d/mundo_2d.tscn")
 
 
 func _botao(texto: String, acao: Callable) -> Button:

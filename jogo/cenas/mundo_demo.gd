@@ -13,6 +13,8 @@ const NUCLEO_EM := Vector2i(-1, -1)  ## núcleo 3×3 em volta do spawn (modo nov
 
 ## Eventos de combate do quadro (tiro, salto, explosão, pulso…), antes do desenho 3D: a versão 2D desenha os seus.
 signal eventos_desenho(eventos: Array)
+## Versão 2D: abertura própria (núcleo, ao terminar) no lugar da cena 3D do espaço.
+var abertura_2d: Callable
 
 var gerador: GeradorMundo
 var mapa: MapaOcupacao
@@ -200,7 +202,13 @@ func _ready() -> void:
 	add_child(pausa)
 	Sessao.aplicar.call_deferred()
 	# jogo novo: o núcleo chega do espaço (abertura; um toque pula)
-	if modo == "novo" and dados.is_empty() and _no_nucleo != null and (not args.has("roteiro") or args.has("abertura")):
+	if modo == "novo" and dados.is_empty() and _no_nucleo != null and (not args.has("roteiro") or args.has("abertura")) and abertura_2d.is_valid():
+		controle.process_mode = Node.PROCESS_MODE_DISABLED       # versão 2D: a abertura é desenhada em 2D
+		_abertura_rodando = true
+		abertura_2d.call(_no_nucleo, func():
+			controle.process_mode = Node.PROCESS_MODE_INHERIT
+			_abertura_rodando = false)
+	elif modo == "novo" and dados.is_empty() and _no_nucleo != null and (not args.has("roteiro") or args.has("abertura")):
 		var ab := Abertura.new()
 		ab.nucleo = _no_nucleo
 		ab.camera_jogo = camera
