@@ -10,6 +10,7 @@ Ficaram de fora as 4 propostas antigas e o tufo de grama.
 - **Render:** a cor é renderizada em 4x e reduzida pela média. A silhueta tem contorno escuro de 1 px.
 - **Peças finas:** cabos, tirantes e grades com menos de 1 px de largura viram uma linha escura de 1 px, sem contorno.
 - **Sombra:** fica numa folha à parte (`*_sombra.png`), em preto com 50% de opacidade. Ela vai embaixo do sprite. O sol vem da esquerda e de trás da câmera.
+- **Abaixo do chão:** o que no 3D fica enterrado (a rosca da broca, o cano da bomba, a base do núcleo) não aparece. Um plano "holdout" no nível do chão esconde essas partes. Drones e aranhas não são cortados.
 
 ## Arquivos de cada modelo (`sprites/<categoria>/<nome>/`)
 - `<nome>.png` e `<nome>_sombra.png`: folhas com fundo transparente. As linhas são as rotações ou direções, e as colunas são os quadros.

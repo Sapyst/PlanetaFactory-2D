@@ -17,6 +17,12 @@ var camera: Camera2DJogo
 var chao := Node2D.new()
 var sombras := Node2D.new()
 var objetos := Node2D.new()
+## o que é rente ao chão (esteira e trilho no nível do chão) e os itens em cima dela: fica sempre embaixo das
+## construções, árvores e trens (y-sort de sprite alto erraria: trilho por cima do telhado, item sumindo sob a esteira)
+var plano_sombras := Node2D.new()
+var plano := Node2D.new()
+var plano_itens := Node2D.new()
+var _itens_plano: Array[Sprite2D] = []
 var _mat_base: ShaderMaterial
 var _chunks: Dictionary = {}       ## k → {mi3, mi2, assin, objs: Array}
 var _est: Dictionary = {}          ## id → {spr, som, nome, variante}
@@ -31,6 +37,9 @@ var _fant_txt: Array[Label] = []
 var _fant_seta: Array[Polygon2D] = []
 var _assin_fios := ""
 var efeitos := Node2D.new()
+var _portas: Array[Polygon2D] = []
+var _marcadores: Array = []         ## os MarcadorPortas do mundo 3D (procurados de tempos em tempos)
+var _mat_porta: Array[ShaderMaterial] = []
 var _efs: Array[Dictionary] = []    ## {no, vida, dur, tipo, ...}
 var _voos: Dictionary = {}          ## nó 3D do foguete → {no, fumaca}
 var noite := CanvasModulate.new()
@@ -48,11 +57,17 @@ func _ready() -> void:
 	sombras.z_index = -10
 	objetos.y_sort_enabled = true
 	marcas.z_index = -15
+	plano_sombras.z_index = -14
+	plano.z_index = -13
+	plano_itens.z_index = -12
 	fios.z_index = 3
 	fantasmas.z_index = 5
 	efeitos.z_index = 4
 	add_child(chao)
 	add_child(marcas)
+	add_child(plano_sombras)
+	add_child(plano)
+	add_child(plano_itens)
 	add_child(sombras)
 	add_child(objetos)
 	add_child(fios)
@@ -79,13 +94,14 @@ func _process(delta: float) -> void:
 	_sincronizar_moveis()
 	_sincronizar_fios()
 	_sincronizar_fantasma()
+	_sincronizar_portas()
 	_sincronizar_voos(delta)
 	_atualizar_efeitos(delta)
 	_sincronizar_noite()
 
 
 # ------------------------------------------------------------------ sprite + sombra
-func _par(nome: String) -> Dictionary:
+func _par(nome: String, rente := false) -> Dictionary:
 	var m := Catalogo2D.meta(nome)
 	if m.is_empty():
 		return {}
@@ -99,12 +115,14 @@ func _par(nome: String) -> Dictionary:
 	som.region_enabled = true
 	som.texture = Catalogo2D.folha(nome, "", true)
 	som.offset = spr.offset
-	objetos.add_child(spr)
-	sombras.add_child(som)
+	(plano if rente else objetos).add_child(spr)
+	(plano_sombras if rente else sombras).add_child(som)
 	return {"spr": spr, "som": som, "m": m, "nome": nome, "variante": ""}
 
 
-func _por(p: Dictionary, pos3: Vector3, linha: int, q: int, variante := "") -> void:
+## `z_ordem`: z do mundo pelo qual o sprite se ordena (NAN = o próprio pé). Construção grande usa a fileira sul da
+## área: o que está embaixo dela (trem sob o telhado) fica atrás, o que está ao sul fica na frente.
+func _por(p: Dictionary, pos3: Vector3, linha: int, q: int, variante := "", z_ordem := NAN) -> void:
 	if variante != p.variante:
 		p.variante = variante
 		(p.spr as Sprite2D).texture = Catalogo2D.folha(p.nome, variante)
@@ -112,10 +130,11 @@ func _por(p: Dictionary, pos3: Vector3, linha: int, q: int, variante := "") -> v
 	var r := Catalogo2D.regiao(p.m, linha, q)
 	var chao_p := Camera2DJogo.projetar(Vector3(pos3.x, 0.0, pos3.z))
 	var alto := Camera2DJogo.projetar(pos3) - chao_p          # altura do pé (relevo, esteira elevada) vira deslocamento
-	(p.spr as Sprite2D).position = chao_p                      # ordenação pelo pé no chão
-	(p.spr as Sprite2D).offset = -Vector2(p.m.ancora[0], p.m.ancora[1]) + alto
+	var ordem := chao_p if is_nan(z_ordem) else Camera2DJogo.projetar(Vector3(pos3.x, 0.0, z_ordem))
+	(p.spr as Sprite2D).position = ordem                       # ordenação pelo pé no chão
+	(p.spr as Sprite2D).offset = -Vector2(p.m.ancora[0], p.m.ancora[1]) + alto + chao_p - ordem
 	(p.spr as Sprite2D).region_rect = r
-	(p.som as Sprite2D).position = chao_p
+	(p.som as Sprite2D).position = ordem
 	(p.som as Sprite2D).offset = (p.spr as Sprite2D).offset
 	(p.som as Sprite2D).region_rect = r
 
@@ -238,7 +257,8 @@ func _sincronizar_natureza(c: Dictionary, d: Node3D) -> void:
 	var mmis: Array = []
 	var assin := ""
 	for n in d.get_children():
-		if n is MultiMeshInstance3D and n.name != "grama" and (n as MultiMeshInstance3D).multimesh != null:
+		if n is MultiMeshInstance3D and n.name != "grama" and (n as MultiMeshInstance3D).multimesh != null \
+				and not n.is_queued_for_deletion():
 			mmis.append(n)
 			assin += "%d:%d;" % [n.get_instance_id(), (n as MultiMeshInstance3D).multimesh.instance_count]
 	if assin == c.assin:
@@ -248,7 +268,7 @@ func _sincronizar_natureza(c: Dictionary, d: Node3D) -> void:
 		_soltar(p)
 	c.objs = []
 	for mmi: MultiMeshInstance3D in mmis:
-		var nome_no := String(mmi.name)
+		var nome_no := String(mmi.get_meta("modelo", mmi.name))   # o chunk guarda o modelo (o nome o Godot pode trocar)
 		var nome := nome_no.get_slice("#", 0)
 		if not Catalogo2D.tem(nome):
 			continue
@@ -274,9 +294,12 @@ func _sincronizar_estruturas() -> void:
 		var n: Node3D = nos[id]
 		if not is_instance_valid(n) or not mapa.estruturas.has(id):
 			continue
-		var nome: String = mapa.estruturas[id].nome
+		var e: Dictionary = mapa.estruturas[id]
 		vistos[id] = true
-		_desenhar_estrutura(id, nome, n.global_transform, n)
+		var z_ordem := NAN
+		if Grade.area_girada(e.area, e.rot).y > 1:
+			z_ordem = -float(e.minimo.y) - 0.05                # logo dentro da borda sul da área
+		_desenhar_estrutura(id, String(e.nome), n.global_transform, n, z_ordem)
 	var lotes: DesenhoLotes = mundo.get("_lotes")
 	if lotes != null:
 		for chave in lotes._lotes:
@@ -291,11 +314,11 @@ func _sincronizar_estruturas() -> void:
 			_est.erase(id)
 
 
-func _desenhar_estrutura(id: int, nome: String, t: Transform3D, n: Node3D) -> void:
+func _desenhar_estrutura(id: int, nome: String, t: Transform3D, n: Node3D, z_ordem := NAN) -> void:
 	if not _est.has(id) or _est[id].nome != nome:
 		if _est.has(id):
 			_soltar(_est[id])
-		var p := _par(nome)
+		var p := _par(nome, n == null and _rente(nome, t.origin))
 		if p.is_empty():
 			return
 		_est[id] = p
@@ -330,15 +353,23 @@ func _desenhar_estrutura(id: int, nome: String, t: Transform3D, n: Node3D) -> vo
 				q = int(a.tempo * FPS)
 	if String(m.get("tipo_linha", "")) == "direcao" and a != null and a.tem("giro"):
 		linha = Catalogo2D.linha_do_angulo(m, (a._partes["giro"] as Node3D).global_rotation.y)
-	_por(p, t.origin, linha, q, variante)
+	_por(p, t.origin, linha, q, variante, z_ordem)
 	(p.spr as Sprite2D).visible = n == null or n != ocultar
 	(p.som as Sprite2D).visible = (p.spr as Sprite2D).visible
+
+
+## Esteira e trilho no nível do chão (não a rampa nem a elevada) vão para a camada rente ao chão.
+static func _rente(nome: String, pos: Vector3) -> bool:
+	if not (nome.begins_with("esteira") or nome.begins_with("trilho")) or nome.begins_with("esteira_rampa"):
+		return false
+	return pos.y - Grade.altura_em(Vector2(pos.x, -pos.z)) < 0.25
 
 
 # ------------------------------------------------------------------ itens (esteira e garra)
 func _sincronizar_itens() -> void:
 	var di = mundo.get("_desenho_itens")
 	var k := 0
+	var kp := 0
 	if di != null:
 		for item in di._mm:
 			var mmi: MultiMeshInstance3D = di._mm[item]
@@ -350,14 +381,21 @@ func _sincronizar_itens() -> void:
 			var m := Catalogo2D.meta(item)
 			for i in n:
 				var p := g * mm.get_instance_transform(i).origin
-				if k >= _itens.size():
+				# item baixo (na esteira do chão) vai por cima dela na camada rente; o da garra se ordena com o resto
+				var rente := i < int(di._base.get(item, 0)) and p.y - Grade.altura_em(Vector2(p.x, -p.z)) < 0.45
+				var lista := _itens_plano if rente else _itens
+				var j := kp if rente else k
+				if j >= lista.size():
 					var s := Sprite2D.new()
 					s.centered = false
 					s.region_enabled = true
-					objetos.add_child(s)
-					_itens.append(s)
-				var s: Sprite2D = _itens[k]
-				k += 1
+					(plano_itens if rente else objetos).add_child(s)
+					lista.append(s)
+				var s: Sprite2D = lista[j]
+				if rente:
+					kp += 1
+				else:
+					k += 1
 				s.visible = true
 				s.texture = Catalogo2D.folha(item)
 				s.region_rect = Catalogo2D.regiao(m, 0, 0)
@@ -366,6 +404,8 @@ func _sincronizar_itens() -> void:
 				s.offset = -Vector2(m.ancora[0], m.ancora[1]) + Camera2DJogo.projetar(p) - pc - Vector2(0, 0.6)
 	for j in range(k, _itens.size()):
 		_itens[j].visible = false
+	for j in range(kp, _itens_plano.size()):
+		_itens_plano[j].visible = false
 
 
 # ------------------------------------------------------------------ trens, aranhas, ninhos, drones (nós que andam)
@@ -445,6 +485,59 @@ func _sincronizar_fios() -> void:
 			var t := k / 12.0
 			l.add_point(Camera2DJogo.projetar(a.lerp(b, t) - Vector3(0, flecha * 4.0 * t * (1.0 - t), 0)))
 		fios.add_child(l)
+
+
+# ------------------------------------------------------------------ marcadores de porta (o que o MarcadorPortas pinta no 3D)
+func _sincronizar_portas() -> void:
+	if _marcadores.is_empty() or Engine.get_process_frames() % 60 == 0:
+		_marcadores = []
+		for n in mundo.get_children():
+			if n is DesenhoPortas:
+				_marcadores.append(n._marcador)          # aviso de porta solta das máquinas postas
+		var ctl = mundo.get("controle")
+		if ctl != null and ctl.fantasma != null:
+			_marcadores.append(ctl.fantasma._marcador)    # verde/vermelho do que se vai construir
+	if _mat_porta.is_empty():
+		for f in 2:
+			var m := ShaderMaterial.new()
+			m.shader = preload("res://versao2d/marcador_porta_2d.gdshader")
+			m.set_shader_parameter("fluido", float(f))
+			_mat_porta.append(m)
+	var k := 0
+	const L := MarcadorPortas.LADO * 0.5
+	for mp: MarcadorPortas in _marcadores:
+		if not is_instance_valid(mp) or not mp.is_visible_in_tree():
+			continue
+		var mm := mp.multimesh
+		for i in mm.instance_count:
+			var t := mp.global_transform * mm.get_instance_transform(i)
+			if k >= _portas.size():
+				var pg := Polygon2D.new()
+				pg.texture = _branco()
+				pg.uv = PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)])
+				objetos.add_child(pg)
+				_portas.append(pg)
+			var pg: Polygon2D = _portas[k]
+			k += 1
+			pg.visible = true
+			# ordena pela borda sul do tile: fica por cima das pedras do próprio tile e embaixo do que está mais ao sul
+			var ordem := Camera2DJogo.projetar(Vector3(t.origin.x, 0.0, t.origin.z + 0.49))
+			pg.position = ordem
+			pg.polygon = PackedVector2Array([Camera2DJogo.projetar(t * Vector3(-L, 0, -L)) - ordem, Camera2DJogo.projetar(t * Vector3(L, 0, -L)) - ordem,
+					Camera2DJogo.projetar(t * Vector3(L, 0, L)) - ordem, Camera2DJogo.projetar(t * Vector3(-L, 0, L)) - ordem])
+			pg.color = mm.get_instance_color(i)
+			pg.material = _mat_porta[1 if mm.get_instance_custom_data(i).r > 0.5 else 0]
+	for j in range(k, _portas.size()):
+		_portas[j].visible = false
+
+
+static var _tex_branca: Texture2D
+static func _branco() -> Texture2D:
+	if _tex_branca == null:
+		var im := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+		im.fill(Color.WHITE)
+		_tex_branca = ImageTexture.create_from_image(im)
+	return _tex_branca
 
 
 # ------------------------------------------------------------------ fantasma da construção (o mesmo plano do 3D)

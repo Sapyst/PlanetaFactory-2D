@@ -426,6 +426,9 @@ def pose(q, variante, linha):
 
 LINHAS = DIRECOES if DIRECOES else len(ROTS)
 
+# o que está abaixo do chão (broca, bomba, base enterrada) não aparece: plano "holdout" no nível do chão
+# (só para o que fica no chão; drone e aranha voam ou andam e não são cortados)
+CORTA_CHAO = GRUPO not in ('drones', 'inimigos') and NOME != 'nucleo_queda'
 # ------------------------------------------------------------------ enquadramento: tudo de todas as linhas e quadros + sombra
 bpy.context.view_layer.update()
 R_cam = cam.rotation_euler.to_matrix()
@@ -445,6 +448,8 @@ for var in VARIANTES:
                     continue
                 P = co.reshape(-1, 3)
                 P = (np.array(mw)[:3, :3] @ P.T).T + np.array(mw.translation)
+                if CORTA_CHAO:
+                    P[:, 2] = np.maximum(P[:, 2], 0.0)       # o que fica embaixo do chão não aparece
                 for pts in (P, P - np.outer(np.maximum(P[:, 2], 0) / max(DIR_SOL.z, 0.2), np.array(DIR_SOL))):
                     xs.extend([float((pts @ np.array(ex)).min()), float((pts @ np.array(ex)).max())])
                     ys.extend([float((pts @ np.array(ey)).min()), float((pts @ np.array(ey)).max())])
@@ -469,6 +474,9 @@ mch = bpy.data.materials.new('chao'); mch.use_nodes = True
 pch = next(n for n in mch.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
 pch.inputs['Base Color'].default_value = (0.8, 0.8, 0.8, 1); pch.inputs['Roughness'].default_value = 1.0
 CHAO.data.materials.append(mch)
+bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, -0.005))
+CORTE = bpy.context.object
+CORTE.is_holdout = True
 
 # ------------------------------------------------------------------ keyframes de toda a sequência (variante, linha, quadro)
 SEQ = [(var, li, q) for var in VARIANTES for li in range(LINHAS) for q in range(QUADROS)]
@@ -507,6 +515,7 @@ def passe(nome, escala, transparente, chao):
     sc.render.resolution_x, sc.render.resolution_y = W * escala, H * escala
     sc.render.film_transparent = transparente
     CHAO.hide_render = not chao
+    CORTE.hide_render = chao or not CORTA_CHAO
     for o in malhas:
         o.visible_camera = not chao
     sc.render.filepath = os.path.join(TMP, nome + '_')

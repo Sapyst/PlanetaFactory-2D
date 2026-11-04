@@ -3,11 +3,11 @@
  "categoria": "energia",
  "quadro": [
   84,
-  74
+  58
  ],
  "ancora": [
   38.6,
-  34.4
+  34.3
  ],
  "fps": 12,
  "quadros": 48,
@@ -26,7 +26,5 @@
  "camera_elevacao_graus": 35,
  "cabos": 0,
  "animacao": "trabalho",
- "avisos": [],
- "colunas": 48,
- "fileiras_por_linha": 1
+ "avisos": []
 }

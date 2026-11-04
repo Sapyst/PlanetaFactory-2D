@@ -6,8 +6,8 @@
   84
  ],
  "ancora": [
-  37.3,
-  60.1
+  36.9,
+  61.2
  ],
  "fps": 12,
  "quadros": 48,
@@ -26,7 +26,5 @@
  "camera_elevacao_graus": 35,
  "cabos": 16,
  "animacao": "trabalho",
- "avisos": [],
- "colunas": 48,
- "fileiras_por_linha": 1
+ "avisos": []
 }

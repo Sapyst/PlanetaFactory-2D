@@ -583,11 +583,11 @@
   "pasta": "sprites/energia/gerador_fluido",
   "quadro": [
    194,
-   136
+   134
   ],
   "ancora": [
    53.5,
-   102.0
+   101.8
   ],
   "quadros": 48,
   "linhas": 4,
@@ -646,8 +646,8 @@
    84
   ],
   "ancora": [
-   37.3,
-   60.1
+   36.9,
+   61.2
   ],
   "quadros": 48,
   "linhas": 4,
@@ -803,11 +803,11 @@
   "pasta": "sprites/energia/turbina_correnteza",
   "quadro": [
    84,
-   74
+   58
   ],
   "ancora": [
    38.6,
-   34.4
+   34.3
   ],
   "quadros": 48,
   "linhas": 4,
@@ -1793,11 +1793,11 @@
   "pasta": "sprites/logistica_canos/bomba_agua",
   "quadro": [
    168,
-   138
+   112
   ],
   "ancora": [
    54.8,
-   80.1
+   79.4
   ],
   "quadros": 48,
   "linhas": 4,
@@ -4033,11 +4033,11 @@
   "pasta": "sprites/maquinas/broca_grande",
   "quadro": [
    228,
-   204
+   160
   ],
   "ancora": [
    54.6,
-   126.7
+   126.8
   ],
   "quadros": 48,
   "linhas": 4,
@@ -4053,11 +4053,11 @@
   "pasta": "sprites/maquinas/broca_minerio",
   "quadro": [
    178,
-   180
+   124
   ],
   "ancora": [
    44.7,
-   97.7
+   97.4
   ],
   "quadros": 48,
   "linhas": 4,
@@ -4133,11 +4133,11 @@
   "pasta": "sprites/maquinas/estacao_tratamento",
   "quadro": [
    164,
-   128
+   102
   ],
   "ancora": [
    71.4,
-   59.8
+   59.6
   ],
   "quadros": 48,
   "linhas": 4,
@@ -4193,11 +4193,11 @@
   "pasta": "sprites/maquinas/filtro_agua",
   "quadro": [
    152,
-   126
+   100
   ],
   "ancora": [
    52.8,
-   68.1
+   67.9
   ],
   "quadros": 48,
   "linhas": 4,
@@ -4473,11 +4473,11 @@
   "pasta": "sprites/maquinas/nucleo",
   "quadro": [
    188,
-   132
+   126
   ],
   "ancora": [
    59.2,
-   91.0
+   91.5
   ],
   "quadros": 48,
   "linhas": 4,
@@ -4633,11 +4633,11 @@
   "pasta": "sprites/maquinas/terraplenagem",
   "quadro": [
    202,
-   144
+   140
   ],
   "ancora": [
    56.6,
-   104.9
+   105.7
   ],
   "quadros": 48,
   "linhas": 4,

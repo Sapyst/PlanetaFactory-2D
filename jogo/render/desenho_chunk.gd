@@ -547,6 +547,7 @@ func refazer_objetos() -> void:
 		mm.buffer = buf
 		var mmi := MultiMeshInstance3D.new()
 		mmi.name = nome
+		mmi.set_meta("modelo", nome)               # o nome pode ser trocado pelo Godot (nó antigo ainda na árvore)
 		mmi.multimesh = mm
 		_objetos.append(mmi)
 		mmi.visible = _objetos_visiveis

@@ -19,8 +19,11 @@ sprites pixel art em vez de 3D. A versão 3D continua em [Sapyst/PlanetaFactory]
   sprites), então clique e construção funcionam como no 3D.
 - **Arte:** `jogo/assets2d/` traz os sprites dos 253 modelos (4 rotações, animação, sombra à parte), o chão e os
   efeitos. As ferramentas que geram tudo a partir dos modelos 3D estão em [arte2d/](arte2d/LEIA-ME.md).
-- **Falta:** caminhada da aranha, fumaça das chaminés, grade e marcador de portas no modo construção, menu para
-  escolher 2D ou 3D, desempenho no celular.
+- **Ordem de desenho:** esteira e trilho rentes ao chão ficam numa camada embaixo de tudo, com os itens da esteira
+  por cima delas. Construção maior que um tile se ordena pela fileira sul, então o trem passa por baixo do telhado.
+  Os marcadores de porta do 3D (fantasma e porta solta) aparecem por cima do chão e das pedras.
+- **Falta:** caminhada da aranha, fumaça das chaminés, grade no modo construção, menu para escolher 2D ou 3D,
+  desempenho no celular.
 
 ![Voo sobre uma fábrica](docs/midia/voo.gif)
 
