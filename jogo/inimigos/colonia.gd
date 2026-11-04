@@ -40,6 +40,7 @@ var torres: Dictionary = {}       ## id da estrutura → {municao, recarga, mira
 var torre_energia: Callable       ## func(id, mj) -> bool: tiro com a energia guardada na torre (Fabrica.gastar_torre)
 var energia: Callable             ## (opcional) func(id) -> float 0..1: energia da rede que chega na estrutura (muro de campo)
 var projeteis: Array[Dictionary] = []   ## foguetes/granadas no ar: {torre, nome, de, para, t, dur, dano, raio}
+var cuspes: Array[Dictionary] = []      ## gosma ácida das larvas no ar: {larva, de, para, t, dur, dano, raio}
 var minas: Dictionary = {}        ## id da mina → {recarga: s até rearmar (0 = armada)}
 var _lista_minas: Array[int] = []
 var _lista_escudos: Array[int] = []
@@ -62,6 +63,8 @@ var _n: Dictionary
 var _a: Dictionary
 var _x: Dictionary
 var _f: Dictionary
+var _c: Dictionary                ## cratera (casa das larvas)
+var _l: Dictionary                ## larva ácida
 
 
 func _init(p_mapa: MapaOcupacao, p_poluicao: Poluicao, semente := 7) -> void:
@@ -72,8 +75,28 @@ func _init(p_mapa: MapaOcupacao, p_poluicao: Poluicao, semente := 7) -> void:
 	_a = Registro.inimigos.get("aranha", {})
 	_x = Registro.inimigos.get("expansao", {})
 	_f = Registro.inimigos.get("furia", {})
+	_c = Registro.inimigos.get("cratera", {})
+	_l = Registro.inimigos.get("larva", {})
 	_t_expansao = _x.get("intervalo_s", 150.0)
 	destruir = func(id: int) -> void: mapa.remover(id)
+
+
+## Toca de inimigo (ninho das aranhas ou cratera das larvas): não é mordida, só cai na bala, não barra quem mora.
+static func eh_toca(nome: String) -> bool:
+	return nome == "ninho_aranha" or nome == "cratera_larva"
+
+
+## Estrutura do mapa de cada espécie (a toca) e os dados dela.
+static func toca_de(especie: String) -> String:
+	return "cratera_larva" if especie == "larva" else "ninho_aranha"
+
+
+func _dados_toca(n: Dictionary) -> Dictionary:
+	return _c if n.get("especie", "aranha") == "larva" else _n
+
+
+func _dados_bicho(ar: Dictionary) -> Dictionary:
+	return _l if ar.get("especie", "aranha") == "larva" else _a
 
 
 # ------------------------------------------------------------------ ninhos do mapa
@@ -106,18 +129,21 @@ func _ninho_da_celula(c: Vector2i, cel: int) -> void:
 		var minimo := c * cel + off
 		if (Vector2(minimo) + Vector2(1.5, 1.5)).length() < raio:
 			continue
-		if mapa.motivo_bloqueio("ninho_aranha", minimo, 0) == "":
-			var id := _criar_ninho(minimo, 1.0)
-			for i in int(_n.get("aranhas_iniciais", 2)):
+		var especie := "larva" if Distribuicao.h(c.x, c.y, 530) < float(_c.get("chance", 0.0)) else "aranha"
+		if mapa.motivo_bloqueio(toca_de(especie), minimo, 0) == "":
+			var id := _criar_ninho(minimo, 1.0, especie)
+			var dt_ := _dados_toca(ninhos[id])
+			for i in int(dt_.get("larvas_iniciais" if especie == "larva" else "aranhas_iniciais", 2)):
 				_nova_aranha(id)
 			return
 
 
-func _criar_ninho(minimo: Vector2i, obra: float) -> int:
-	var id := mapa.colocar("ninho_aranha", minimo, 0)
+func _criar_ninho(minimo: Vector2i, obra: float, especie := "aranha") -> int:
+	var id := mapa.colocar(toca_de(especie), minimo, 0)
 	if id < 0:
 		return -1
-	ninhos[id] = {"id": id, "centro": Vector2(minimo) + Vector2(1.5, 1.5), "vida": float(_n.get("vida", 400)),
+	var dados := _c if especie == "larva" else _n
+	ninhos[id] = {"id": id, "especie": especie, "centro": Vector2(minimo) + Vector2(1.5, 1.5), "vida": float(dados.get("vida", 400)),
 			"raiva": 0.0, "obra": obra, "absorvido": 0.0, "idade": Infestacao.MADURA_S if obra >= 1.0 else 0.0}
 	eventos.append({"tipo": "ninho_novo", "id": id, "obra": obra})
 	return id
@@ -128,7 +154,9 @@ func _nova_aranha(ninho: int) -> int:
 	var id := _prox
 	_prox += 1
 	var ang := _rng.randf() * TAU
-	aranhas[id] = {"id": id, "pos": n.centro + Vector2.from_angle(ang) * 2.4, "vida": float(_a.get("vida", 60)),
+	var especie: String = n.get("especie", "aranha")
+	aranhas[id] = {"id": id, "especie": especie, "pos": n.centro + Vector2.from_angle(ang) * 2.4,
+			"vida": float((_l if especie == "larva" else _a).get("vida", 60)), "recarga": 0.0,
 			"ninho": ninho, "estado": E.PARADA, "alvo": -1, "destino": n.centro + Vector2.from_angle(ang) * 2.4,
 			"mordendo": false, "t": _rng.randf() * 5.0, "preso": 0.0}
 	eventos.append({"tipo": "aranha_nova", "id": id})
@@ -157,6 +185,7 @@ func tick(dt: float, fontes: Array[Dictionary]) -> void:
 	_separar()
 	_torres(dt)
 	_voar(dt)
+	_voar_cuspes(dt)
 	_minas(dt)
 	_regenerar(dt)
 	_expandir(dt)
@@ -186,13 +215,15 @@ func _ninhos(dt: float, fontes: Array[Dictionary]) -> void:
 		var tirou := poluicao.absorver(k, poluicao.em_chunk(k) * float(_n.get("taxa_absorcao", 0.06)) * dt)
 		n.raiva += tirou
 		n.absorvido += tirou
-		var custo_aqui := custo / (1.0 + float(_f.get("producao", 1.0)) * fu) / (1.0 - menos_grupos)
-		if n.raiva >= custo_aqui and aranhas_do_ninho(id).size() < maximo:
+		var dn := _dados_toca(n)
+		var larva: bool = n.get("especie", "aranha") == "larva"
+		var custo_aqui := float(dn.get("custo_larva", custo) if larva else custo) / (1.0 + float(_f.get("producao", 1.0)) * fu) / (1.0 - menos_grupos)
+		if n.raiva >= custo_aqui and aranhas_do_ninho(id).size() < (int(dn.get("max_larvas", maximo)) if larva else maximo):
 			n.raiva -= custo_aqui
 			_nova_aranha(id)
 		if paz and fu <= FURIA_ZERO:                      # Simbiose: ninho em paz não manda grupo
 			continue
-		var grupo_aqui := maxi(2, grupo - roundi(float(_f.get("grupo_menos", 2)) * fu))
+		var grupo_aqui := maxi(2, (int(dn.get("grupo_ataque", grupo)) if larva else grupo) - roundi(float(_f.get("grupo_menos", 2)) * fu))
 		var paradas := aranhas_do_ninho(id, E.PARADA)
 		if paradas.size() >= grupo_aqui:
 			var alvo := _fonte_mais_perto(n.centro, fontes, 1.0 + float(_f.get("raio_ataque", 0.5)) * fu)
@@ -249,7 +280,12 @@ func _aranha(ar: Dictionary, dt: float) -> void:
 					ar.estado = E.VOLTANDO
 					return
 			var e: Dictionary = mapa.estruturas[ar.alvo]
-			if _dist_estrutura(ar.pos, e) <= float(_a.get("alcance", 1.2)):
+			if ar.get("especie", "aranha") == "larva":
+				if _dist_estrutura(ar.pos, e) <= float(_l.get("alcance_cuspe", 9.0)) - 0.5:
+					_cuspir(ar, ar.alvo, dt)
+				else:
+					_mover(ar, Grade.centro_da_area(e.minimo, e.area, e.rot), dt, 1.0)
+			elif _dist_estrutura(ar.pos, e) <= float(_a.get("alcance", 1.2)):
 				_morder(ar, ar.alvo, dt)
 			else:
 				_mover(ar, Grade.centro_da_area(e.minimo, e.area, e.rot), dt, 1.0)
@@ -299,7 +335,7 @@ func _mover(ar: Dictionary, para: Vector2, dt: float, ritmo: float) -> void:
 	else:
 		ar.preso += dt
 	var dir := d.normalized()
-	var passo: float = minf(float(_a.get("velocidade", 1.4)) * (1.0 + float(_f.get("velocidade", 0.4)) * furia(ar)) * ritmo * dt, d.length())
+	var passo: float = minf(float(_dados_bicho(ar).get("velocidade", 1.4)) * (1.0 + float(_f.get("velocidade", 0.4)) * furia(ar)) * ritmo * dt, d.length())
 	for ang in [0.0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9, 2.6, -2.6]:
 		var tent := dir.rotated(ang)
 		var novo: Vector2 = ar.pos + tent * passo
@@ -308,7 +344,10 @@ func _mover(ar: Dictionary, para: Vector2, dt: float, ritmo: float) -> void:
 		# corpo com raio: nenhuma parte da aranha entra numa construção (nem no alvo: morde pela borda)
 		var bloq := _corpo_bloqueado(novo)
 		if bloq >= 0 and ar.estado == E.ATACANDO and ang == 0.0:
-			_morder(ar, bloq, dt)                        # no caminho (ou é o alvo): morde dali
+			if ar.get("especie", "aranha") == "larva":
+				_cuspir(ar, bloq, dt)                    # larva não morde: cospe no que barra
+			else:
+				_morder(ar, bloq, dt)                    # no caminho (ou é o alvo): morde dali
 			return
 		if bloq >= 0:
 			continue
@@ -335,7 +374,7 @@ func _bloqueio(t: Vector2i) -> int:
 	if id < 0:
 		return -1
 	var nome: String = mapa.estruturas[id].nome
-	if nome == "ninho_aranha":
+	if eh_toca(nome):
 		return -1
 	var dims: Array = Registro.modelos.get(nome, {}).get("dims", [0, 0, 0])
 	return id if float(dims[2]) > float(_a.get("altura_que_bloqueia", 0.5)) else -1
@@ -348,9 +387,16 @@ func _morder(ar: Dictionary, id: int, dt: float) -> void:
 		return
 	var em: Dictionary = mapa.estruturas[id]
 	ar.mordida = Grade.centro_da_area(em.minimo, em.area, em.rot)       # para onde as pernas golpeiam (desenho)
-	var nome: String = mapa.estruturas[id].nome
 	var dano := float(_a.get("dano", 15)) * (1.0 + float(_f.get("dano", 0.8)) * furia(ar)) * dt
-	if _escudo_absorve(id, dano, ar.pos):
+	ferir_estrutura(id, dano, ar.pos)
+
+
+## Dano numa construção (mordida, gosma ácida): escudo absorve; zerou, cai.
+func ferir_estrutura(id: int, dano: float, de: Vector2) -> void:
+	if not mapa.estruturas.has(id) or eh_toca(String(mapa.estruturas[id].nome)):
+		return
+	var nome: String = mapa.estruturas[id].nome
+	if _escudo_absorve(id, dano, de):
 		return
 	var v: float = vida.get(id, float(Registro.estruturas.get(nome, {}).get("vida", 100)))
 	v -= dano
@@ -360,6 +406,52 @@ func _morder(ar: Dictionary, id: int, dt: float) -> void:
 		var e: Dictionary = mapa.estruturas[id]
 		eventos.append({"tipo": "destruida", "id": id, "nome": nome, "centro": Grade.centro_da_area(e.minimo, e.area, e.rot)})
 		destruir.call(id)
+
+
+## Larva cuspindo: encara o alvo e, na cadência, lança uma gosma ácida em arco até ele (a gosma fere onde cair).
+func _cuspir(ar: Dictionary, id: int, dt: float) -> void:
+	ar.preso = 0.0
+	if not mapa.estruturas.has(id):
+		return
+	var em: Dictionary = mapa.estruturas[id]
+	var c := Grade.centro_da_area(em.minimo, em.area, em.rot)
+	ar.mordida = c
+	ar.mordendo = true                                 # encarando (o desenho vira a larva para lá)
+	ar.recarga = float(ar.get("recarga", 0.0)) - dt
+	if float(ar.recarga) > 0.0:
+		return
+	ar.recarga = 1.0 / float(_l.get("cadencia_cuspe", 0.5)) * _rng.randf_range(0.85, 1.15)
+	var para := c + Vector2(_rng.randf_range(-0.6, 0.6), _rng.randf_range(-0.6, 0.6))
+	var de: Vector2 = ar.pos + ((para - ar.pos) as Vector2).normalized() * 0.6     # a boca fica na frente do corpo
+	var dur: float = de.distance_to(para) / float(_l.get("velocidade_cuspe", 13.0)) + 0.15
+	var dano := float(_l.get("dano_cuspe", 9)) * (1.0 + float(_f.get("dano", 0.8)) * furia(ar))
+	cuspes.append({"larva": ar.id, "de": de, "para": para, "t": 0.0, "dur": dur, "dano": dano, "raio": float(_l.get("raio_respingo", 1.3))})
+	eventos.append({"tipo": "cuspe", "id": ar.id, "de": de, "para": para, "dur": dur})
+
+
+## Gosma no ar: ao cair, fere as construções no raio do respingo e suja o chão.
+func _voar_cuspes(dt: float) -> void:
+	for i in range(cuspes.size() - 1, -1, -1):
+		var g: Dictionary = cuspes[i]
+		g.t += dt
+		if g.t < g.dur:
+			continue
+		cuspes.remove_at(i)
+		var p: Vector2 = g.para
+		var feitos := {}
+		var r: float = g.raio
+		for dx in range(-ceili(r), ceili(r) + 1):
+			for dy in range(-ceili(r), ceili(r) + 1):
+				var t := Vector2i((p + Vector2(dx, dy)).floor())
+				if (Vector2(t) + Vector2(0.5, 0.5)).distance_to(p) > r + 0.5:
+					continue
+				var id: int = mapa.tiles.get(t, -1)
+				if id >= 0 and not feitos.has(id):
+					feitos[id] = true
+					ferir_estrutura(id, float(g.dano), g.de)
+				if ambiente != null:
+					ambiente.somar(t, AmbienteVivo.SUJ, float(_l.get("suja", 0.25)) * 0.5)
+		eventos.append({"tipo": "respingo", "pos": p, "larva": g.larva})
 
 
 ## Ninhos com fúria a partir de `limite` (aviso da Leitura ambiental).
@@ -382,7 +474,7 @@ func _estrutura_perto(p: Vector2, raio: float) -> int:
 	var md := raio
 	for id in mapa.estruturas:
 		var e: Dictionary = mapa.estruturas[id]
-		if e.nome == "ninho_aranha" or e.nome == "pilar":
+		if eh_toca(e.nome) or e.nome == "pilar":
 			continue
 		var d := _dist_estrutura(p, e)
 		if d < md:
@@ -568,7 +660,7 @@ func ferir_aranha(a: int, dano: float) -> void:
 func _ferir_aranha(a: int, dano: float) -> void:
 	aranhas[a].vida -= dano
 	if aranhas[a].vida <= 0.0:
-		eventos.append({"tipo": "aranha_morta", "id": a, "pos": aranhas[a].pos})
+		eventos.append({"tipo": "aranha_morta", "id": a, "pos": aranhas[a].pos, "especie": aranhas[a].get("especie", "aranha")})
 		aranhas.erase(a)
 
 
@@ -802,7 +894,8 @@ func _expandir(dt: float) -> void:
 	var prontos := []
 	for id in ninhos:
 		# só expande quem está sendo "irritado" pela poluição (absorveu o bastante desde a última vez)
-		if ninhos[id].obra >= 1.0 and ninhos[id].absorvido >= float(_x.get("poluicao_para_expandir", 30)) \
+		if ninhos[id].get("especie", "aranha") == "aranha" and ninhos[id].obra >= 1.0 \
+				and ninhos[id].absorvido >= float(_x.get("poluicao_para_expandir", 30)) \
 				and aranhas_do_ninho(id, E.PARADA).size() >= int(_x.get("construtoras", 3)):
 			prontos.append(id)
 	if prontos.is_empty():
@@ -848,7 +941,7 @@ func dist_fabrica(p: Vector2) -> float:
 	var md := INF
 	for id in mapa.estruturas:
 		var e: Dictionary = mapa.estruturas[id]
-		if e.nome != "ninho_aranha":
+		if not eh_toca(e.nome):
 			md = minf(md, _dist_estrutura(p, e))
 	return md
 

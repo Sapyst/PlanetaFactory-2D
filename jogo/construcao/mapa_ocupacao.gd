@@ -43,7 +43,7 @@ func motivo_bloqueio(nome: String, minimo: Vector2i, rot: int) -> String:
 		if tiles.has(t):
 			return "ocupado"
 		var ter := gerador.terreno(t)
-		if gerador.eh_agua(ter) and (nome == "ninho_aranha" or not ter in AGUA_RASA):
+		if gerador.eh_agua(ter) and (Colonia.eh_toca(nome) or not ter in AGUA_RASA):
 			return "agua"                              # mar/oceano: fundo demais para pilar
 		if not limpos.has(t) and not gerador.distribuicao.obstaculo(t).is_empty():
 			return "obstaculo"

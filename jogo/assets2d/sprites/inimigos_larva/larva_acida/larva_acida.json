@@ -1,0 +1,43 @@
+{
+ "nome": "larva_acida",
+ "categoria": "inimigos/larva",
+ "quadro": [
+  86,
+  56
+ ],
+ "ancora": [
+  33.4,
+  37.0
+ ],
+ "fps": 12,
+ "quadros": 12,
+ "linhas": 16,
+ "tipo_linha": "direcao",
+ "angulos_graus": [
+  0.0,
+  22.5,
+  45.0,
+  67.5,
+  90.0,
+  112.5,
+  135.0,
+  157.5,
+  180.0,
+  202.5,
+  225.0,
+  247.5,
+  270.0,
+  292.5,
+  315.0,
+  337.5
+ ],
+ "variantes": [
+  "andar",
+  "cuspe"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "larva",
+ "avisos": []
+}

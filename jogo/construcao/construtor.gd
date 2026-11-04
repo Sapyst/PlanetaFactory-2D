@@ -397,7 +397,7 @@ func plano_remocao(a: Vector2i, b: Vector2i) -> Array[Dictionary]:
 				if not vistos.has(id):
 					vistos[id] = true
 					var e: Dictionary = mapa.estruturas[id]
-					var motivo := "inimigo" if e.nome == "ninho_aranha" else ""      # ninho só cai na bala
+					var motivo := "inimigo" if Colonia.eh_toca(e.nome) else ""      # toca (ninho, cratera) só cai na bala
 					if e.nome == "nucleo":
 						motivo = "nucleo"
 					out.append({"acao": "remover", "id": id, "nome": e.nome, "minimo": e.minimo, "rot": e.rot, "motivo": motivo,

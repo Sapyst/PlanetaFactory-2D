@@ -33,6 +33,8 @@ var _mortas: Array[Dictionary] = [] ## aranha morrendo: {p, pos, linha, t}
 const ARANHA := "aranha_animada"
 const PASSO_ARANHA := 1.1           ## m que o corpo anda num ciclo da marcha (os 2 trípodes; quadros 0..11)
 const MORTE_ARANHA := 1.2           ## s até a carcaça começar a sumir (queda 0,6 + parada 0,6, como no 3D)
+const LARVA := "larva_acida"
+const PASSO_LARVA := 0.5            ## m andados por ciclo de contração (como no 3D: Larva.CICLO_M)
 var fantasmas := Node2D.new()
 var marcas := Node2D.new()
 var fios := Node2D.new()
@@ -447,7 +449,10 @@ func _sincronizar_moveis() -> void:
 		for id in dc._ninhos:
 			var no: Node3D = dc._ninhos[id]
 			if is_instance_valid(no) and no.visible:
-				_movel("ni%d" % id, "ninho_aranha", no, int(_t * FPS), vistos)
+				var toca := "ninho_aranha"
+				if dc.colonia != null and dc.colonia.ninhos.has(id):
+					toca = Colonia.toca_de(String(dc.colonia.ninhos[id].get("especie", "aranha")))
+				_movel("ni%d" % id, toca, no, int(_t * FPS) if toca == "ninho_aranha" else 0, vistos)
 	var dd = mundo.get("_desenho_drones")
 	if dd != null:
 		for id in dd._nos:
@@ -487,15 +492,16 @@ func _sincronizar_aranhas(delta: float) -> void:
 	if dc == null or not Catalogo2D.tem(ARANHA):
 		return
 	for id in dc._aranhas:
-		var no: Aranha = dc._aranhas[id]
+		var no: Node3D = dc._aranhas[id]
 		if not is_instance_valid(no):
 			continue
+		var larva := no is Larva
 		var a: Dictionary = _aranhas.get(id, {})
 		if a.is_empty():
-			var p := _par(ARANHA)
+			var p := _par(LARVA if larva else ARANHA)
 			if p.is_empty():
 				return
-			a = {"p": p, "fase": randf(), "ult": no.global_position, "rumo": no.rotation.y}
+			a = {"p": p, "fase": randf(), "ult": no.global_position, "rumo": no.rotation.y, "larva": larva}
 			_aranhas[id] = a
 		var pos := no.global_position
 		# a marcha avança com o chão percorrido (e com o giro no lugar): o pé plantado não escorrega
@@ -503,7 +509,14 @@ func _sincronizar_aranhas(delta: float) -> void:
 		a.ult = pos
 		a.rumo = no.rotation.y
 		var linha := Catalogo2D.linha_do_angulo(a.p.m, no.rotation.y)
-		if no.atacando:
+		if larva:
+			var cusp := float((no as Larva).cuspindo)
+			if cusp > 0.0:
+				_por(a.p, pos, linha, clampi(int((1.0 - cusp) * 12.0), 0, 11), "cuspe")
+			else:
+				a.fase = fposmod(float(a.fase) + anda / PASSO_LARVA, 1.0)
+				_por(a.p, pos, linha, int(float(a.fase) * 12.0), "andar")
+		elif no.atacando:
 			_por(a.p, pos, linha, int(_t * FPS), "ataque")
 		else:
 			a.fase = fposmod(float(a.fase) + anda / PASSO_ARANHA, 1.0)
@@ -515,15 +528,24 @@ func _sincronizar_aranhas(delta: float) -> void:
 			continue
 		var a: Dictionary = _aranhas[id]               # saiu da lista do 3D = morreu (o nó 3D segue a própria morte)
 		_aranhas.erase(id)
-		_mortas.append({"p": a.p, "pos": a.ult, "linha": Catalogo2D.linha_do_angulo(a.p.m, float(a.rumo)), "t": 0.0})
+		_mortas.append({"p": a.p, "pos": a.ult, "linha": Catalogo2D.linha_do_angulo(a.p.m, float(a.rumo)), "t": 0.0,
+				"larva": bool(a.get("larva", false)), "q": int(float(a.fase) * 12.0)})
 	for i in range(_mortas.size() - 1, -1, -1):
 		var m: Dictionary = _mortas[i]
 		m.t += delta
-		_por(m.p, m.pos, m.linha, mini(int(m.t * FPS), 11), "morte")
+		if m.larva:                                   # larva: murcha e achata no lugar (como o 3D), sem quadros de morte
+			_por(m.p, m.pos, m.linha, int(m.q), "andar")
+			var k := clampf(m.t / 0.5, 0.0, 1.0)
+			(m.p.spr as Sprite2D).scale = Vector2(1.0 + 0.15 * k, 1.0 - 0.6 * k)
+			(m.p.som as Sprite2D).scale = Vector2(1.0 + 0.15 * k, 1.0)
+		else:
+			_por(m.p, m.pos, m.linha, mini(int(m.t * FPS), 11), "morte")
 		var alfa := clampf(1.0 - (m.t - MORTE_ARANHA) / 0.8, 0.0, 1.0)
 		(m.p.spr as Sprite2D).modulate.a = alfa
 		(m.p.som as Sprite2D).modulate.a = alfa
 		if alfa <= 0.0:
+			(m.p.spr as Sprite2D).scale = Vector2.ONE
+			(m.p.som as Sprite2D).scale = Vector2.ONE
 			_soltar(m.p)
 			_mortas.remove_at(i)
 
@@ -790,7 +812,7 @@ func efeitos_de(eventos: Array) -> void:
 				var no_t: Node3D = (mundo.get("_nos") as Dictionary).get(id_t)
 				var reserva: Vector3 = dc._boca(e, 1.25) if dc != null else Grade.ponto_mundo(e.de, 1.25)
 				var de: Vector3 = _boca_2d(id_t, String(e.get("nome", "")), no_t.global_position, reserva) if no_t != null else reserva
-				var alvo := "aranha" if int(e.get("aranha", -1)) >= 0 else ("estrutura" if int(e.get("ninho", -1)) >= 0 else "chao")
+				var alvo := _especie(int(e.get("aranha", -1))) if int(e.get("aranha", -1)) >= 0 else ("estrutura" if int(e.get("ninho", -1)) >= 0 else "chao")
 				var alto := 0.6 if alvo != "chao" else 0.0
 				var projetil := bool(e.get("projetil", false))
 				ef.disparar(arma, de, Grade.ponto_mundo(e.para, alto), alvo, float(e.get("dur", 0.0)), not projetil)
@@ -799,7 +821,15 @@ func efeitos_de(eventos: Array) -> void:
 				var p_dr := Grade.ponto_mundo(e.de, float(e.get("alt", 2.4)))
 				var de_dr := _boca_2d(chave, "drone_defesa", p_dr, p_dr)
 				var ar_pos: Vector2 = e.para
-				ef.disparar("drone", de_dr, Grade.ponto_mundo(ar_pos, 0.6), "aranha")
+				ef.disparar("drone", de_dr, Grade.ponto_mundo(ar_pos, 0.6), _especie(int(e.get("aranha", -1))))
+			"cuspe":
+				# a gosma sai da boca da larva (meta "boca" do sprite, se houver) e cai onde a Colonia diz; o respingo
+				# vem no evento "respingo", quando ela chega
+				var pl: Vector3 = Grade.ponto_mundo(e.de, 0.3)
+				var de_l := _boca_2d("", LARVA, pl, pl)
+				ef.disparar("cuspe", de_l, Grade.ponto_mundo(e.para, 0.1), "estrutura", float(e.get("dur", 0.6)), false)
+			"respingo":
+				ef.impacto("cuspe", Grade.ponto_mundo(e.pos, 0.1), "estrutura")
 			"salto":
 				ef.arco(Grade.ponto_mundo(e.de, 0.6), Grade.ponto_mundo(e.para, 0.6))
 			"aranha_morta":
@@ -808,6 +838,14 @@ func efeitos_de(eventos: Array) -> void:
 				ef.explosao(Grade.ponto_mundo(e.pos, 0.0), clampf(float(e.raio) / 2.5, 0.5, 1.6))
 			"pulso":
 				_anel(Grade.ponto_mundo(e.pos, 0.05), float(e.raio), Color(0.75, 0.55, 1.0))
+
+
+## "aranha" ou "larva" (sangue e lascas do impacto) pelo id do bicho na Colonia.
+func _especie(id: int) -> String:
+	var dc = mundo.get("_desenho_colonia")
+	if dc != null and dc.colonia != null and dc.colonia.aranhas.has(id):
+		return String(dc.colonia.aranhas[id].get("especie", "aranha"))
+	return "aranha"
 
 
 func _traco(de: Vector3, para: Vector3, cor: Color, vida: float) -> void:

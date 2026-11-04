@@ -40,7 +40,10 @@ void vertex() {
 	tom *= mix(vec3(1.0), vec3(0.72, 0.62, 0.42), smoothstep(0.1, 0.6, amb.r));   // suja: amarelada
 	float inf = texelFetch(mapa_teia, px, 0).r;
 	tom *= mix(vec3(1.0), vec3(0.55, 0.52, 0.46), smoothstep(0.05, 0.4, inf));     // tomada pela teia: murcha
+	float cor_l = texelFetch(mapa_teia, px, 0).g;                                     // corroída pelo ácido das larvas
+	tom *= mix(vec3(1.0), vec3(0.30, 0.27, 0.13), smoothstep(0.02, 0.3, cor_l));       // queimada: seca e escura
 	some = max(some, smoothstep(0.35, 0.8, inf));
+	some = max(some, smoothstep(0.08, 0.45, cor_l));                                    // o ácido come a grama
 	float dist = distance(o.xz, alvo_camera.xz);
 	some = max(some, smoothstep(raio_vista - 6.0, raio_vista, dist));
 	some = max(some, smoothstep(raio_detalhe - 6.0, raio_detalhe, dist));

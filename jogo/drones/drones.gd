@@ -370,7 +370,7 @@ func alvo_reparo(est: int, perto: Vector2) -> int:
 		if ocupados.has(id) or not mapa.estruturas.has(id):
 			continue
 		var e: Dictionary = mapa.estruturas[id]
-		if e.nome == "ninho_aranha" or e.nome == "pilar":
+		if Colonia.eh_toca(e.nome) or e.nome == "pilar":
 			continue
 		var p := Grade.centro_da_area(e.minimo, e.area, e.rot)
 		if p.distance_to(c) > alcance(est):
@@ -472,7 +472,7 @@ func _combate(d: Dictionary, dt: float) -> void:
 		d.recarga = float(d.recarga) - dt
 		if float(d.recarga) <= 0.0:
 			d.recarga = maxf(float(d.recarga), -dt) + 1.0 / float(_r.get("cadencia", 2.5))
-			eventos.append({"tipo": "drone_tiro", "id": d.id, "de": d.pos, "alt": d.alt, "para": ar})
+			eventos.append({"tipo": "drone_tiro", "id": d.id, "de": d.pos, "alt": d.alt, "para": ar, "aranha": a})
 			colonia.ferir_aranha(a, dano())
 	else:
 		d.e = E.INDO

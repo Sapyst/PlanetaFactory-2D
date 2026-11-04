@@ -250,6 +250,26 @@ void fragment() {
 		float teia = max(fio, fio2) * smoothstep(0.25, 0.85, inf) * tufos;
 		c_terra = mix(c_terra, vec3(0.50, 0.48, 0.45), clamp(teia, 0.0, 1.0) * 0.5);
 	}
+	// corrosão (cratera das larvas, canal G): terra queimada pelo ácido — crosta verde-escura rachada, rastros de baba
+	// brilhando e poças de ácido nas baixadas, que crescem perto da cratera
+	float cor_l = (texture(mapa_teia, (grade + w1 * 1.4 - origem_mapa) / 34.0).g
+			+ texture(mapa_teia, (grade + w2 * 2.0 - origem_mapa) / 34.0).g) * 0.5 * terra_firme;
+	float acido = 0.0;
+	if (cor_l > 0.002) {
+		float crosta = smoothstep(0.0, 0.5, cor_l) * (0.75 + 0.4 * grao);
+		c_terra = mix(c_terra, vec3(0.055, 0.065, 0.03) + c_terra * 0.15, clamp(crosta, 0.0, 0.92));
+		float racha = 1.0 - smoothstep(0.0, 0.06, abs(texture(detalhe, grade * 0.11 + w2 * 0.3).r - 0.5));
+		c_terra = mix(c_terra, vec3(0.16, 0.20, 0.05), racha * smoothstep(0.2, 0.7, cor_l) * 0.6);      // rachas amareladas
+		// rastros: faixas finas e tortas de baba (onde as larvas se arrastam)
+		float rastro = 1.0 - smoothstep(0.0, 0.035, abs(texture(detalhe, grade * 0.045 + w1 * 0.25 + vec2(0.71, 0.29)).r - 0.5));
+		rastro *= smoothstep(0.15, 0.6, cor_l);
+		c_terra = mix(c_terra, vec3(0.22, 0.30, 0.06), rastro * 0.55);
+		// poças de ácido nas baixadas do ruído (e do relevo), mais perto da cratera
+		float fundo_a = texture(detalhe, grade * 0.09 + vec2(0.41, 0.13)).r + baixa * 0.15 + cor_l * 0.08;
+		acido = smoothstep(0.76, 0.80, fundo_a) * smoothstep(0.35, 0.8, cor_l);
+		c_terra = mix(c_terra, vec3(0.30, 0.45, 0.04) * (0.8 + 0.3 * grao), acido * 0.85);
+		acido = max(acido, rastro * 0.4);
+	}
 	vec3 c = mix(c_terra, c_agua, agua);
 	c *= 0.88 + 0.24 * d;
 	float poca = 0.0;
@@ -288,7 +308,8 @@ void fragment() {
 	vec3 fogo_cor = mix(vec3(0.55, 0.05, 0.01), vec3(1.0, 0.33, 0.04), smoothstep(0.25, 0.7, brasa));
 	fogo_cor = mix(fogo_cor, vec3(1.0, 0.85, 0.45), smoothstep(0.7, 1.0, brasa));
 	EMISSION += fogo_cor * brasa * 1.3 * (1.0 - agua) * vd;
+	EMISSION += vec3(0.20, 0.32, 0.02) * acido * 0.35 * (0.85 + 0.15 * sin(TIME * 1.7 + grade.x)) * vd;   // ácido: brilho fraco
 	float oleo_r = smoothstep(0.35, 0.55, ambiente_em(grade, w1, w2).g);
-	ROUGHNESS = mix(mix(mix(mix(0.92, 0.55, molhado), 0.06, poca), 0.15, oleo_r * (1.0 - agua)), mix(0.08, 0.45, suja), agua);
+	ROUGHNESS = mix(mix(mix(mix(0.92, 0.55, molhado), 0.06, poca), 0.15, max(oleo_r, acido) * (1.0 - agua)), mix(0.08, 0.45, suja), agua);
 	SPECULAR = mix(0.5 + 0.4 * poca, mix(0.8, 0.3, suja), agua) * mix(0.05, 1.0, vd);   // água suja é opaca: reflete menos o céu
 }

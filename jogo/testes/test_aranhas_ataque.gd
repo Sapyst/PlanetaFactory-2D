@@ -42,7 +42,7 @@ func test_ninhos_do_mapa() -> void:
 	var mais_perto := INF
 	for id in c.ninhos:
 		mais_perto = minf(mais_perto, c.ninhos[id].centro.length())
-		igual(m.estruturas[id].nome, "ninho_aranha", "ninho ocupa o mapa")
+		igual(m.estruturas[id].nome, Colonia.toca_de(c.ninhos[id].especie), "toca ocupa o mapa")
 	verificar(mais_perto >= 52.0, "nenhum ninho perto do spawn (%.0f)" % mais_perto)
 	# determinístico: outra colônia com o mesmo mundo acha os mesmos lugares
 	var b2 := _base()

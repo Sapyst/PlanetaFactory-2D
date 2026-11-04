@@ -1,21 +1,86 @@
 {
  "_nota": "Poluição e aranhas. Unidades: poluição em pontos por chunk (32×32); taxas por segundo. As fontes (máquinas) emitem 'poluicao' de estruturas.json por minuto.",
  "poluicao": {
-  "difusao": 0.05, "vento_a_favor": 0.7,
+  "difusao": 0.05,
+  "vento_a_favor": 0.7,
   "minimo_espalhar": 0.6,
   "absorcao": 0.003,
   "absorcao_fixa": 0.01,
-  "absorcao_bioma": {"campina": 1.0, "floresta_fungica": 1.8, "deserto_silex": 0.35, "planalto_rochoso": 0.6,
-                     "campo_cristal": 0.8, "pantano": 1.4, "cinzal": 0.4, "_agua": 0.3}
+  "absorcao_bioma": {
+   "campina": 1.0,
+   "floresta_fungica": 1.8,
+   "deserto_silex": 0.35,
+   "planalto_rochoso": 0.6,
+   "campo_cristal": 0.8,
+   "pantano": 1.4,
+   "cinzal": 0.4,
+   "_agua": 0.3
+  }
  },
  "ninho": {
-  "celula": 48, "raio_sem_ninho": 52, "chance": 0.6, "chance_longe": 0.9, "vida": 400,
-  "taxa_absorcao": 0.15, "custo_aranha": 4, "max_aranhas": 8, "aranhas_iniciais": 2,
-  "grupo_ataque": 4, "raio_ataque": 160
+  "celula": 48,
+  "raio_sem_ninho": 52,
+  "chance": 0.6,
+  "chance_longe": 0.9,
+  "vida": 400,
+  "taxa_absorcao": 0.15,
+  "custo_aranha": 4,
+  "max_aranhas": 8,
+  "aranhas_iniciais": 2,
+  "grupo_ataque": 4,
+  "raio_ataque": 160
  },
- "aranha": {"vida": 60, "dano": 15, "velocidade": 1.4, "alcance": 1.2, "raio_procura": 20, "altura_que_bloqueia": 0.5},
- "expansao": {"intervalo_s": 150, "dist_min": 14, "dist_max": 30, "tempo_obra": 10, "livre_de_estruturas": 26, "longe_do_spawn": 40, "construtoras": 3, "poluicao_para_expandir": 30},
- "torre": {"municao_inicial": 60},
- "furia": {"_nota": "chão sujo em volta do ninho (sujeira, óleo, água suja, num raio) deixa as aranhas furiosas: 0 = limpo, 1 = média 'sujo_cheio' ou mais. Cada efeito é o ganho em fúria 1.",
-           "raio": 24, "sujo_cheio": 0.12, "recalcula_s": 5, "dano": 0.8, "velocidade": 0.4, "producao": 1.0, "grupo_menos": 2, "raio_ataque": 0.5}
+ "aranha": {
+  "vida": 60,
+  "dano": 15,
+  "velocidade": 1.4,
+  "alcance": 1.2,
+  "raio_procura": 20,
+  "altura_que_bloqueia": 0.5
+ },
+ "expansao": {
+  "intervalo_s": 150,
+  "dist_min": 14,
+  "dist_max": 30,
+  "tempo_obra": 10,
+  "livre_de_estruturas": 26,
+  "longe_do_spawn": 40,
+  "construtoras": 3,
+  "poluicao_para_expandir": 30
+ },
+ "torre": {
+  "municao_inicial": 60
+ },
+ "furia": {
+  "_nota": "chão sujo em volta do ninho (sujeira, óleo, água suja, num raio) deixa as aranhas furiosas: 0 = limpo, 1 = média 'sujo_cheio' ou mais. Cada efeito é o ganho em fúria 1.",
+  "raio": 24,
+  "sujo_cheio": 0.12,
+  "recalcula_s": 5,
+  "dano": 0.8,
+  "velocidade": 0.4,
+  "producao": 1.0,
+  "grupo_menos": 2,
+  "raio_ataque": 0.5
+ },
+ "cratera": {
+  "_": "cratera das larvas (pedido de Sapyst): casa delas; parte das células que teriam ninho vira cratera",
+  "chance": 0.34,
+  "vida": 350,
+  "custo_larva": 4,
+  "max_larvas": 6,
+  "larvas_iniciais": 2,
+  "grupo_ataque": 3
+ },
+ "larva": {
+  "_": "larva ácida: anda contraindo e esticando, cospe gosma ácida até a metade do alcance da torre padrão (18 m)",
+  "vida": 35,
+  "velocidade": 0.75,
+  "alcance_cuspe": 9.0,
+  "dano_cuspe": 9,
+  "cadencia_cuspe": 0.5,
+  "raio_respingo": 1.3,
+  "velocidade_cuspe": 13.0,
+  "raio_procura": 20,
+  "suja": 0.25
+ }
 }

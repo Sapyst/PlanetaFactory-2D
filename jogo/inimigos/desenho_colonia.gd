@@ -136,9 +136,23 @@ func atualizar(eventos: Array[Dictionary], delta: float) -> void:
 					_bolhas[e.id].impacto = 1.0
 			"aranha_morta":
 				if _aranhas.has(e.id):
-					(_aranhas[e.id] as Aranha).morrer()
+					_aranhas[e.id].morrer()
 					_aranhas.erase(e.id)
-				_faiscas(Grade.ponto_mundo(e.pos, 0.6), 24)
+				if e.get("especie", "aranha") == "larva":
+					_respingo(Grade.ponto_mundo(e.pos, 0.3), 30)
+					Som.tocar("acido_respingo", Grade.ponto_mundo(e.pos), -4.0)
+				else:
+					_faiscas(Grade.ponto_mundo(e.pos, 0.6), 24)
+			"cuspe":
+				var no_l: Node3D = _aranhas.get(e.id)
+				if no_l != null and no_l.has_method("cuspir"):
+					no_l.cuspir()
+				var de_c := Grade.ponto_mundo(e.de, 0.3)
+				Som.tocar("cuspe_acido", de_c, -3.0)
+				_gosma(de_c, Grade.ponto_mundo(e.para, 0.1), float(e.dur))
+			"respingo":
+				_respingo(Grade.ponto_mundo(e.pos, 0.1), 22)
+				Som.tocar("acido_respingo", Grade.ponto_mundo(e.pos), -4.0)
 			"ninho_destruido":
 				if _ninhos.has(e.id):
 					var n: Node3D = _ninhos[e.id]
@@ -174,14 +188,14 @@ func _perto_da_vista(p: Vector2) -> bool:
 func _sincronizar_aranhas() -> void:
 	for id in colonia.aranhas:
 		var ar: Dictionary = colonia.aranhas[id]
-		var no: Aranha = _aranhas.get(id)
+		var no: Node3D = _aranhas.get(id)
 		if not _perto_da_vista(ar.pos):
 			if no != null:
 				no.queue_free()
 				_aranhas.erase(id)
 			continue
 		if no == null:
-			no = Aranha.new()
+			no = Larva.new() if ar.get("especie", "aranha") == "larva" else Aranha.new()
 			no.position = Grade.ponto_mundo(ar.pos)
 			if ar.has("destino"):
 				var d_ini: Vector2 = (ar.destino as Vector2) - (ar.pos as Vector2)
@@ -197,7 +211,7 @@ func _sincronizar_aranhas() -> void:
 			no.encarar(Grade.ponto_mundo(ar.mordida))
 	for id in _aranhas.keys():
 		if not colonia.aranhas.has(id):
-			(_aranhas[id] as Aranha).morrer()
+			_aranhas[id].morrer()
 			_aranhas.erase(id)
 
 
@@ -211,13 +225,14 @@ func _sincronizar_ninhos(delta: float) -> void:
 				_ninhos.erase(id)
 			continue
 		if no == null:
-			no = (load(Registro.modelos["ninho_aranha"].modelo) as PackedScene).instantiate()
+			var toca := Colonia.toca_de(String(n.get("especie", "aranha")))
+			no = (load(Registro.modelos[toca].modelo) as PackedScene).instantiate()
 			add_child(no)
 			Materiais.converter(no)
 			no.position = Grade.ponto_mundo(n.centro)
 			no.rotation.y = fposmod(n.centro.x * 1.7 + n.centro.y * 0.9, TAU)
 			var anim := Animador.new()                 # laço do estudo: mandíbulas, coroa e bioplasma pulsando
-			anim.modelo = "ninho_aranha"
+			anim.modelo = toca
 			no.add_child(anim)
 			_ninhos[id] = no
 		# obra: cresce do chão, tremendo
@@ -302,6 +317,58 @@ func _quad(cor: Color, prioridade: int) -> MeshInstance3D:
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)
 	return mi
+
+
+## Gosma ácida voando em arco da boca da larva até onde cai (a Colonia manda o respingo quando chega).
+func _gosma(de: Vector3, para: Vector3, dur: float) -> void:
+	var g := MeshInstance3D.new()
+	var esf := SphereMesh.new()
+	esf.radius = 0.07
+	esf.height = 0.12
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.45, 0.75, 0.1)
+	m.emission_enabled = true
+	m.emission = Color(0.5, 0.9, 0.15)
+	m.emission_energy_multiplier = 1.5
+	esf.material = m
+	g.mesh = esf
+	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(g)
+	g.global_position = de
+	var arco := maxf(0.6, de.distance_to(para) * 0.25)
+	var tw := g.create_tween()
+	tw.tween_method(func(u: float): g.global_position = de.lerp(para, u) + Vector3.UP * arco * 4.0 * u * (1.0 - u), 0.0, 1.0, maxf(dur, 0.1))
+	tw.tween_callback(g.queue_free)
+
+
+## Respingo de ácido: gotas verdes saltando em coroa (some sozinho).
+func _respingo(p: Vector3, n: int) -> void:
+	var f := CPUParticles3D.new()
+	f.one_shot = true
+	f.emitting = true
+	f.amount = n
+	f.lifetime = 0.8
+	f.explosiveness = 0.95
+	f.direction = Vector3.UP
+	f.spread = 75.0
+	f.initial_velocity_min = 1.5
+	f.initial_velocity_max = 3.5
+	f.gravity = Vector3(0, -9.0, 0)
+	f.scale_amount_min = 0.04
+	f.scale_amount_max = 0.08
+	var malha := SphereMesh.new()
+	malha.radius = 0.5
+	malha.height = 1.0
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.45, 0.75, 0.1)
+	m.emission_enabled = true
+	m.emission = Color(0.4, 0.8, 0.1)
+	malha.material = m
+	f.mesh = malha
+	f.position = p
+	add_child(f)
+	if is_inside_tree():
+		get_tree().create_timer(1.3).timeout.connect(f.queue_free)
 
 
 ## Faíscas de uma vez (some sozinha).

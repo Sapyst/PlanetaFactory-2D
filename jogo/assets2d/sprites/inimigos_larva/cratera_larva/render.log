@@ -1,0 +1,27 @@
+00:00.957  cycles           | WARNING HIPEW initialization failed: Error opening HIP dynamic library
+/mnt/d/Projetos/Jogos/PlanetaFactory_2D/ferramentas/sprite_modelo.py:167: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  mundo = bpy.data.worlds.new('M'); mundo.use_nodes = True; sc.world = mundo
+/mnt/d/Projetos/Jogos/PlanetaFactory_2D/ferramentas/sprite_modelo.py:187: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m_cabo = bpy.data.materials.new('cabo'); m_cabo.use_nodes = True
+/mnt/d/Projetos/Jogos/PlanetaFactory_2D/ferramentas/sprite_modelo.py:663: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mch = bpy.data.materials.new('chao'); mch.use_nodes = True
+00:01.349  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/A_1000.png'
+00:01.404  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/A_1001.png'
+00:01.461  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/A_1002.png'
+00:01.512  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/A_1003.png'
+00:01.576  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/B_1000.png'
+00:01.610  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/B_1001.png'
+00:01.644  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/B_1002.png'
+00:01.678  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/B_1003.png'
+00:01.745  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/S_1000.png'
+00:01.777  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/S_1001.png'
+00:01.807  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/S_1002.png'
+00:01.835  render           | Saved: 'sprites/inimigos_larva/cratera_larva/_tmp/S_1003.png'
+BlenderMCP addon registered
+BlenderMCP addon unregistered
+LARVA tris=7206
+DIR_SOL (-0.628, -0.527, 0.574)
+SPRITE_OK cratera_larva 120 76 linhas 4 quadros 1 variantes 1 cabos 0 avisos 0
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
+
+Blender quit

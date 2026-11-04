@@ -96,6 +96,15 @@ void fragment() {
 		float tufos = texture(detalhe, grade * 0.08 + vec2(0.13, 0.57)).r + inf * 0.3;              // teia em tufos
 		float fio = max(texture(tex_teia, grade * 0.21).a, texture(tex_teia, grade * 0.09 + vec2(0.31, 0.77)).a * step(0.6, inf));
 		if (fio > 0.25 && tufos + (b - 0.5) * 0.15 > 0.62 && inf + (b - 0.5) * 0.4 > 0.3) { cor = mix(cor, vec3(0.56, 0.54, 0.50), 0.45 + 0.3 * inf); }
+		// corrosão da cratera das larvas (G): crosta verde-escura, rachas, rastros de baba e poças de ácido
+		float cl = (texture(mapa_teia, ap).g + texture(mapa_teia, bp).g) * 0.5;
+		if (cl + (b - 0.5) * 0.3 > 0.1) { cor = mix(cor, vec3(0.055, 0.065, 0.03), 0.6 + 0.3 * cl); }
+		float racha = abs(texture(detalhe, grade * 0.11 + w2 * 0.3).r - 0.5);
+		if (racha < 0.02 && cl > 0.25) { cor = mix(cor, vec3(0.12, 0.15, 0.04), 0.5); }
+		float rastro = abs(texture(detalhe, grade * 0.045 + w1 * 0.25 + vec2(0.71, 0.29)).r - 0.5);
+		if (rastro < 0.015 && cl > 0.2) { cor = mix(cor, vec3(0.17, 0.22, 0.05), 0.5); }
+		float fundo_a = texture(detalhe, grade * 0.09 + vec2(0.41, 0.13)).r + cl * 0.08 + (b - 0.5) * 0.04;
+		if (fundo_a > 0.77 && cl > 0.4) { cor = mix(vec3(0.20, 0.30, 0.04), vec3(0.34, 0.48, 0.08), step(0.81, fundo_a)); }
 		if (amb.b >= 0.5) {                                                                                 // brasa
 			float br = (amb.b - 0.5) * 2.0 * (0.7 + 0.3 * sin(TIME * 7.0 + grade.x * 3.1));
 			if (br + (b - 0.5) * 0.4 > 0.35) { cor = mix(vec3(0.55, 0.10, 0.02), vec3(1.0, 0.55, 0.12), step(0.7, br)); }

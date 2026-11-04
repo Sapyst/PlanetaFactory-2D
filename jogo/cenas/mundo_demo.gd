@@ -292,7 +292,7 @@ func _danificar(id: int, pontos: float) -> void:
 	if not mapa.estruturas.has(id):
 		return
 	var nome: String = mapa.estruturas[id].nome
-	if nome == "ninho_aranha":
+	if Colonia.eh_toca(nome):
 		return
 	var v: float = colonia.vida.get(id, float(Registro.estruturas.get(nome, {}).get("vida", 100)))
 	v -= pontos
@@ -386,7 +386,7 @@ func _carregar(d: Dictionary) -> void:
 	drones.restaurar(d.get("drones", {}))
 	for id in mapa.estruturas:
 		var nome: String = mapa.estruturas[id].nome
-		if nome != "ninho_aranha" and nome != "pilar":
+		if not Colonia.eh_toca(nome) and nome != "pilar":
 			_criar_no(id)
 	for id in mapa.estruturas:
 		if MUROS.has(mapa.estruturas[id].nome):
@@ -1835,7 +1835,7 @@ func selecionar(p: Vector2) -> void:
 					_sel = {"trem": t.id}
 		if _sel.is_empty():
 			var id: int = mapa.tiles.get(Vector2i(p.floor()), -1)
-			if id >= 0 and mapa.estruturas[id].nome != "ninho_aranha":
+			if id >= 0 and not Colonia.eh_toca(mapa.estruturas[id].nome):
 				_sel = {"estrutura": id}
 	_detalhe()
 
@@ -2123,7 +2123,7 @@ func _detalhe() -> void:
 		if not compacto:
 			linhas.append("Integridade: %d de %d (%d%%)%s" % [ceilf(v), vida_max, v / vida_max * 100.0, "" if v < vida_max else " — inteira"])
 		var custo := custo_reparo(id)
-		if not custo.is_empty() and e.nome != "ninho_aranha":
+		if not custo.is_empty() and not Colonia.eh_toca(e.nome):
 			opcoes.append({"texto": "Reparar (%s)" % _lista_itens(custo), "acao": func(): reparar(id); _detalhe(), "secao": "acoes", "icone_txt": "✚ Reparar"})
 	if fabrica.maquinas.has(id):
 		var m: Maquina = fabrica.maquinas[id]
@@ -2511,7 +2511,7 @@ func _detalhe() -> void:
 		opcoes.append({"texto": "📦  Enviar à central antes e remover", "acao": func(): confirmar_remocao_bau(id, true), "secao": "acoes", "icone_txt": "📦 Enviar e remover"})
 		opcoes.append({"texto": "✕  Remover e perder (%d itens)" % n_itens, "acao": func(): confirmar_remocao_bau(id, false), "secao": "acoes", "icone_txt": "✕ Remover e perder", "perigo": true})
 		opcoes.append({"texto": "Cancelar remoção", "acao": func(): _confirmando_remocao_bau = -1; _detalhe(), "secao": "acoes", "icone_txt": "Cancelar"})
-	elif e.nome != "nucleo" and e.nome != "ninho_aranha":
+	elif e.nome != "nucleo" and not Colonia.eh_toca(e.nome):
 		opcoes.append({"texto": "✕  Remover", "acao": func(): remover_estrutura(id), "secao": "acoes", "icone_txt": "✕ Remover", "tecla": "Del", "perigo": true})
 	if fabrica.tem_config(id):
 		opcoes.append({"texto": "⧉  Copiar configuração", "acao": func(): copiar_config_de(id), "secao": "acoes", "icone_txt": "⧉ Copiar", "tecla": "Ctrl+C"})
@@ -2908,9 +2908,13 @@ func _hud() -> void:
 	if not _sel.is_empty():
 		_detalhe()
 	var atacando := 0
+	var larvas_vindo := 0
 	for a in colonia.aranhas.values():
 		if a.estado == Colonia.E.ATACANDO:
-			atacando += 1
+			if a.get("especie", "aranha") == "larva":
+				larvas_vindo += 1
+			else:
+				atacando += 1
 	var municao := 0
 	for t in colonia.torres.values():
 		municao += t.municao
@@ -2921,4 +2925,9 @@ func _hud() -> void:
 		controle.barra.estoque(inventario)
 		if pesquisa.ativa != "":
 			texto += "\nPesquisa: %s %d/%d" % [pesquisa.pesquisas()[pesquisa.ativa].nome, pesquisa.feitos, pesquisa.unidades(pesquisa.ativa)]
-	controle.barra.situacao(texto, "Ataque! %d aranha(s) vindo" % atacando if atacando > 0 else "")
+	var vindo: PackedStringArray = []
+	if atacando > 0:
+		vindo.append("%d aranha(s)" % atacando)
+	if larvas_vindo > 0:
+		vindo.append("%d larva(s)" % larvas_vindo)
+	controle.barra.situacao(texto, ("Ataque! %s vindo" % " e ".join(vindo)) if not vindo.is_empty() else "")

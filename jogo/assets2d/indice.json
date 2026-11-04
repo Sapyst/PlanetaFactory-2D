@@ -5095,5 +5095,46 @@
   "animacao": "aranha",
   "avisos": 0,
   "luz": null
+ },
+ "larva_acida": {
+  "pasta": "sprites/inimigos_larva/larva_acida",
+  "quadro": [
+   86,
+   56
+  ],
+  "ancora": [
+   33.4,
+   37.0
+  ],
+  "quadros": 12,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "andar",
+   "cuspe"
+  ],
+  "animacao": "larva",
+  "avisos": 0,
+  "luz": null
+ },
+ "cratera_larva": {
+  "pasta": "sprites/inimigos_larva/cratera_larva",
+  "quadro": [
+   120,
+   76
+  ],
+  "ancora": [
+   55.2,
+   42.6
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
  }
 }

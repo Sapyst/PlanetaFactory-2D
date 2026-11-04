@@ -467,7 +467,7 @@ func atualizar_fabrica() -> void:
 				var nome: String = _mapa.estruturas[id].nome
 				if _mapa.estruturas[id].get("sobre_agua", false):
 					continue                              # sobre a água: plataforma com pilares, o leito fica como está
-				if nome == "ninho_aranha" or Registro.estruturas.get(nome, {}).has("requer_jazida"):
+				if Colonia.eh_toca(nome) or Registro.estruturas.get(nome, {}).has("requer_jazida"):
 					_sem_grama_em(base + Vector2i(i - 1, j - 1), i, j, plano, valor, alvo)
 					continue                              # sem piso (o minério/chão fica à mostra), mas a vegetação baixa sai
 				var nv_e := _mapa.gerador.nivel(base + Vector2i(i - 1, j - 1))

@@ -254,6 +254,7 @@
  "pilar_segmento":    {"grupo": "pilar", "vida": 80},
  "pilar_topo":        {"grupo": "pilar", "vida": 80},
  "ninho_aranha":      {"grupo": "inimigo", "vida": 400},
+ "cratera_larva":     {"grupo": "inimigo", "vida": 350},
  "nucleo":            {"grupo": "poste", "sem_fio": true, "raio_fio": 12, "raio_ligacao": 7, "energia_kw": -260, "inesgotavel": true, "vida": 3000,
                        "_energia": "núcleo: pouca energia própria, sem cabo, para as primeiras máquinas em volta (até 7 m da borda)"}
 }
