@@ -37,6 +37,9 @@ var silo: SiloLancamento                ## silos de lançamento (foguete de prol
 var agua: AguaJogo                     ## buracos/canais escavados que enchem a partir de rio/lago
 var colonia: Colonia
 var infestacao: Infestacao               ## teia e sujeira no chão em volta das tocas (cresce com a idade da toca)
+var passaros: Passaros                   ## pássaros nativos (patch fauna): bandos, fuga, sementes que reflorestam
+var _desenho_passaros: DesenhoPassaros
+var _raios_passaros := 0
 var _teia_versao := -1
 var _teia_chunks: Dictionary = {}        ## chunk → nó DesenhoChunk que já recebeu a infestação (o nó pode ser refeito)
 var _t_teia := 0.0
@@ -129,6 +132,7 @@ func _ready() -> void:
 	clima.tempo_real = true                    # estações: 7 dias reais cada
 	colonia = Colonia.new(mapa, poluicao, semente)
 	infestacao = Infestacao.new(colonia, semente)
+	passaros = Passaros.new(gerador, mapa, ambiente, colonia, infestacao, semente + 41)
 	pesquisa = Pesquisa.new(modo == "demo")
 	fabrica = Fabrica.new(mapa)
 	ambiente = AmbienteVivo.new(gerador, mapa, semente)
@@ -428,6 +432,9 @@ func modal_aberto() -> bool:
 
 
 func _criar_desenhos() -> void:
+	_desenho_passaros = DesenhoPassaros.new()
+	_desenho_passaros.passaros = passaros
+	add_child(_desenho_passaros)
 	_desenho_colonia = DesenhoColonia.new()
 	_desenho_colonia.colonia = colonia
 	_desenho_colonia.mapa = mapa
@@ -1596,6 +1603,19 @@ func _tick_mundo(dt: float) -> void:
 		elif ev.tipo == "arvore_dissolvida":
 			_dissolver(ev.tile, ev.nome, ev.tiles, bool(ev.silencioso))
 	infestacao.eventos.clear()
+	# pássaros: tiro, explosão e raio espantam; o foco é onde a câmera olha
+	for ev in colonia.eventos:
+		if ev.tipo == "tiro":
+			passaros.assustar(ev.de, 14.0)
+		elif ev.tipo == "explosao":
+			passaros.assustar(ev.pos, 16.0 + 6.0 * float(ev.get("raio", 1.0)))
+	while _raios_passaros < raios.total:
+		_raios_passaros += 1
+		if not raios.quedas.is_empty():
+			passaros.assustar(raios.quedas[-1].get("pos", Vector2.ZERO), 30.0)
+	passaros.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z), clima)
+	_desenho_passaros.efeitos_de(passaros.eventos)
+	passaros.eventos.clear()
 	_eventos.append_array(colonia.eventos)
 	varredura.tick(dt)                                  # sensores revelam chunks (e os ninhos deles) com energia
 	varredura.eventos.clear()

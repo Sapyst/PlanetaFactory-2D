@@ -17,6 +17,7 @@ var recursos: Dictionary = {}     ## nomes e cores da visão de recursos
 var ambiente: Dictionary = {}     ## sujeira, óleo, despejo, fogo, tufão
 var luzes: Dictionary = {}        ## luz de cada estrutura à noite, cor da energia por rede, faíscas dos cabos
 var fluidos: Dictionary = {}      ## fluidos dos canos (nome, serve_como)
+var fauna: Dictionary = {}        ## pássaros (patch fauna): espécies, bandos, medos, sementes, estações
 
 
 func _init() -> void:
@@ -36,6 +37,7 @@ func carregar(pasta := "res://dados") -> void:
 	ambiente = _ler(pasta + "/ambiente.json")
 	luzes = _ler(pasta + "/luzes.json")
 	fluidos = _sem_notas(_ler(pasta + "/fluidos.json"))
+	fauna = _ler(pasta + "/fauna.json")
 	var regras := _sem_notas(_ler(pasta + "/estruturas.json"))
 	estruturas.clear()
 	for nome in regras:

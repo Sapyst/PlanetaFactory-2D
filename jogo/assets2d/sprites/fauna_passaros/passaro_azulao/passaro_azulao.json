@@ -1,0 +1,46 @@
+{
+ "nome": "passaro_azulao",
+ "categoria": "fauna/passaros",
+ "quadro": [
+  26,
+  24
+ ],
+ "ancora": [
+  13.0,
+  16.3
+ ],
+ "fps": 12,
+ "quadros": 8,
+ "linhas": 16,
+ "tipo_linha": "direcao",
+ "angulos_graus": [
+  0.0,
+  22.5,
+  45.0,
+  67.5,
+  90.0,
+  112.5,
+  135.0,
+  157.5,
+  180.0,
+  202.5,
+  225.0,
+  247.5,
+  270.0,
+  292.5,
+  315.0,
+  337.5
+ ],
+ "variantes": [
+  "voo",
+  "planar",
+  "parado",
+  "bicando",
+  "pousar"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "passaro",
+ "avisos": []
+}

@@ -813,6 +813,108 @@ def faisca(rng):
 
 # ==============================================================================
 # nome, função, alvo (dB do pico de curto prazo), laço (s de crossfade; 0 = som único), fade de entrada (s)
+# ==============================================================================
+# FAUNA (patch fauna): cantos por espécie e a revoada
+# ==============================================================================
+def silaba(rng, fs, harm=(1.0, 0.22, 0.06), sopro=0.07, vib=(0.0, 0.0), ataque=0.004, queda=0.02, aspero=0.0):
+    """Sílaba de canto: tom com a curva de frequência `fs` (Hz por amostra), harmônicos fracos, vibrato, um pouco de
+    sopro (ruído na mesma banda) e jitter de altura — a siringe não é um oscilador perfeito."""
+    fs = np.asarray(fs, dtype=float)
+    n = len(fs)
+    t = np.arange(n) / TAXA
+    jit = 1.0 + 0.006 * np.interp(np.arange(n), np.linspace(0, n, 12), rng.standard_normal(12))   # deriva lenta da altura
+    f = fs * jit * (1.0 + vib[1] * np.sin(2 * np.pi * vib[0] * t))
+    x = sum(a * osc(f * (k + 1)) for k, a in enumerate(harm))
+    if aspero > 0.0:                                     # chiado da garganta (canto áspero, grito)
+        x *= 1.0 + aspero * banda(ruido(n, rng), 60, 400) * 3
+    fm = float(np.median(fs))
+    x += sopro * banda(ruido(n, rng), fm * 0.7, fm * 1.4) * 4
+    borda = min(n // 2 - 1, int(0.004 * TAXA))             # rampas de 4 ms (sem estalo no começo/fim da nota)
+    jan = np.ones(n)
+    if borda > 1:
+        r = 0.5 - 0.5 * np.cos(np.linspace(0, np.pi, borda))
+        jan[:borda] = r
+        jan[-borda:] = r[::-1]
+    return x * env(n, ataque, queda, 0.6) * jan
+
+
+def frase(rng, notas, gap_s):
+    """Junta sílabas com pausas (cada uma com o seu volume)."""
+    partes, t0 = [], 0.0
+    for x, vol in notas:
+        partes.append((x, vol, t0))
+        t0 += len(x) / TAXA + gap_s * rng.uniform(0.8, 1.25)
+    return junta(*partes)
+
+
+def pardelo_canto(rng):
+    """Pardelo: dois ou três "tchip" curtos descendo e um "tchrr" chiado no fim (pássaro de bando, conversa)."""
+    notas = []
+    for i in range(rng.integers(2, 4)):
+        f0 = rng.uniform(4300, 5000)
+        notas.append((silaba(rng, varre(f0, f0 * 0.72, rng.uniform(0.05, 0.07), 1.8), (1.0, 0.3, 0.1), 0.1), 1.0))
+    notas.append((silaba(rng, varre(3900, 3500, 0.11), (1.0, 0.4, 0.2), 0.25, (85, 0.06), aspero=0.5), 0.6))
+    return reverb(frase(rng, notas, 0.07), 0.45, 0.14, 7000)
+
+
+def cobrico_canto(rng):
+    """Cobrico: trinado rápido e agudo (notas de 25 ms alternando e subindo), como um canário miúdo."""
+    notas = []
+    base = rng.uniform(5200, 5800)
+    for i in range(rng.integers(10, 16)):
+        f = base * (1.0 + 0.012 * i) * (1.1 if i % 2 else 1.0)
+        notas.append((silaba(rng, varre(f * 0.92, f, 0.026, 0.7), (1.0, 0.15), 0.05, ataque=0.002, queda=0.006), 0.8 + 0.2 * (i % 2)))
+    return reverb(frase(rng, notas, 0.012), 0.45, 0.14, 8000)
+
+
+def azulao_canto(rng):
+    """Azulão: assobio melódico, notas ligadas e cheias com vibrato (frase de 4–5 notas)."""
+    notas = []
+    f = rng.uniform(2300, 2700)
+    for i in range(rng.integers(4, 6)):
+        f1 = f * rng.choice([0.84, 1.12, 1.26, 0.94, 1.19])
+        notas.append((silaba(rng, varre(f, f1, rng.uniform(0.11, 0.2), 0.6), (1.0, 0.12, 0.03), 0.04, (6.5, 0.012),
+                             ataque=0.012, queda=0.04), 1.0))
+        f = min(3800, max(2100, f1))
+    return reverb(frase(rng, notas, 0.035), 0.5, 0.16, 6000)
+
+
+def rubro_canto(rng):
+    """Rubro: "tiú-tiú-tiú" forte e limpo, cada nota descendo (chamado de território)."""
+    notas = []
+    for i in range(rng.integers(3, 5)):
+        f0 = rng.uniform(3600, 4000) * (1 - 0.03 * i)
+        notas.append((silaba(rng, varre(f0, f0 * 0.6, 0.15, 1.4), (1.0, 0.2, 0.05), 0.05, ataque=0.006, queda=0.05), 1.0))
+    return reverb(frase(rng, notas, 0.09), 0.5, 0.15, 6500)
+
+
+def planador_grito(rng):
+    """Planador-cinza: grito alto e longo que cai ("kiii-aaa"), áspero, ecoando (ave grande, longe)."""
+    d = rng.uniform(0.8, 1.05)
+    f0 = rng.uniform(3000, 3300)
+    fs = np.concatenate([varre(f0 * 0.85, f0, 0.12, 0.5), varre(f0, f0 * 0.62, d - 0.12, 1.6)])
+    x = silaba(rng, fs, (1.0, 0.45, 0.25, 0.12), 0.12, (11, 0.01), ataque=0.03, queda=0.25, aspero=0.35)
+    return reverb(x, 1.1, 0.3, 5000)
+
+
+def revoada(rng):
+    """Bando levantando voo: batidas de asa (pulsos de ruído largo a ~16/s por pássaro) de vários pássaros
+    desencontrados, que sobem e somem; um ou dois piados de susto."""
+    d = 1.3
+    n = int(d * TAXA)
+    t = tempo(d)
+    x = np.zeros(n)
+    for k in range(int(rng.integers(5, 9))):
+        t0 = rng.uniform(0.0, 0.25)
+        bat = rng.uniform(13, 19)
+        fase = (t - t0) * bat
+        pulso = np.where(t > t0, np.clip(np.sin(2 * np.pi * fase), 0, 1) ** 6, 0.0)
+        some = np.clip(1.0 - (t - t0) / rng.uniform(0.7, 1.1), 0, 1) ** 1.5
+        x += banda(rosa(n, rng), rng.uniform(500, 900), rng.uniform(3500, 6000)) * pulso * some * rng.uniform(0.6, 1.0)
+    piado = silaba(rng, varre(5000, 3600, 0.06, 1.5), (1.0, 0.3), 0.1)
+    return reverb(junta((x, 1.0, 0), (piado, 0.35, rng.uniform(0.05, 0.3))), 0.4, 0.12, 6000)
+
+
 SONS = [
     ('clique', clique, -22, 0, 0.0005), ('construir', construir, -15, 0, 0.0005), ('remover', remover, -17, 0, 0.0005),
     ('alerta', alerta, -14, 0, 0.005), ('pesquisa', pesquisa, -15, 0, 0.001), ('derrota', derrota, -14, 0, 0.01),
@@ -832,10 +934,14 @@ SONS = [
     ('chuva', chuva, -20, 0.5, 0), ('trovao', trovao, -11, 0, 0.0005), ('vento_forte', vento_forte, -18, 0.6, 0),
     ('aranha_passo', aranha_passo_e, -30, 0, 0.0003), ('aranha_morre', aranha_morre_b, -14, 0, 0.003),
     ('reentrada', reentrada, -12, 0, 0.3), ('fogo', fogo, -21, 0.4, 0), ('faisca', faisca, -18, 0, 0.0005),
+    ('pardelo_canto', pardelo_canto, -24, 0, 0.002), ('cobrico_canto', cobrico_canto, -25, 0, 0.002),
+    ('azulao_canto', azulao_canto, -23, 0, 0.004), ('rubro_canto', rubro_canto, -23, 0, 0.003),
+    ('planador_grito', planador_grito, -21, 0, 0.01), ('revoada', revoada, -18, 0, 0.003),
 ]
 
 
-VARIACOES = {'aranha_passo': 4}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
+VARIACOES = {'aranha_passo': 4, 'pardelo_canto': 3, 'cobrico_canto': 3, 'azulao_canto': 3, 'rubro_canto': 2,
+             'planador_grito': 2, 'revoada': 2}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
 
 
 if __name__ == '__main__':

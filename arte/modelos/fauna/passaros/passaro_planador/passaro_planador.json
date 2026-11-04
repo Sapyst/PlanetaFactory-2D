@@ -1,0 +1,31 @@
+{
+ "nome": "passaro_planador",
+ "categoria": "fauna/passaros",
+ "tipo": "veiculo",
+ "area": [
+  1,
+  1
+ ],
+ "descricao": "Planador-cinza: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+ "ocupa_canto": false,
+ "partes": [
+  {
+   "nome": "corpo",
+   "pai": null,
+   "pivo": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "portas": [],
+ "tris": 658,
+ "dims": [
+  0.699,
+  2.131,
+  0.319
+ ],
+ "anima": true,
+ "estudo": "estudo_passaro.py"
+}

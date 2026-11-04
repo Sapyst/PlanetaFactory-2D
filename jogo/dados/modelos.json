@@ -2253,6 +2253,166 @@
   "estudo": "estudo_turbina_eolica.py",
   "modelo": "res://assets/modelos/energia/turbina_eolica.glb"
  },
+ "passaro_azulao": {
+  "nome": "passaro_azulao",
+  "categoria": "fauna/passaros",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Azulão: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 594,
+  "dims": [
+   0.35,
+   0.754,
+   0.161
+  ],
+  "anima": true,
+  "estudo": "estudo_passaro.py",
+  "modelo": "res://assets/modelos/fauna/passaros/passaro_azulao.glb"
+ },
+ "passaro_cobrico": {
+  "nome": "passaro_cobrico",
+  "categoria": "fauna/passaros",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Cobrico: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 578,
+  "dims": [
+   0.246,
+   0.539,
+   0.117
+  ],
+  "anima": true,
+  "estudo": "estudo_passaro.py",
+  "modelo": "res://assets/modelos/fauna/passaros/passaro_cobrico.glb"
+ },
+ "passaro_pardelo": {
+  "nome": "passaro_pardelo",
+  "categoria": "fauna/passaros",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Pardelo: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 610,
+  "dims": [
+   0.398,
+   0.671,
+   0.147
+  ],
+  "anima": true,
+  "estudo": "estudo_passaro.py",
+  "modelo": "res://assets/modelos/fauna/passaros/passaro_pardelo.glb"
+ },
+ "passaro_planador": {
+  "nome": "passaro_planador",
+  "categoria": "fauna/passaros",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Planador-cinza: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 658,
+  "dims": [
+   0.699,
+   2.131,
+   0.319
+  ],
+  "anima": true,
+  "estudo": "estudo_passaro.py",
+  "modelo": "res://assets/modelos/fauna/passaros/passaro_planador.glb"
+ },
+ "passaro_rubro": {
+  "nome": "passaro_rubro",
+  "categoria": "fauna/passaros",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Rubro: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 594,
+  "dims": [
+   0.378,
+   0.629,
+   0.131
+  ],
+  "anima": true,
+  "estudo": "estudo_passaro.py",
+  "modelo": "res://assets/modelos/fauna/passaros/passaro_rubro.glb"
+ },
  "aranha_corpo": {
   "nome": "aranha_corpo",
   "categoria": "inimigos/aranha",

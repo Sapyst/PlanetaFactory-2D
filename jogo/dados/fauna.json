@@ -1,0 +1,18 @@
+{
+ "_nota": "Patch fauna: pássaros nativos. Bandos vivem em volta de onde a câmera olha (raio_vida tiles), só onde a natureza está viva (saude_min); fogem de fogo, rajada, trovão, tiro, explosão e monstros; comem em área saudável e levam semente, que cai em chão morto e vira muda (AmbienteVivo.plantar_perto). estacoes = quanto de cada espécie fica em [primavera, verão, outono, inverno] (o resto migrou).",
+ "raio_vida": 55,
+ "bandos_max": 7,
+ "bando_max_n": 40,
+ "junta_dist": 6.0,
+ "saude_min": 0.25,
+ "nasce_s": 6.0,
+ "medo": {"fogo": 13, "monstro": 9, "rajada": 1.15, "construcao": 5, "susto_min": 6},
+ "semente": {"chance_s": 0.55, "por_bando": 2, "raio": 2.5},
+ "especies": {
+  "pardelo":  {"peso": 4.0, "bando": [12, 28], "vel": 6.5, "alt": [4.0, 8.0], "pousa_s": [10, 26], "canto": "pardelo_canto", "canto_s": 5.0, "estacoes": [1.0, 1.0, 1.0, 0.8], "sementes": true},
+  "cobrico":  {"peso": 2.0, "bando": [8, 18], "vel": 7.0, "alt": [4.0, 7.0], "pousa_s": [8, 20], "canto": "cobrico_canto", "canto_s": 6.0, "estacoes": [1.0, 1.0, 1.0, 0.4], "sementes": true},
+  "azulao":   {"peso": 1.5, "bando": [3, 7], "vel": 6.0, "alt": [5.0, 9.0], "pousa_s": [14, 30], "canto": "azulao_canto", "canto_s": 8.0, "estacoes": [1.0, 1.0, 0.5, 0.0], "sementes": true},
+  "rubro":    {"peso": 1.0, "bando": [2, 5], "vel": 6.0, "alt": [4.0, 8.0], "pousa_s": [14, 34], "canto": "rubro_canto", "canto_s": 9.0, "estacoes": [0.7, 1.0, 1.0, 0.3], "sementes": true},
+  "planador": {"peso": 0.9, "bando": [1, 2], "vel": 7.5, "alt": [18.0, 28.0], "giro": [10.0, 16.0], "canto": "planador_grito", "canto_s": 22.0, "estacoes": [1.0, 1.0, 1.0, 1.0], "sementes": false, "max": 2}
+ }
+}

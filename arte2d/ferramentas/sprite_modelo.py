@@ -10,7 +10,11 @@ TODOS = json.load(open(os.path.join(JOGO, 'dados', 'modelos.json')))
 ARANHA = NOME == 'aranha_animada'          # aranha do jogo: corpo + 6 pernas (fêmur, tíbia) posadas como no aranha.gd
 LARVA = NOME in ('larva_acida', 'cratera_larva')   # larva e cratera: montadas pelo estudo (arte/estudos/estudo_larva.py)
 ESTUDO_LARVA = os.path.join(JOGO, '..', 'arte', 'estudos', 'estudo_larva.py')
-if LARVA:
+PASSARO = NOME.startswith('passaro_')         # pássaros (patch fauna): montados pelo estudo (arte/estudos/estudo_passaro.py)
+ESTUDO_PASSARO = os.path.join(JOGO, '..', 'arte', 'estudos', 'estudo_passaro.py')
+if PASSARO:
+    M = {'nome': NOME, 'categoria': 'fauna/passaros', 'tipo': 'veiculo', 'partes': []}
+elif LARVA:
     M = {'nome': NOME, 'categoria': 'inimigos/larva', 'tipo': 'veiculo' if NOME == 'larva_acida' else 'estrutura', 'partes': []}
 else:
     M = dict(TODOS['aranha_montada'], nome=NOME) if ARANHA else TODOS[NOME]
@@ -57,6 +61,25 @@ if ARANHA:
         for lista, rot in ((AR_FEMUR, 'ar_femur%d'), (AR_TIBIA, 'ar_tibia%d')):
             c = lista[0].copy(); c.data = lista[0].data.copy(); c.name = rot % k
             sc.collection.objects.link(c); lista.append(c)
+elif PASSARO:
+    # o estudo monta todos; fica só o pássaro da espécie (o "<espécie>_voo"), na origem, sem giro
+    _argv = sys.argv
+    sys.argv = [sys.argv[0], '--python', ESTUDO_PASSARO, '--', 'nada']
+    sys.path.insert(0, os.path.dirname(ESTUDO_PASSARO))
+    NS_P = {'__name__': '__main__', '__file__': ESTUDO_PASSARO}
+    exec(compile(open(ESTUDO_PASSARO, encoding='utf-8').read(), ESTUDO_PASSARO, 'exec'), NS_P)
+    sys.argv = _argv
+    sc = bpy.context.scene
+    ARM_P = sc.objects[NOME.split('_', 1)[1] + '_voo']
+    for o in list(sc.objects):
+        if not (o is ARM_P or o.parent is ARM_P):
+            bpy.data.objects.remove(o, do_unlink=True)
+    ARM_P.animation_data_clear()
+    ARM_P.location = (0, 0, 0)
+    ARM_P.rotation_euler = (0, 0, 0)
+    ARM_P.scale = (0.75, 0.75, 0.75)          # = DesenhoPassaros.ESCALA (o tamanho do pássaro no jogo)
+    bpy.context.view_layer.update()           # (senão o pivô abaixo herda a posição antiga, da cena do estudo)
+    OSSOS = list(ARM_P.pose.bones)
 elif LARVA:
     # o estudo monta a cena (materiais, esqueleto, poses); aqui fica só a peça pedida, na origem
     _argv = sys.argv
@@ -143,6 +166,8 @@ if GRUPO == 'drones' and M.get('tipo') == 'veiculo':               # drone: 8 di
         VARIANTES = ['base', 'tiro']
 if NOME == 'aranha_montada':
     DIRECOES = 8; ROTS = [0]
+if PASSARO:                                 # 16 direções; voo, planar, parado, bicando e pousar (ao contrário = decolar), 8 quadros
+    DIRECOES = 16; ROTS = [0]; QUADROS = 8; VARIANTES = ['voo', 'planar', 'parado', 'bicando', 'pousar']
 if NOME == 'larva_acida':                   # 16 direções; andar (laço: a massa contrai e estica) e cuspe, 12 quadros cada
     DIRECOES = 16; ROTS = [0]; QUADROS = 12; VARIANTES = ['andar', 'cuspe']
 if ARANHA:                                  # 16 direções; andar (laço), ataque (laço) e morte (uma vez), 12 quadros cada
@@ -365,7 +390,7 @@ def converter(m):
     s2g = nt.nodes.new('ShaderNodeShaderToRGB'); nt.links.new(gl.outputs[0], s2g.inputs[0])
     rg = nt.nodes.new('ShaderNodeValToRGB'); rg.color_ramp.interpolation = 'CONSTANT'
     rg.color_ramp.elements[0].color = (0, 0, 0, 1); rg.color_ramp.elements[1].position = 0.55
-    rg.color_ramp.elements[1].color = (0, 0, 0, 1) if GRUPO == 'mapa' or LARVA else (0.32, 0.30, 0.27, 1)   # natureza não brilha como metal
+    rg.color_ramp.elements[1].color = (0, 0, 0, 1) if GRUPO == 'mapa' or LARVA or PASSARO else (0.32, 0.30, 0.27, 1)   # natureza não brilha como metal
     nt.links.new(s2g.outputs['Color'], rg.inputs['Fac'])
     soma = nt.nodes.new('ShaderNodeMix'); soma.data_type = 'RGBA'; soma.blend_type = 'ADD'; soma.inputs['Factor'].default_value = 1.0
     nt.links.new(mult.outputs['Result'], soma.inputs['A']); nt.links.new(rg.outputs['Color'], soma.inputs['B'])
@@ -569,6 +594,11 @@ def pose_aranha(q, variante, rumo):
 def pose(q, variante, linha):
     """q = quadro (0..QUADROS-1), linha = rotação/direção."""
     u = q / QUADROS                                             # 0..1 no laço
+    if PASSARO:
+        PIVO.matrix_basis = Matrix.Rotation(2 * math.pi * linha / DIRECOES, 4, 'Z')
+        {'voo': NS_P['pose_voo'], 'planar': NS_P['pose_planar'], 'parado': NS_P['pose_parado'],
+         'bicando': NS_P['pose_bicar'], 'pousar': lambda a, u: NS_P['pose_pousar'](a, q / (QUADROS - 1))}[variante](ARM_P, q / QUADROS)
+        return
     if NOME == 'larva_acida':
         PIVO.matrix_basis = Matrix.Rotation(2 * math.pi * linha / DIRECOES, 4, 'Z')
         arm = bpy.data.objects['larva']
@@ -652,9 +682,13 @@ for var in VARIANTES:
                 P = (np.array(mw)[:3, :3] @ P.T).T + np.array(mw.translation)
                 if CORTA_CHAO:
                     P[:, 2] = np.maximum(P[:, 2], 0.0)       # o que fica embaixo do chão não aparece
-                for pts in (P, P - np.outer(np.maximum(P[:, 2], 0) / max(DIR_SOL.z, 0.2), np.array(DIR_SOL))):
+                # pássaro: só ele (a sombra das asas erguidas no ar seria de metros; no jogo a sombra vai para o chão)
+                for pts in ((P,) if PASSARO else (P, P - np.outer(np.maximum(P[:, 2], 0) / max(DIR_SOL.z, 0.2), np.array(DIR_SOL)))):
                     xs.extend([float((pts @ np.array(ex)).min()), float((pts @ np.array(ex)).max())])
                     ys.extend([float((pts @ np.array(ey)).min()), float((pts @ np.array(ey)).max())])
+if os.environ.get('DBG_ENQ'):
+    print('ENQ', min(xs), max(xs), min(ys), max(ys), [o.name for o in malhas])
+    sys.exit(0)
 MARG = 3
 W = int(math.ceil((max(xs) - min(xs)) / PX)) + 2 * MARG
 H = int(math.ceil((max(ys) - min(ys)) / PX)) + 2 * MARG
@@ -720,7 +754,7 @@ for i, (var, li, q) in enumerate(SEQ):
     fr = 1000 + i
     for o in animados:
         o.keyframe_insert('location', frame=fr); o.keyframe_insert('rotation_quaternion', frame=fr); o.keyframe_insert('scale', frame=fr)
-    for pb in (OSSOS if NOME == 'larva_acida' else []):
+    for pb in (OSSOS if NOME == 'larva_acida' or PASSARO else []):
         pb.keyframe_insert('location', frame=fr); pb.keyframe_insert('rotation_euler', frame=fr); pb.keyframe_insert('scale', frame=fr)
     for no, _, _ in BRILHOS:
         no.inputs['Strength'].keyframe_insert('default_value', frame=fr)
@@ -835,7 +869,7 @@ meta = {'nome': NOME, 'categoria': CAT, 'quadro': [W, H], 'ancora': ANCORA, 'fps
         'linhas': LINHAS, 'tipo_linha': ('direcao' if DIRECOES else 'rotacao'),
         'angulos_graus': [round(360 * li / DIRECOES, 2) for li in range(DIRECOES)] if DIRECOES else [90 * r for r in ROTS],
         'variantes': VARIANTES, 'metros_por_pixel': PX, 'camera_elevacao_graus': 35, 'cabos': len(CABOS),
-        'animacao': ('larva' if NOME == 'larva_acida' else 'aranha' if ARANHA else 'trabalho' if acao is not None else 'braco' if BRACO else 'pecas' if QUADROS > 1 else 'parado'),
+        'animacao': ('passaro' if PASSARO else 'larva' if NOME == 'larva_acida' else 'aranha' if ARANHA else 'trabalho' if acao is not None else 'braco' if BRACO else 'pecas' if QUADROS > 1 else 'parado'),
         'avisos': avisos}
 if BOCA:
     meta['boca'] = BOCA

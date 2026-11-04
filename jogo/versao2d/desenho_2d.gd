@@ -31,6 +31,7 @@ var _moveis: Dictionary = {}       ## chave → par (trens, ninhos, drones)
 var _aranhas: Dictionary = {}      ## id → {p, fase, ult, rumo}: aranha viva (sprite "aranha_animada")
 var _mortas: Array[Dictionary] = [] ## aranha morrendo: {p, pos, linha, t}
 var _afundando: Dictionary = {}     ## nó 3D da árvore dissolvendo (mundo._dissolver) → par de sprites
+var _passaros: Dictionary = {}      ## nó 3D do pássaro (DesenhoPassaros) → par de sprites "passaro_<espécie>"
 const ARVORE_MORTA := "arvore_morta"
 const COR_CORROIDA := Color(0.92, 0.86, 0.72)   ## madeira desbotada pelo ácido (puxa para a terra da cratera)
 const ARANHA := "aranha_animada"
@@ -110,6 +111,7 @@ func _process(delta: float) -> void:
 	_sincronizar_moveis()
 	_sincronizar_aranhas(delta)
 	_sincronizar_afundando()
+	_sincronizar_passaros()
 	_sincronizar_fios()
 	_sincronizar_fantasma()
 	_sincronizar_portas()
@@ -592,6 +594,55 @@ func _sincronizar_afundando() -> void:
 		if not vivos.has(no):
 			_soltar(_afundando[no])
 			_afundando.erase(no)
+
+
+## Pássaros: cada pássaro 3D (DesenhoPassaros) vira o sprite da espécie, na mesma posição, direção e animação
+## (voo, planar, parado, bicando; pousar e decolar pelo andamento da animação). No ar, fica por cima de tudo e a
+## sombra fica no chão, mais clara quanto mais alto ele voa.
+func _sincronizar_passaros() -> void:
+	var dp = mundo.get("_desenho_passaros")
+	if dp == null:
+		return
+	var vistos := {}
+	for id in dp._bandos:
+		var esp := ""
+		var b: Dictionary = mundo.passaros.bandos.get(id, {})
+		if b.is_empty():
+			continue
+		esp = "passaro_" + String(b.especie)
+		if not Catalogo2D.tem(esp):
+			continue
+		for p3 in dp._bandos[id]:
+			var no: Node3D = p3.no
+			if not is_instance_valid(no):
+				continue
+			vistos[no] = true
+			if not _passaros.has(no):
+				var par := _par(esp)
+				if par.is_empty():
+					continue
+				_passaros[no] = par
+			var pa: Dictionary = _passaros[no]
+			var acao := String(p3.acao)
+			var variante := acao.trim_suffix("<")
+			if not variante in ["voo", "planar", "parado", "bicando", "pousar"]:
+				variante = "voo"
+			var anim: AnimationPlayer = p3.anim
+			var q := 0
+			if anim != null and anim.current_animation != "" and anim.current_animation_length > 0.0:
+				q = clampi(int(anim.current_animation_position / anim.current_animation_length * 8.0), 0, 7)
+			var linha := Catalogo2D.linha_do_angulo(pa.m, no.rotation.y)
+			var pos := no.global_position
+			_por(pa, pos, linha, q, variante)
+			var alt := pos.y - Grade.altura_em(Vector2(pos.x, -pos.z))
+			var alto := Camera2DJogo.projetar(pos) - Camera2DJogo.projetar(Vector3(pos.x, pos.y - alt, pos.z))
+			(pa.som as Sprite2D).offset -= alto                       # a sombra fica no chão
+			(pa.som as Sprite2D).modulate.a = clampf(1.0 - alt / 25.0, 0.25, 1.0)
+			(pa.spr as Sprite2D).z_index = 20 if alt > 1.0 else 0     # voando: por cima das árvores e construções
+	for no in _passaros.keys():
+		if not vistos.has(no):
+			_soltar(_passaros[no])
+			_passaros.erase(no)
 
 
 ## Drone de reparo trabalhando numa estrutura: feixe de solda vermelho e faíscas, de tempos em tempos.

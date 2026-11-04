@@ -5136,5 +5136,125 @@
   "animacao": "parado",
   "avisos": 0,
   "luz": null
+ },
+ "passaro_pardelo": {
+  "pasta": "sprites/fauna_passaros/passaro_pardelo",
+  "quadro": [
+   30,
+   30
+  ],
+  "ancora": [
+   15.0,
+   31.5
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "voo",
+   "planar",
+   "parado",
+   "bicando",
+   "pousar"
+  ],
+  "animacao": "passaro",
+  "avisos": 0,
+  "luz": null
+ },
+ "passaro_cobrico": {
+  "pasta": "sprites/fauna_passaros/passaro_cobrico",
+  "quadro": [
+   22,
+   20
+  ],
+  "ancora": [
+   11.0,
+   13.2
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "voo",
+   "planar",
+   "parado",
+   "bicando",
+   "pousar"
+  ],
+  "animacao": "passaro",
+  "avisos": 0,
+  "luz": null
+ },
+ "passaro_azulao": {
+  "pasta": "sprites/fauna_passaros/passaro_azulao",
+  "quadro": [
+   26,
+   24
+  ],
+  "ancora": [
+   13.0,
+   16.3
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "voo",
+   "planar",
+   "parado",
+   "bicando",
+   "pousar"
+  ],
+  "animacao": "passaro",
+  "avisos": 0,
+  "luz": null
+ },
+ "passaro_rubro": {
+  "pasta": "sprites/fauna_passaros/passaro_rubro",
+  "quadro": [
+   24,
+   22
+  ],
+  "ancora": [
+   12.0,
+   14.6
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "voo",
+   "planar",
+   "parado",
+   "bicando",
+   "pousar"
+  ],
+  "animacao": "passaro",
+  "avisos": 0,
+  "luz": null
+ },
+ "passaro_planador": {
+  "pasta": "sprites/fauna_passaros/passaro_planador",
+  "quadro": [
+   62,
+   54
+  ],
+  "ancora": [
+   31.0,
+   37.9
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "voo",
+   "planar",
+   "parado",
+   "bicando",
+   "pousar"
+  ],
+  "animacao": "passaro",
+  "avisos": 0,
+  "luz": null
  }
 }
