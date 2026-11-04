@@ -230,8 +230,14 @@ paisagem, assinado com a chave de depuração em ~/.local/share/archivys_keys). 
 teste com OpenGL; o Vulkan do emulador sem janela não apresenta quadros): menu, jogo novo e construir com o dedo ok.
 
 ## Som
-`ferramentas/gerar_sons.py` sintetiza os efeitos e a trilha (assets/sons); `nucleo/som.gd` toca (posicionado no
-mundo, com intervalo mínimo por som).
+`ferramentas/gerar_sons.py` sintetiza os efeitos (assets/sons; precisa de numpy e scipy). Cada som é feito em camadas
+(transiente, corpo e cauda), com metal batido por ruído em ressonâncias amortecidas, granulado para terra e chapa
+amassando, reverberação curta e volume calibrado; o peso fica entre 150 Hz e 6 kHz, para soar no celular.
+`nucleo/som.gd` toca:
+- pontual, posicionado no mundo, com intervalo mínimo e limite de vozes por som;
+- variações: `nome__2.wav`, `__3`… são sorteadas a cada toque (o passo da aranha tem 4);
+- máquinas, esteira e trens em laço contínuo (`loop_maquina`), renovado pelo mundo a cada 0,35 s: entra e sai com
+  fade, começa num ponto ao acaso do laço; só as 6 máquinas mais perto da câmera tocam.
 
 ## Fábrica do jogador
 Tudo que se constrói funciona — a mini-fábrica da demo é só um mapa pronto rodando na mesma `Fabrica`.

@@ -65,7 +65,7 @@ sprites pixel art em vez de 3D. A versão 3D continua em [Sapyst/PlanetaFactory]
 2. `python3 jogo/ferramentas/gerar_arvore.py` — refaz `jogo/dados/arvore.json` depois de mexer em `docs/ARVORE_TECNOLOGIA.mmd`/`.md`.
    `jogo/ferramentas/testar.sh` — importa e roda todos os testes do jogo sem janela.
 3. `godot --path jogo --write-movie /tmp/q.png --fixed-fps 30 --quit-after 70 -- camera X Z DIST` — foto real.
-4. `python3 jogo/ferramentas/gerar_sons.py` — sintetiza os sons; `python3 jogo/ferramentas/gerar_nuvens.py` — mapa das nuvens.
+4. `python3 jogo/ferramentas/gerar_sons.py` — sintetiza os sons (precisa de numpy e scipy); `python3 jogo/ferramentas/gerar_nuvens.py` — mapa das nuvens.
 5. `godot --headless --path jogo --export-debug "Android" jogo/export/PlanetaFactory-0.14.0.apk` — APK.
 6. `... -- camera -3 2 11 roteiro construir` (ou `roteiro toque`) — teste visual da construção com cliques/toques injetados.
 7. `godot --path jogo --write-movie /tmp/v/q.png --fixed-fps 30 -- roteiro mostruario voo` — regrava o voo do mostruário

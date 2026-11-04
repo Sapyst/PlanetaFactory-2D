@@ -1082,38 +1082,54 @@ func _process(delta: float) -> void:
 	_atualizar_chunks()
 
 
-## Emite sons de máquinas trabalhando, esteiras e trens próximos à câmera, respeitando limites de vozes.
+## Sons contínuos de máquinas trabalhando, da esteira e dos trens perto da câmera: cada um é um laço (Som.loop_maquina)
+## renovado aqui a cada 0,35 s; quando a máquina para ou sai do alcance, o laço some com fade. Só as 6 máquinas mais
+## perto tocam (máquina igual soa igual; muitas juntas viram ruído).
+const MAQ_SONS := [["broca", "maq_broca", -5.0], ["fornalha", "maq_fornalha", -6.0], ["montadora", "maq_montadora", -5.0]]
+const MAQ_PERTO := 6
+
+
 func _atualizar_sons_mundo() -> void:
 	if DisplayServer.get_name() == "headless" or camera == null:
 		return
 	var p_cam: Vector3 = camera.alvo
+	var perto: Array = []
 	for id in fabrica.maquinas:
 		if not fabrica.trabalhando(id):
 			continue
 		var e: Dictionary = mapa.estruturas.get(id, {})
 		if e.is_empty():
 			continue
-		var p := Grade.ponto_mundo(Grade.centro_da_area(e.minimo, e.area, e.rot))
-		if p.distance_to(p_cam) > 55.0:
-			continue
-		var nome: String = e.nome
-		if nome in ["broca", "broca_nucleo"]:
-			Som.tocar_maquina("maq_broca", p, -5.0)
-		elif nome in ["fornalha", "fornalha_eletrica"]:
-			Som.tocar_maquina("maq_fornalha", p, -6.0)
-		elif nome in ["montadora", "montadora_2", "montadora_quantica"]:
-			Som.tocar_maquina("maq_montadora", p, -5.0)
-	for c in fabrica.caminhos:
-		if c.esteira.itens.size() > 0 and c.tiles.size() > 0:       # caminho: {esteira, tiles, entra, sai}
-			var p_est := Grade.centro_mundo(c.tiles[0])
-			if p_est.distance_to(p_cam) <= 45.0:
-				Som.tocar_maquina("maq_esteira", p_est, -9.0)
+		for m in MAQ_SONS:
+			if String(e.nome).begins_with(m[0]):
+				var p := Grade.ponto_mundo(Grade.centro_da_area(e.minimo, e.area, e.rot))
+				var d := p.distance_to(p_cam)
+				if d <= 55.0:
+					perto.append([d, id, p, m[1], m[2]])
 				break
-	for t in trens:
+	perto.sort_custom(func(a, b): return a[0] < b[0])
+	for k in mini(perto.size(), MAQ_PERTO):
+		var m: Array = perto[k]
+		Som.loop_maquina("maq%d" % m[1], m[3], m[2], m[4])
+	var melhor := INF                                           # esteira: a mais perto que está levando item
+	var p_est := Vector3.ZERO
+	for c in fabrica.caminhos:
+		if c.esteira.itens.size() == 0:
+			continue
+		for t in c.tiles:
+			var pt := Grade.centro_mundo(t)
+			var d := pt.distance_squared_to(p_cam)
+			if d < melhor:
+				melhor = d
+				p_est = pt
+	if melhor <= 45.0 * 45.0:
+		Som.loop_maquina("esteira", "maq_esteira", p_est, -9.0, 45.0)
+	for i in trens.size():
+		var t = trens[i]
 		if absf(t.v) > 0.15 and t.acum.size() > 1:             # v = velocidade (m/s); acum vazio = sem trilho
 			var pt := Grade.ponto_mundo(t.ponto_em(t.s).pos)
 			if pt.distance_to(p_cam) <= 55.0:
-				Som.tocar_maquina("trem_trilho", pt, -5.0)
+				Som.loop_maquina("trem%d" % i, "trem_trilho", pt, -5.0)
 
 
 ## Distância e altura do pulso nas duas pontas do braço: esteira/chão baixo; baú/máquina mais alto e um pouco antes

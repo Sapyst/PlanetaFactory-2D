@@ -77,6 +77,11 @@ var _ultimo: Dictionary = {}
 var _pool2d: Array[AudioStreamPlayer] = []
 var _pool3d: Array[AudioStreamPlayer3D] = []
 var _loops_ambiente: Dictionary = {}
+var _loops_maq: Dictionary = {}       ## chave → {p: AudioStreamPlayer3D, visto: float, vol: float}: máquina trabalhando em laço
+var _wav_laco: Dictionary = {}        ## nome → cópia do som com laço ligado
+const MAQ_ENTRA := 0.25               ## s de fade quando a máquina começa
+const MAQ_SAI := 0.6                  ## s de fade quando ela para (ou sai do alcance)
+const MAQ_ESQUECE := 0.9              ## s sem ser renovado = parou
 
 
 func _init() -> void:
@@ -90,14 +95,36 @@ func _ready() -> void:
 	_criar_pools()
 
 
+## Variações do mesmo som ("aranha_passo__2.wav", "__3"…): cada toque sorteia uma (o passo não vira metralhadora).
+var _variantes: Dictionary = {}       ## nome → Array[AudioStream] (só os que têm mais de um arquivo)
+
+
 func _carregar_sons() -> void:
 	var dir := "res://assets/sons"
+	var vistos := {}
 	for f in DirAccess.get_files_at(dir):
-		var nome := f.get_basename()
-		if f.ends_with(".wav") and not _sons.has(nome):
-			_sons[nome] = load(dir + "/" + f)
-		elif f.ends_with(".wav.import") and not _sons.has(nome.get_basename()):
-			_sons[nome.get_basename()] = load(dir + "/" + nome)
+		var arq := f.trim_suffix(".import")
+		if not arq.ends_with(".wav") or vistos.has(arq):
+			continue
+		vistos[arq] = true
+		var nome := arq.get_basename()
+		var base := nome.get_slice("__", 0)
+		var s: AudioStream = load(dir + "/" + arq)
+		if base == nome:
+			_sons[base] = s
+		elif not _sons.has(base):
+			_sons[base] = s
+		if not _variantes.has(base):
+			_variantes[base] = []
+		(_variantes[base] as Array).append(s)
+	for base in _variantes.keys():
+		if (_variantes[base] as Array).size() < 2:
+			_variantes.erase(base)
+
+
+func _stream(nome: String) -> AudioStream:
+	var vs: Array = _variantes.get(nome, [])
+	return vs.pick_random() if not vs.is_empty() else _sons[nome]
 
 
 func _criar_pools() -> void:
@@ -141,7 +168,7 @@ func tocar(nome: String, onde := Vector3.INF, volume_db := 0.0, bus_custom := ""
 		if p == null:
 			return null
 		_ultimo[nome] = agora
-		p.stream = _sons[nome]
+		p.stream = _stream(nome)
 		p.bus = barramento
 		p.volume_db = volume_db
 		p.pitch_scale = randf_range(0.97, 1.03)
@@ -154,7 +181,7 @@ func tocar(nome: String, onde := Vector3.INF, volume_db := 0.0, bus_custom := ""
 		if p == null:
 			return null
 		_ultimo[nome] = agora
-		p.stream = _sons[nome]
+		p.stream = _stream(nome)
 		p.bus = barramento
 		p.global_position = onde
 		p.unit_size = 18.0
@@ -169,6 +196,61 @@ func tocar(nome: String, onde := Vector3.INF, volume_db := 0.0, bus_custom := ""
 
 ## Toca som de máquina ativa (fornalha, montadora, broca, esteira, trem) com atenuação
 ## acentuada por distância e teto estrito de vozes simultâneas.
+## Som contínuo de máquina, esteira ou trem: um laço por `chave` que segue a posição. Quem chama renova a cada
+## atualização (0,35 s); sem renovação por MAQ_ESQUECE s, o laço some com fade. Começa num ponto ao acaso do
+## laço, para duas máquinas iguais não soarem em uníssono.
+func loop_maquina(chave: String, nome: String, onde: Vector3, volume_db := 0.0, distancia_max := 55.0) -> void:
+	if not _sons.has(nome) or DisplayServer.get_name() == "headless":
+		return
+	var agora := Time.get_ticks_msec() / 1000.0
+	var l: Dictionary = _loops_maq.get(chave, {})
+	if l.is_empty():
+		var p := AudioStreamPlayer3D.new()
+		p.bus = "Efeitos"
+		p.unit_size = 10.0
+		p.max_distance = distancia_max
+		p.stream = _laco(nome)
+		p.volume_db = -60.0
+		add_child(p)
+		p.global_position = onde
+		var wav := p.stream as AudioStreamWAV
+		p.play(randf() * (wav.get_length() if wav != null else 0.0))
+		l = {"p": p, "visto": agora, "vol": volume_db}
+		_loops_maq[chave] = l
+	l.visto = agora
+	l.vol = volume_db
+	(l.p as AudioStreamPlayer3D).global_position = onde
+
+
+func _laco(nome: String) -> AudioStream:
+	if not _wav_laco.has(nome):
+		var s: AudioStream = _sons[nome]
+		if s is AudioStreamWAV:
+			var w := (s as AudioStreamWAV).duplicate() as AudioStreamWAV
+			w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+			w.loop_begin = 0
+			w.loop_end = w.data.size() / (2 * (2 if w.stereo else 1))
+			s = w
+		_wav_laco[nome] = s
+	return _wav_laco[nome]
+
+
+func _process(delta: float) -> void:
+	if _loops_maq.is_empty():
+		return
+	var agora := Time.get_ticks_msec() / 1000.0
+	for chave in _loops_maq.keys():
+		var l: Dictionary = _loops_maq[chave]
+		var p: AudioStreamPlayer3D = l.p
+		var vivo := agora - float(l.visto) < MAQ_ESQUECE
+		var alvo: float = float(l.vol) if vivo else -60.0
+		var passo := delta * 60.0 / (MAQ_ENTRA if vivo else MAQ_SAI)       # dB por quadro até o alvo
+		p.volume_db = move_toward(p.volume_db, alvo, passo)
+		if not vivo and p.volume_db <= -59.0:
+			p.queue_free()
+			_loops_maq.erase(chave)
+
+
 func tocar_maquina(nome: String, onde: Vector3, volume_db := 0.0, distancia_max := 55.0) -> Variant:
 	if not _sons.has(nome) or DisplayServer.get_name() == "headless":
 		return null
@@ -186,7 +268,7 @@ func tocar_maquina(nome: String, onde: Vector3, volume_db := 0.0, distancia_max 
 	if p == null:
 		return null
 	_ultimo[nome] = agora
-	p.stream = _sons[nome]
+	p.stream = _stream(nome)
 	p.bus = "Efeitos"
 	p.global_position = onde
 	p.unit_size = 10.0
