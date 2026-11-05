@@ -298,7 +298,7 @@ func _confirmar() -> void:
 		_avisar("%s: %d tile(s)%s" % ["Escavado" if peca == ESCAVAR else "Aplainado", n.ok,
 				"  ·  %d bloqueado(s)" % n.bloqueados if n.bloqueados > 0 else ""])
 	elif enc > 0:
-		Som.tocar("construir")
+		Som.tocar("clique")                   # só a ordem; o som da obra é a solda do drone
 		_avisar("Encomendado: %d — o drone sai do núcleo%s" % [enc, "  ·  %d bloqueada(s)" % n.bloqueados if n.bloqueados > 0 else ""])
 	elif n.ok > 0:
 		Som.tocar("construir")

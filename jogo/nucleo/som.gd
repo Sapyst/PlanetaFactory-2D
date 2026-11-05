@@ -38,6 +38,8 @@ const INTERVALO := {
 	"trovao": 1.5,
 	"fogo": 2.0,
 	"faisca": 0.15,
+	"solda_arco": 0.1,
+	"solda_mig": 0.1,
 }
 
 const MAX_VOZES := {

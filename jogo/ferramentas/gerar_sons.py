@@ -915,6 +915,32 @@ def revoada(rng):
     return reverb(junta((x, 1.0, 0), (piado, 0.35, rng.uniform(0.05, 0.3))), 0.4, 0.12, 6000)
 
 
+def solda_arco(rng):
+    """Solda a arco (braço do drone construtor): zumbido elétrico de 100 Hz + chiado frito com estouros ao acaso,
+    que oscila com o movimento da tocha. Alterna com solda_mig enquanto o drone trabalha."""
+    d = 0.9
+    n = int(d * TAXA)
+    t = tempo(d)
+    zumbido = pb(osc(100, 'quad') * 0.5 + osc(200, 'serra') * 0.3, 1400) * 0.25
+    frito = banda(ruido(n, rng), 1800, 9000) * (0.55 + 0.45 * np.abs(np.sin(2 * np.pi * 3.3 * t + rng.uniform(0, 6))))
+    pops = estalos(d, 55, rng, 2000, 9000, 0.0015, (0.3, 1.0))
+    x = (zumbido + frito * 0.45 + pops * 0.7) * env(n, 0.02, 0.1, d - 0.15)
+    return reverb(x, 0.25, 0.08)
+
+
+def solda_mig(rng):
+    """Solda MIG: fritura densa e contínua (centenas de microestalos), mais grave e encorpada, com o sopro do gás e
+    quase sem zumbido. Alterna com solda_arco."""
+    d = 0.9
+    n = int(d * TAXA)
+    t = tempo(d)
+    fritura = estalos(d, 420, rng, 1200, 7000, 0.0008, (0.2, 1.0))
+    gas = banda(rosa(n, rng), 300, 2500) * 0.25
+    zum = pb(osc(120, 'quad'), 900) * 0.08
+    x = (fritura + gas + zum) * env(n, 0.03, 0.1, d - 0.16) * (0.75 + 0.25 * np.sin(2 * np.pi * 2.1 * t))
+    return reverb(x, 0.25, 0.08)
+
+
 SONS = [
     ('clique', clique, -22, 0, 0.0005), ('construir', construir, -15, 0, 0.0005), ('remover', remover, -17, 0, 0.0005),
     ('alerta', alerta, -14, 0, 0.005), ('pesquisa', pesquisa, -15, 0, 0.001), ('derrota', derrota, -14, 0, 0.01),
@@ -937,6 +963,7 @@ SONS = [
     ('pardelo_canto', pardelo_canto, -24, 0, 0.002), ('cobrico_canto', cobrico_canto, -25, 0, 0.002),
     ('azulao_canto', azulao_canto, -23, 0, 0.004), ('rubro_canto', rubro_canto, -23, 0, 0.003),
     ('planador_grito', planador_grito, -21, 0, 0.01), ('revoada', revoada, -18, 0, 0.003),
+    ('solda_arco', solda_arco, -20, 0, 0.002), ('solda_mig', solda_mig, -20, 0, 0.002),
 ]
 
 

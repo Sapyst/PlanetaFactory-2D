@@ -3020,6 +3020,7 @@ func _avisar_furia() -> void:
 # ------------------------------------------------------------------ patch RTS: drones construtores
 var _obras_eventos: Array[Dictionary] = []
 var _t_som_obra := 0.0
+var _solda_t: Dictionary = {}           ## id do construtor → [falta para o próximo toque, qual solda tocou]
 
 
 ## Plano confirmado na construção: vira encomenda para os drones construtores (limpar/aplainar seguem na hora).
@@ -3035,9 +3036,7 @@ func _eventos_obras(delta: float) -> void:
 	for ev in _obras_eventos:
 		match ev.tipo:
 			"obra_pronta":
-				if _t_som_obra <= 0.0:
-					_t_som_obra = 0.25                   # traço longo de esteira não vira metralhadora de som
-					Som.tocar("construir", Grade.ponto_mundo(ev.pos))
+				pass                                     # o som da obra é a solda (abaixo), não um baque genérico
 			"obra_removida":
 				if _t_som_obra <= 0.0:
 					_t_som_obra = 0.25
@@ -3049,6 +3048,18 @@ func _eventos_obras(delta: float) -> void:
 				if is_instance_valid(controle):
 					controle._avisar("Drone construtor derrubado: a carga se perdeu")
 	_obras_eventos.clear()
+	# solda dos construtores trabalhando: arco e MIG alternados, cada drone no seu ritmo, na posição dele
+	for d in obras.construtores():
+		if d.e != Drones.E.TRABALHANDO:
+			_solda_t.erase(d.id)
+			continue
+		var st: Array = _solda_t.get(d.id, [0.0, randi() % 2])
+		st[0] = float(st[0]) - delta
+		if float(st[0]) <= 0.0:
+			st[0] = 0.85
+			st[1] = 1 - int(st[1])
+			Som.tocar("solda_arco" if int(st[1]) == 0 else "solda_mig", Grade.ponto_mundo(d.pos, float(d.alt)))
+		_solda_t[d.id] = st
 
 
 func _detalhe_construtores(linhas: Array[String], opcoes: Array) -> void:
