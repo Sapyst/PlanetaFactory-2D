@@ -59,6 +59,9 @@ var _t_solda: Dictionary = {}       ## id do drone de reparo → próximo feixe 
 var _portas: Array[Polygon2D] = []
 var _marcadores: Array = []         ## os MarcadorPortas do mundo 3D (procurados de tempos em tempos)
 var _mat_porta: Array[ShaderMaterial] = []
+var _mat_folha: Dictionary = {}              ## "perfil|sombra" → copa pela estação (folhagem_2d.gdshader)
+var _mudas: Dictionary = {}                  ## tile → {p (sprites), modelo, esc}: mudas e árvores plantadas
+var _versao_mudas := -1
 var _efs: Array[Dictionary] = []    ## {no, vida, dur, tipo, ...}
 var _voos: Dictionary = {}          ## nó 3D do foguete → {no, fumaca}
 var noite := CanvasModulate.new()
@@ -120,6 +123,7 @@ func _process(delta: float) -> void:
 	_sincronizar_moveis()
 	_sincronizar_aranhas(delta)
 	_sincronizar_afundando()
+	_sincronizar_mudas()
 	_sincronizar_passaros()
 	_sincronizar_vida()
 	_sincronizar_fios()
@@ -307,6 +311,7 @@ func _sincronizar_natureza(c: Dictionary, d: Node3D) -> void:
 			nome = ARVORE_MORTA                                     # morta pelo ácido: tronco seco, sem copa
 		if not Catalogo2D.tem(nome):
 			continue
+		var perfil := Ecossistema.perfil_folha(nome)              # a copa muda pela estação, como no 3D
 		var mm := mmi.multimesh
 		var g := mmi.global_transform
 		for i in mm.instance_count:
@@ -319,7 +324,21 @@ func _sincronizar_natureza(c: Dictionary, d: Node3D) -> void:
 				(p.spr as Sprite2D).modulate = Color(0.25, 0.22, 0.2)
 			elif corroida:
 				(p.spr as Sprite2D).modulate = COR_CORROIDA
+			elif perfil >= 1:
+				(p.spr as Sprite2D).material = _material_folha(perfil, false)
+				(p.som as Sprite2D).material = _material_folha(perfil, true)
 			c.objs.append(p)
+
+
+func _material_folha(perfil: int, sombra: bool) -> ShaderMaterial:
+	var k := "%d|%s" % [perfil, sombra]
+	if not _mat_folha.has(k):
+		var m := ShaderMaterial.new()
+		m.shader = preload("res://versao2d/folhagem_2d.gdshader")
+		m.set_shader_parameter("perfil", perfil)
+		m.set_shader_parameter("sombra", sombra)
+		_mat_folha[k] = m
+	return _mat_folha[k]
 
 
 # ------------------------------------------------------------------ construções
@@ -571,6 +590,48 @@ func _sincronizar_aranhas(delta: float) -> void:
 			(m.p.som as Sprite2D).scale = Vector2.ONE
 			_soltar(m.p)
 			_mortas.remove_at(i)
+
+
+## Mudas e árvores plantadas (viveiro, pássaros, sementes no vento: AmbienteVivo.plantas): o sprite da espécie no
+## tamanho do crescimento, no mesmo modelo, lugar e escala do 3D (DesenhoPlantas), com a copa pela estação. Só refaz
+## quando `versao_plantas` muda (nasce, cai ou cresce um degrau).
+func _sincronizar_mudas() -> void:
+	var amb: AmbienteVivo = mundo.get("ambiente")
+	if amb == null or amb.versao_plantas == _versao_mudas:
+		return
+	_versao_mudas = amb.versao_plantas
+	for t in _mudas.keys():
+		if not amb.plantas.has(t):
+			_soltar(_mudas[t].p)
+			_mudas.erase(t)
+	var g: GeradorMundo = amb.gerador
+	for t: Vector2i in amb.plantas:
+		var modelo := DesenhoPlantas.modelo_de(amb, t)
+		var esc := DesenhoPlantas.escala_de(t, float(amb.plantas[t]))
+		var m: Dictionary = _mudas.get(t, {})
+		if not m.is_empty() and m.modelo == modelo and absf(float(m.esc) - esc) < 0.005:
+			continue
+		if m.is_empty() or m.modelo != modelo:
+			if not m.is_empty():
+				_soltar(m.p)
+				_mudas.erase(t)
+			var p := _par(modelo) if Catalogo2D.tem(modelo) else {}
+			if p.is_empty():
+				continue
+			var perfil := Ecossistema.perfil_folha(modelo)
+			if perfil >= 1:
+				(p.spr as Sprite2D).material = _material_folha(perfil, false)
+				(p.som as Sprite2D).material = _material_folha(perfil, true)
+			m = {"p": p, "modelo": modelo, "esc": esc}
+			_mudas[t] = m
+		m.esc = esc
+		var pg := DesenhoPlantas.pos_de(t)
+		var pos3 := Grade.ponto_mundo(pg, g.micro_em(pg - Vector2(0.5, 0.5)))
+		_por(m.p, pos3, 0, 0)
+		var alto := Camera2DJogo.projetar(pos3) - Camera2DJogo.projetar(Vector3(pos3.x, 0.0, pos3.z))
+		for spr: Sprite2D in [m.p.spr, m.p.som]:
+			spr.scale = Vector2.ONE * esc                         # cresce a partir do pé
+			spr.offset = -Vector2(m.p.m.ancora[0], m.p.m.ancora[1]) + alto / esc   # o relevo não encolhe junto
 
 
 ## Árvore dissolvendo no chão corroído: o tronco morto afunda (a parte de baixo do sprite some no chão, como se

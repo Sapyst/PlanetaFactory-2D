@@ -56,6 +56,7 @@ func _ready() -> void:
 		"obras": _roteiro_obras()
 		"vida": _roteiro_vida()
 		"plantas": _roteiro_plantas()
+		"frutos": _roteiro_frutos()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -2181,8 +2182,9 @@ static func _farol_do_posto(m: MapaOcupacao, ids: Dictionary) -> int:
 
 
 ## Patch fauna, fase 2 (-- novo roteiro plantas): bosque de árvores caducas perto do núcleo. PNG em
-## user://fotos_plantas: flores de dia e de noite (primavera), folhas caindo (outono com vento), galhos e cogumelos
-## depois da tempestade e da chuva, capim seco e viçoso (verão), limo no lago mais perto.
+## user://fotos_plantas: flores de dia e de noite (primavera), folhas caindo (outono com vento), copa abrindo no fim do
+## outono e nua no inverno, galhos e cogumelos depois da tempestade e da chuva, capim seco e viçoso (verão), limo no
+## lago mais perto.
 func _roteiro_plantas() -> void:
 	var w := [Vector2.ZERO]
 	var foto := func(nome: String) -> void:
@@ -2225,12 +2227,16 @@ func _roteiro_plantas() -> void:
 		var dp: DesenhoPlantasReagem = cena._desenho_plantas_reagem
 		print("PLANTAS folhas=%d no_chao=%d taxa=%.2f" % [dp.folhas.size(), dp.folhas.filter(func(f): return f.chao).size(), dp.taxa_folhas()])
 		foto.call("3_outono_folhas"))
-	em(332, func(): estacao.call(1, 0.45, "tempestade"))
-	em(390, func():
+	em(331, func(): cena.clima.t_estacao = float(Registro.clima.get("estacao_s", 604800)) * 0.93)
+	em(350, func(): foto.call("3b_fim_do_outono"))
+	em(351, func(): estacao.call(3, 0.45, "nublado"))
+	em(370, func(): foto.call("3c_inverno"))
+	em(372, func(): estacao.call(1, 0.45, "tempestade"))
+	em(430, func():
 		estacao.call(1, 0.45, "limpo")
 		cena.clima.valores.vento = 0.2
 		cena.clima.molhado = 0.95)
-	em(470, func():
+	em(510, func():
 		var p: PlantasReagem = cena.plantas_reagem
 		p.t += 45.0                                  # os cogumelos já cresceram
 		print("PLANTAS galhos=%d cogumelos=%d" % [p.galhos.size(), p.cogumelos.size()])
@@ -2239,8 +2245,8 @@ func _roteiro_plantas() -> void:
 			cam.alvo = Grade.ponto_mundo(p.cogumelos[0].pos)
 		cam.distancia = 7.0
 		cam.posicionar())
-	em(480, func(): foto.call("4_cogumelos"))
-	em(481, func():
+	em(520, func(): foto.call("4_cogumelos"))
+	em(521, func():
 		var p: PlantasReagem = cena.plantas_reagem
 		var cam = cena.camera
 		if not p.galhos.is_empty():
@@ -2252,17 +2258,17 @@ func _roteiro_plantas() -> void:
 			print("PLANTAS galho perto ", perto.pos, " tela depois ")
 		cam.distancia = 4.0
 		cam.posicionar())
-	em(486, func(): foto.call("4b_galhos"))
-	em(488, func():
+	em(526, func(): foto.call("4b_galhos"))
+	em(528, func():
 		cena.clima.vico = -0.9
 		var cam = cena.camera
 		cam.alvo = Grade.ponto_mundo(w[0])
 		cam.distancia = 12.0
 		cam.posicionar())
-	em(510, func(): foto.call("5_verao_seco"))
-	em(512, func(): cena.clima.vico = 1.0)
-	em(540, func(): foto.call("6_viçoso_depois_da_chuva"))
-	em(542, func():
+	em(550, func(): foto.call("5_verao_seco"))
+	em(552, func(): cena.clima.vico = 1.0)
+	em(580, func(): foto.call("6_viçoso_depois_da_chuva"))
+	em(582, func():
 		var g: GeradorMundo = cena.gerador
 		var lagos: Array = g.hidro.lagos(Vector2i(-160, -160), Vector2i(160, 160)) if g.relevo_ativo else []
 		var melhor: Dictionary = {}
@@ -2275,7 +2281,113 @@ func _roteiro_plantas() -> void:
 			cam.alvo = Grade.ponto_mundo(melhor.centro + Vector2(float(melhor.raio) * 0.7, 0.0))
 			cam.distancia = 18.0
 			cam.posicionar())
-	em(600, func(): foto.call("7_limo_no_lago"))
+	em(640, func(): foto.call("7_limo_no_lago"))
+
+
+## Patch fauna, fase 3 (-- novo roteiro frutos): bolotas embaixo dos carvalhos no outono, sementes voando das bétulas e
+## pinheiros no começo do outono com vento, bagas embaixo do arbusto no verão, frutos apodrecendo e mudas nascidas de
+## semente. PNG em user://fotos_frutos.
+func _roteiro_frutos() -> void:
+	var w := [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]          # carvalhos, bétulas/pinheiros, arbustos
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_frutos")
+		get_viewport().get_texture().get_image().save_png("user://fotos_frutos/%s.png" % nome)
+		print("FRUTOS foto ", nome)
+	var estacao := func(e: int, frac: float, estado: String) -> void:
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = e
+		cl.t_estacao = float(Registro.clima.get("estacao_s", 604800)) * frac
+		cl.hora = 0.45
+		cl.forcar(estado, true)
+		cl.restante = 1.0e9
+	var olhar := func(p: Vector2, dist: float) -> void:
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(p)
+		cam.distancia = dist
+		cam.posicionar()
+	var encher := func(foco: Vector2) -> void:
+		var f: Frutos = cena.frutos
+		for i in 80:
+			f.cair(foco, cena.clima.estacao)
+	em(2, func():
+		Sessao.config.fps = false
+		var eco: Ecossistema = cena.ecossistema
+		var notas := [-1, -1, -1]
+		for y in range(-90, 91, 10):
+			for x in range(-90, 91, 10):
+				var c := Vector2(x, y)
+				if c.length() < 16.0:
+					continue
+				var arvs := eco.arvores_perto(c, 9.0)
+				var k := [arvs.filter(func(a): return Frutos.fruto_de(String(a.nome)) == "bolota").size(),
+						arvs.filter(func(a): return Ecossistema.especie_arvore(String(a.nome)) in ["arv_betula", "arv_pinheiro", "arv_salgueiro"]).size(),
+						eco.arbustos_perto(c, 9.0).size()]
+				for i in 3:
+					if k[i] > notas[i]:
+						notas[i] = k[i]
+						w[i] = c
+		print("FRUTOS carvalhos ", w[0], " ", notas[0], " · sementeiras ", w[1], " ", notas[1], " · arbustos ", w[2], " ", notas[2])
+		for i in 3:
+			_sem_ninhos(Vector2i(w[i]))
+		estacao.call(2, 0.5, "limpo")
+		olhar.call(w[0], 9.0))
+	em(20, func(): encher.call(w[0]))
+	em(70, func():
+		var perto: Array = cena.ecossistema.comida_perto(w[0], 15.0, "fruta")
+		var dp: DesenhoPlantasReagem = cena._desenho_plantas_reagem
+		print("FRUTOS bolotas=%d perto=%d desenhados=%d" % [cena.ecossistema.comida.values().filter(func(f): return f.especie == "bolota").size(),
+				perto.size(), dp._mm_ponto.multimesh.visible_instance_count])
+		var vp_t := get_viewport().get_visible_rect().size
+		var na_tela: Array = []
+		for f in perto:
+			var p0: Vector2 = f.pos
+			var q := Vector3(p0.x, Grade.altura_em(p0) + 0.3, -p0.y)
+			var sp := (cena.camera as Camera3D).unproject_position(q)
+			if not (cena.camera as Camera3D).is_position_behind(q) and Rect2(Vector2.ZERO, vp_t).has_point(sp):
+				na_tela.append(Vector2i(sp))
+		print("FRUTOS na tela ", na_tela.size(), " ", na_tela.slice(0, 8))
+		foto.call("1_bolotas"))
+	em(72, func():
+		estacao.call(2, 0.02, "nublado")
+		olhar.call(w[1], 16.0))
+	em(130, func():
+		var dp: DesenhoPlantasReagem = cena._desenho_plantas_reagem
+		print("FRUTOS sementes voando=%d" % dp.sementes.size())
+		foto.call("2_sementes_no_vento"))
+	em(132, func():
+		estacao.call(1, 0.5, "limpo")
+		olhar.call(w[2], 7.0))
+	em(140, func(): encher.call(w[2]))
+	em(190, func():
+		print("FRUTOS bagas=%d" % cena.ecossistema.comida.values().filter(func(f): return f.especie == "baga").size())
+		foto.call("3_bagas"))
+	em(192, func():
+		for f in cena.ecossistema.comida.values():
+			f.idade = float(f.get("vida", 0.0)) * 0.93)
+	em(230, func(): foto.call("4_podres"))
+	em(232, func():
+		estacao.call(1, 0.99, "limpo")
+		cena.clima.direcao_vento = Vector2(1, 0.2).normalized())
+	em(236, func():
+		var f: Frutos = cena.frutos
+		var cl: Clima = cena.clima
+		cl.estacao = 2
+		cl.t_estacao = 0.0
+		f.semear(w[1], 2, cl.direcao_vento)
+		var amb: AmbienteVivo = cena.ambiente
+		var perto := Vector2.INF
+		for t: Vector2i in amb.plantas:
+			if (Vector2(t) - w[1]).length() < 40.0:
+				amb.plantas[t] = 0.3                                    # já cresceram um pouco (para a foto)
+				if (Vector2(t) - w[1]).length() < (perto - w[1]).length():
+					perto = Vector2(t)
+		amb.versao_plantas += 1
+		print("FRUTOS mudas de semente=%d" % f.semeadas)
+		if perto != Vector2.INF:
+			olhar.call(perto, 8.0))
+	em(280, func(): foto.call("5_mudas_de_semente"))
 
 
 ## Patch fauna, fase 1 (-- novo roteiro vida): campo de capim saudável perto do núcleo; noite de verão com

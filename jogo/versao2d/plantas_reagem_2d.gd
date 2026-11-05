@@ -3,6 +3,8 @@ extends Node2D
 ## Patch fauna, fase 2 na versão 2D: o que as plantas largam, em pixel — folhas do outono (caindo por cima de tudo,
 ## no chão por baixo das coisas), galhos depois da tempestade, cogumelos depois da chuva. No mundo (escurece com a
 ## noite como o resto). Lê o DesenhoPlantasReagem (folhas) e a PlantasReagem (galhos, cogumelos).
+## Fase 3: frutos no chão (a comida "fruta" do Ecossistema; bolota e pinha 2 px, baga 1 px vermelha, escurecem
+## apodrecendo) e sementes voando no vento (1 px claro, por cima de tudo).
 
 var desenho: DesenhoPlantasReagem
 var plantas: PlantasReagem
@@ -36,6 +38,8 @@ func _desenhar_ar() -> void:
 		if not f.chao:
 			var c: Color = f.cor
 			_ar.draw_rect(Rect2(_px(f.pos), Vector2(1, 1) if absf(cos(float(f.giro))) < 0.5 else Vector2(2, 1)), c)
+	for sm in desenho.sementes:
+		_ar.draw_rect(Rect2(_px(sm.pos), Vector2(1, 1)), sm.cor)
 
 
 func _desenhar_chao() -> void:
@@ -44,6 +48,20 @@ func _desenhar_chao() -> void:
 			if f.chao and float(f.cor.a) > 0.3:
 				var c: Color = f.cor
 				_chao.draw_rect(Rect2(_px(f.pos), Vector2(2, 1)), Color(c.r, c.g, c.b))
+	if desenho != null and desenho.eco != null:
+		var foco := desenho.eco.foco
+		for f in desenho.eco.comida.values():
+			if f.tipo != "fruta" or (f.pos as Vector2).distance_squared_to(foco) > 1600.0:
+				continue
+			var fr: Dictionary = DesenhoPlantasReagem.FRUTOS.get(String(f.get("especie", "")), DesenhoPlantasReagem.FRUTOS.bolota)
+			var podre := Ecossistema.podre(f)
+			var cor := (fr.cor as Color).lerp(DesenhoPlantasReagem.PODRE, podre)
+			var base := _px(Grade.ponto_mundo(f.pos))
+			if String(f.get("especie", "")) == "baga":
+				_chao.draw_rect(Rect2(base, Vector2(1, 1)), cor)
+			else:
+				_chao.draw_rect(Rect2(base, Vector2(2 if podre < 0.7 else 1, 1)), cor)
+				_chao.draw_rect(Rect2(base + Vector2(0, -1), Vector2(1, 1)), cor.lightened(0.15))    # luz em cima
 	if plantas == null:
 		return
 	for g in plantas.galhos:

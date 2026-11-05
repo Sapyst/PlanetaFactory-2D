@@ -17,6 +17,27 @@ func _process(_d: float) -> void:
 	_refazer()
 
 
+## Modelo da planta do tile (o mesmo no 3D e no 2D): a espécie dela, senão um da lista padrão.
+static func modelo_de(amb: AmbienteVivo, t: Vector2i) -> String:
+	var modelos: Array = Registro.ambiente.get("plantas", {}).get("modelos", ["arvore_campina_a"])
+	var modelo: String = modelos[int(Distribuicao.h(t.x, t.y, 901) * modelos.size()) % modelos.size()]
+	if amb.especies.has(t):
+		var esp := "%s_%d" % [amb.especies[t], 1 + int(Distribuicao.h(t.x, t.y, 906) * 6.0) % 6]
+		if Registro.modelos.has(esp):
+			modelo = esp
+	return modelo
+
+
+## Onde fica a planta do tile (grade): um pouco fora do centro, por tile.
+static func pos_de(t: Vector2i) -> Vector2:
+	return Vector2(t) + Vector2(0.5, 0.5) + Vector2(Distribuicao.h(t.x, t.y, 902) - 0.5, Distribuicao.h(t.x, t.y, 903) - 0.5) * 0.4
+
+
+## Tamanho pelo crescimento: muda (15%) → árvore inteira, com uma variação por tile.
+static func escala_de(t: Vector2i, cresc: float) -> float:
+	return (0.15 + 0.85 * smoothstep(0.0, 1.0, cresc)) * (0.85 + 0.3 * Distribuicao.h(t.x, t.y, 904))
+
+
 func _refazer() -> void:
 	var modelos: Array = Registro.ambiente.get("plantas", {}).get("modelos", ["arvore_campina_a"])
 	var lista := {}
@@ -25,16 +46,11 @@ func _refazer() -> void:
 	var g := ambiente.gerador
 	for t: Vector2i in ambiente.plantas:
 		var cresc: float = ambiente.plantas[t]
-		var modelo: String = modelos[int(Distribuicao.h(t.x, t.y, 901) * modelos.size()) % modelos.size()]
-		if ambiente.especies.has(t):
-			var esp := "%s_%d" % [ambiente.especies[t], 1 + int(Distribuicao.h(t.x, t.y, 906) * 6.0) % 6]
-			if Registro.modelos.has(esp):
-				modelo = esp
+		var modelo := modelo_de(ambiente, t)
 		if not lista.has(modelo):
 			lista[modelo] = []
-		var off := Vector2(Distribuicao.h(t.x, t.y, 902) - 0.5, Distribuicao.h(t.x, t.y, 903) - 0.5) * 0.4
-		var p := Vector2(t) + Vector2(0.5, 0.5) + off
-		var esc := (0.15 + 0.85 * smoothstep(0.0, 1.0, cresc)) * (0.85 + 0.3 * Distribuicao.h(t.x, t.y, 904))
+		var p := pos_de(t)
+		var esc := escala_de(t, cresc)
 		var b := Basis(Vector3.UP, Distribuicao.h(t.x, t.y, 905) * TAU).scaled(Vector3(esc, esc, esc))
 		(lista[modelo] as Array).append(Transform3D(b, Grade.ponto_mundo(p, g.micro_em(p - Vector2(0.5, 0.5)))))
 	for modelo in lista:

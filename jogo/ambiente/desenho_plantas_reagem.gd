@@ -5,11 +5,31 @@ extends Node3D
 ##             chão em volta da árvore (juntando), até apagar. Sem estado: cada folha é função do tempo e da árvore.
 ##  galhos     os da lógica (PlantasReagem): deitados no capim, somem afundando.
 ##  cogumelos  os da lógica: crescem do chão, murcham.
-## O 2D lê `folhas` (já no mundo) e a lógica (galhos, cogumelos).
+##  frutos     (fase 3) a comida "fruta" do Ecossistema: bolota, pinha e baga no capim embaixo da planta; escurecem e
+##             encolhem apodrecendo. Ponto redondo de tamanho mínimo em pixels (de longe ainda se vê).
+##  sementes   (fase 3) no começo da estação das sementes, bétula, salgueiro e pinheiro soltam sementes que o vento
+##             leva longe, devagar e subindo e descendo; somem no capim. Sem estado, como as folhas.
+## O 2D lê `folhas` e `sementes` (já no mundo) e a lógica (galhos, cogumelos, frutos no Ecossistema).
 
-const CORES_FOLHA := [Color(0.72, 0.36, 0.09), Color(0.55, 0.19, 0.07), Color(0.82, 0.62, 0.14), Color(0.42, 0.29, 0.13)]
+## Cor da folha caída pelo perfil da árvore (Ecossistema.perfil_folha), a mesma da copa no 3D e no 2D.
+const CORES_FOLHA := {
+	1: [Color(0.72, 0.36, 0.09), Color(0.55, 0.19, 0.07), Color(0.82, 0.62, 0.14), Color(0.42, 0.29, 0.13)],   # carvalho
+	2: [Color(0.7, 0.66, 0.3), Color(0.58, 0.55, 0.22), Color(0.75, 0.7, 0.38), Color(0.48, 0.42, 0.2)],       # salgueiro
+	3: [Color(0.62, 0.52, 0.26), Color(0.5, 0.4, 0.2), Color(0.68, 0.6, 0.32), Color(0.42, 0.33, 0.16)],       # acácia
+	4: [Color(0.82, 0.66, 0.16), Color(0.7, 0.55, 0.12), Color(0.86, 0.74, 0.3), Color(0.55, 0.42, 0.14)],     # bétula
+}
+const ESTACOES_PERFIL := {1: "estacoes", 2: "estacoes_salgueiro", 3: "estacoes_acacia", 4: "estacoes"}
 const CORES_COGUMELO := [Color(0.88, 0.82, 0.68), Color(0.55, 0.36, 0.2), Color(0.8, 0.42, 0.12), Color(0.68, 0.62, 0.55)]
 const CASCA := Color(0.3, 0.22, 0.15)
+## Fruto: cor fresca, tamanho real (m) e mínimo em pixels.
+const FRUTOS := {
+	"bolota": {"cor": Color(0.55, 0.4, 0.17), "m": 0.035, "px": 4.2},
+	"pinha": {"cor": Color(0.42, 0.3, 0.17), "m": 0.08, "px": 5.0},
+	"baga": {"cor": Color(0.6, 0.08, 0.12), "m": 0.016, "px": 3.6},
+}
+const PODRE := Color(0.12, 0.1, 0.07)
+## Semente no ar: asa e penugem contra o sol ficam claras (escuras sumiam no capim).
+const CORES_SEMENTE := {"arv_betula": Color(0.8, 0.72, 0.55), "arv_salgueiro": Color(0.95, 0.93, 0.88), "arv_pinheiro": Color(0.72, 0.6, 0.42)}
 
 var eco: Ecossistema
 var clima: Clima
@@ -17,6 +37,7 @@ var plantas: PlantasReagem
 var camera: Camera3D
 
 var folhas: Array = []          ## {pos: Vector3, cor: Color, chao: bool, giro: float}
+var sementes: Array = []        ## {pos: Vector3, cor: Color}
 var _arvs_base: Array = []
 var _arvs: Array = []
 var _d: Dictionary
@@ -25,6 +46,8 @@ var _mm_cai: MultiMeshInstance3D
 var _mm_chao: MultiMeshInstance3D
 var _mm_galho: MultiMeshInstance3D
 var _mm_cog: MultiMeshInstance3D
+var _mm_ponto: MultiMeshInstance3D
+var _d_fr: Dictionary
 var _k_px := 0.0
 
 
@@ -35,7 +58,9 @@ func _ready() -> void:
 	_mm_cai = _mm(q, preload("res://render/shaders/folha_caida.gdshader"), {"plano": false}, true)
 	_mm_chao = _mm(q, preload("res://render/shaders/folha_caida.gdshader"), {"plano": true}, true)
 	_mm_galho = _mm(malha_galho(), preload("res://render/shaders/planta_pequena.gdshader"), {}, false)
-	_mm_cog = _mm(malha_cogumelo(), preload("res://render/shaders/planta_pequena.gdshader"), {}, false)
+	_mm_cog = _mm(malha_cogumelo(), preload("res://render/shaders/planta_pequena.gdshader"), {"realce": 1.0}, false)
+	_mm_ponto = _mm(q, preload("res://render/shaders/folha_caida.gdshader"), {"plano": false, "redondo": true}, true)
+	_d_fr = Registro.fauna.get("frutos", {})
 
 
 func _mm(malha: Mesh, sh: Shader, params: Dictionary, custom: bool) -> MultiMeshInstance3D:
@@ -133,17 +158,19 @@ func _process(delta: float) -> void:
 	if camera != null and vp != null:
 		_k_px = 2.0 * tan(deg_to_rad(camera.fov) / 2.0) / maxf(vp.get_visible_rect().size.y, 1.0)
 	_calcular_folhas()
+	_calcular_sementes()
 	if vp != null and vp.disable_3d:                       # versão 2D: só os dados servem
 		return
 	_desenhar()
 
 
-## Quanto as caducas soltam agora (0..1): pela estação (troca no 1º quarto) e mais com vento.
-func taxa_folhas() -> float:
+## Quanto as árvores de um perfil soltam agora (0..1): pela estação (troca no 1º quarto) e mais com vento. Caducas no
+## outono; salgueiro um pouco no outono e no inverno; acácia no verão (como a copa no shader).
+func taxa_folhas(perfil := 1) -> float:
 	var c: Dictionary = _d.get("folhas", {})
-	if not bool(c.get("liga", true)) or not bool(_d.get("liga", true)) or clima == null:
+	if not bool(c.get("liga", true)) or not bool(_d.get("liga", true)) or clima == null or not ESTACOES_PERFIL.has(perfil):
 		return 0.0
-	var es: Array = c.get("estacoes", [0, 0, 1, 0.1])
+	var es: Array = c.get(ESTACOES_PERFIL[perfil], [0, 0, 1, 0.1])
 	var e := clampi(clima.estacao, 0, 3)
 	var f := float(Registro.clima.get("estacao_s", 604800))
 	var taxa := lerpf(float(es[(e + 3) % 4]), float(es[e]), smoothstep(0.0, 0.25, clima.t_estacao / f))
@@ -151,23 +178,84 @@ func taxa_folhas() -> float:
 	return clampf(taxa * (0.6 + 0.8 * vento), 0.0, 1.0)
 
 
+## Árvores perto da câmera, as mais perto primeiro (orçamento): refaz só quando a busca muda.
+func _arvores(raio: float) -> Array:
+	var arvs := eco.arvores_perto(eco.foco, raio)
+	if arvs != _arvs_base:
+		_arvs_base = arvs
+		_arvs = arvs.duplicate()
+		var f := eco.foco
+		_arvs.sort_custom(func(x, y): return (x.pos as Vector2).distance_squared_to(f) < (y.pos as Vector2).distance_squared_to(f))
+	return _arvs
+
+
+## Quanto uma espécie solta semente agora (0..1): só no começo da estação dela (`janela`), mais com vento.
+func taxa_sementes(esp: String) -> float:
+	var c: Dictionary = _d_fr.get("sementes", {})
+	var v: Dictionary = c.get("voando", {})
+	if not bool(c.get("liga", true)) or not bool(_d_fr.get("liga", true)) or clima == null or not c.get("especies", {}).has(esp):
+		return 0.0
+	var peso := float((c.especies[esp] as Array)[clampi(clima.estacao, 0, 3)])
+	var frac := clima.t_estacao / float(Registro.clima.get("estacao_s", 604800))
+	var vento := float(clima.valores.get("vento", 0.0))
+	return clampf(peso * (1.0 - smoothstep(0.0, float(v.get("janela", 0.35)), frac)) * (0.35 + 0.9 * vento), 0.0, 1.0)
+
+
+func _calcular_sementes() -> void:
+	sementes.clear()
+	var c: Dictionary = _d_fr.get("sementes", {})
+	var esps: Dictionary = c.get("especies", {})
+	var taxas := {}
+	for esp in esps:
+		var tx := taxa_sementes(esp)
+		if tx > 0.0:
+			taxas[esp] = tx
+	if taxas.is_empty():
+		return
+	var v: Dictionary = c.get("voando", {})
+	var ciclo := float(v.get("ciclo_s", 40.0))
+	var mx := int(v.get("max", 180))
+	var vel := float(clima.valores.get("vento", 0.0))
+	var vento := clima.direcao_vento * (0.6 + 2.4 * vel)
+	var lado := Vector2(-clima.direcao_vento.y, clima.direcao_vento.x)
+	# a lista é a das folhas (mesmo raio): a busca não se repete
+	for a in _arvores(float(_d.get("folhas", {}).get("raio", 28.0))):
+		var esp := Ecossistema.especie_arvore(String(a.nome))
+		if not taxas.has(esp):
+			continue
+		var t: Vector2i = a.tile
+		for k in int(v.get("por_arvore", 8)):
+			if sementes.size() >= mx:
+				return
+			if _h(t, 500 + k) > float(taxas[esp]):
+				continue
+			var fase := fposmod(_t / ciclo + _h(t, 520 + k), 1.0) * ciclo
+			var h0 := float(a.alto) * lerpf(0.6, 0.95, _h(t, 540 + k))
+			var vq := 0.18 + 0.25 * _h(t, 560 + k)                   # m/s: penugem e asa caem devagar
+			var cai := h0 / vq
+			if fase >= cai:
+				continue                                              # já pousou: some no capim
+			var ini: Vector2 = a.pos + Vector2.from_angle(_h(t, 580 + k) * TAU) * float(a.copa) * 0.8 * _h(t, 600 + k)
+			var p: Vector2 = ini + vento * fase + lado * sin(fase * 0.9 + float(k) * 1.7) * 0.8
+			var y := Grade.altura_em(p) + maxf(0.25, h0 - vq * fase + sin(fase * 1.6 + float(k)) * 0.35 * minf(1.0, fase))
+			sementes.append({"pos": Vector3(p.x, y, -p.y), "cor": CORES_SEMENTE.get(esp, Color(0.8, 0.78, 0.7))})
+
+
 func _calcular_folhas() -> void:
 	folhas.clear()
-	var taxa := taxa_folhas()
-	if taxa <= 0.0:
+	var taxas := [0.0, taxa_folhas(1), taxa_folhas(2), taxa_folhas(3), taxa_folhas(4)]
+	if taxas.max() <= 0.0:
 		return
 	var c: Dictionary = _d.get("folhas", {})
 	var ciclo := float(c.get("ciclo_s", 26.0))
 	var mx := int(c.get("max", 220))
 	var vento := clima.direcao_vento * (0.3 + 1.6 * float(clima.valores.get("vento", 0.0)))
-	var arvs := eco.arvores_perto(eco.foco, float(c.get("raio", 28.0)))
-	if arvs != _arvs_base:                                 # orçamento: as árvores mais perto da câmera primeiro
-		_arvs_base = arvs
-		_arvs = arvs.duplicate()
-		var f := eco.foco
-		_arvs.sort_custom(func(x, y): return (x.pos as Vector2).distance_squared_to(f) < (y.pos as Vector2).distance_squared_to(f))
-	for a in _arvs:
-		if not a.caduca:
+	for a in _arvores(float(c.get("raio", 28.0))):
+		var perfil := int(a.get("perfil", -1))
+		if perfil < 1:
+			continue
+		var taxa: float = taxas[perfil]
+		if taxa <= 0.0:
 			continue
 		var t: Vector2i = a.tile
 		for k in int(c.get("por_arvore", 7)):
@@ -190,7 +278,7 @@ func _calcular_folhas() -> void:
 			var pousa := 0.2 + 0.16 * _h(t, 380 + k)                  # no chão fica por cima do capim (que segura a folha)
 			var pos := Vector3(p.x, y + (pousa if chao else maxf(pousa, h0 - vq * tt)), -p.y)
 			var apaga := clampf((ciclo - fase) / 3.0, 0.0, 1.0) if chao else 1.0
-			var cor: Color = CORES_FOLHA[int(_h(t, 320 + k) * 4.0) % 4]
+			var cor: Color = CORES_FOLHA[perfil][int(_h(t, 320 + k) * 4.0) % 4]
 			cor.a = apaga
 			folhas.append({"pos": pos, "cor": cor, "chao": chao, "giro": tt * (3.0 + 2.0 * _h(t, 340 + k)) + _h(t, 360 + k) * TAU})
 
@@ -238,6 +326,21 @@ func _desenhar() -> void:
 			var cor: Color = CORES_COGUMELO[int(c.cor) % 4]
 			cog.append([Transform3D(b, Vector3(p.x, Grade.altura_em(p), -p.y)), cor, Color()])
 	_encher(_mm_cog, cog)
+	var pts: Array = []
+	for f in eco.comida.values():
+		if f.tipo != "fruta" or (f.pos as Vector2).distance_squared_to(eco.foco) > 1600.0:
+			continue
+		var fr: Dictionary = FRUTOS.get(String(f.get("especie", "")), FRUTOS.bolota)
+		var podre := Ecossistema.podre(f)
+		var p: Vector2 = f.pos
+		# por cima do capim (25 a 45 cm, segura o fruto como segura a folha): dentro dele sumia
+		var pos := Vector3(p.x, Grade.altura_em(p) + 0.24 + 0.1 * _h(Vector2i(p * 7.0), 1), -p.y)
+		var s := _tam(pos, float(fr.m) * float(f.get("tam", 1.0)), float(fr.px)) * (1.0 - 0.4 * podre)
+		pts.append([Transform3D(Basis(), pos), (fr.cor as Color).lerp(PODRE, podre), Color(s, s, 0, 0)])
+	for sm in sementes:
+		var s := _tam(sm.pos, 0.018, float(_d_fr.get("sementes", {}).get("voando", {}).get("px", 1.6)))
+		pts.append([Transform3D(Basis(), sm.pos), sm.cor, Color(s, s, 0, 0)])
+	_encher(_mm_ponto, pts)
 
 
 ## Um buffer por MultiMesh (transform 12 + cor 4 [+ custom 4]): uma chamada por quadro, mesmo com 500 folhas.

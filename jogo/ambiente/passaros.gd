@@ -156,7 +156,7 @@ func _novo(esp: String, pos: Vector2) -> Dictionary:
 	var alt: Array = s.alt
 	return {"id": id, "especie": esp, "n": _rng.randi_range(int(s.bando[0]), int(s.bando[1])), "pos": pos,
 			"alt": _rng.randf_range(float(alt[0]), float(alt[1])), "alt_alvo": _rng.randf_range(float(alt[0]), float(alt[1])),
-			"vel": Vector2.ZERO, "destino": pos, "pousar": false, "estado": E.VOANDO, "t": 0.0, "sementes": 0,
+			"vel": Vector2.ZERO, "destino": pos, "pousar": false, "estado": E.VOANDO, "t": 0.0, "sementes": 0, "semente_esp": "",
 			"t_canto": _rng.randf_range(1.0, float(s.canto_s)), "t_olha": 0.0, "t_semente": 1.0, "dormindo": false,
 			"centro": pos, "ang": _rng.randf() * TAU, "raio": _rng.randf_range(10.0, 16.0), "poleiros": []}
 
@@ -210,6 +210,7 @@ func para_ecossistema() -> Array:
 func _lugar_bom(b: Dictionary, de: Vector2, foco: Vector2, alcance: float) -> Variant:
 	var melhor: Variant = null
 	var nota := float(_d.saude_min)
+	var comem_fruta := bool(_d.especies.get(b.especie, {}).get("sementes", false))
 	for i in 12:
 		var p := de + Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(4.0, alcance)
 		if p.distance_to(foco) > float(_d.raio_vida):
@@ -220,6 +221,8 @@ func _lugar_bom(b: Dictionary, de: Vector2, foco: Vector2, alcance: float) -> Va
 		if _ameaca_em(p, 3.0) != null:
 			continue
 		var s := saude(t) + _rng.randf() * 0.05 + (0.3 if not poleiros_em(p).is_empty() else 0.0)   # gostam de árvore
+		if comem_fruta and not eco.comida_perto(p, 2.5, "fruta").is_empty():
+			s += 0.45                                                                  # e de fruto no chão
 		if s > nota:
 			nota = s
 			melhor = Vector2(t) + Vector2(0.5, 0.5)
@@ -346,8 +349,8 @@ func _bando(b: Dictionary, dt: float, foco: Vector2, clima: Clima, noite: bool) 
 			b.dormindo = false
 			_cantar(b, s, dt, 1.0)
 			if b.t <= 0.0 or some:
-				if bool(s.get("sementes", false)) and saude(Vector2i((b.pos as Vector2).floor())) >= float(_d.saude_min):
-					b.sementes = int(_d.semente.por_bando)  # comeu fruta/semente aqui: leva
+				if bool(s.get("sementes", false)):
+					_comer(b)
 				b.estado = E.DECOLANDO
 				b.t = DECOLA_S
 				eventos.append({"tipo": "revoada", "id": b.id, "pos": b.pos, "especie": b.especie})
@@ -383,7 +386,24 @@ func _voar(b: Dictionary, alvo: Vector2, vel: float, dt: float) -> bool:
 	return d.length() < 0.8
 
 
-## Semente: voando sobre chão morto, de vez em quando cai uma e nasce uma muda.
+## Antes de decolar: come os frutos do chão em volta (patch fauna, fase 3) e leva a semente da árvore deles; sem fruto,
+## em chão saudável come semente do mato e leva semente do bioma.
+func _comer(b: Dictionary) -> void:
+	var fr: Array = eco.comida_perto(b.pos, float(_d.semente.get("fruta_raio", 3.0)), "fruta")
+	var come := mini(fr.size(), clampi(int(ceil(float(b.n) / 8.0)), 1, 4))
+	var esp := ""
+	for i in come:
+		if eco.comer(int(fr[i].id), "passaro") and esp == "":
+			esp = String(fr[i].get("fonte", ""))
+	if come > 0:
+		b.sementes = int(_d.semente.por_bando)
+		b.semente_esp = esp
+	elif saude(Vector2i((b.pos as Vector2).floor())) >= float(_d.saude_min):
+		b.sementes = int(_d.semente.por_bando)
+		b.semente_esp = ""
+
+
+## Semente: voando sobre chão morto, de vez em quando cai uma e nasce uma muda (da árvore do fruto que comeu).
 func _semear(b: Dictionary, dt: float) -> void:
 	if int(b.sementes) <= 0 or ambiente == null:
 		return
@@ -396,6 +416,8 @@ func _semear(b: Dictionary, dt: float) -> void:
 		return
 	var onde: Variant = ambiente.plantar_perto(b.pos, float(_d.semente.raio), true)
 	if onde != null:
+		if String(b.get("semente_esp", "")) != "":
+			ambiente.especies[onde] = String(b.semente_esp)
 		b.sementes = int(b.sementes) - 1
 		plantadas += 1
 		eventos.append({"tipo": "semente", "id": b.id, "pos": Vector2(onde) + Vector2(0.5, 0.5), "de": b.pos,

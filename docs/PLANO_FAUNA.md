@@ -101,17 +101,51 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
   - **Cogumelos:** brotam no pé das árvores com o chão molhado, fora do inverno; crescem, ficam um dia e murcham.
   - **Código:** `PlantasReagem` é a lógica, `DesenhoPlantasReagem` o 3D e `PlantasReagem2D` o 2D. A busca de
     árvores perto ficou no `Ecossistema` e serve às frutas da fase 3.
+- **Ajustes depois (2026-11-05):**
+  - **Copa do 2D pela estação:** `versao2d/folhagem_2d.gdshader` faz nos sprites o mesmo que o 3D faz na malha. O
+    pixel de folha amarela pelo perfil da árvore e a copa abre em tufos até sobrar uma névoa de galho no inverno;
+    a sombra fica mais rala junto.
+  - **Folha caída pelo perfil:** cada árvore solta folha na estação dela, com a cor dela (`Ecossistema.PERFIS`, o
+    mesmo do material 3D). Carvalho e bétula soltam no outono, o salgueiro um pouco no outono e no inverno, a acácia
+    no verão. A árvore de campina, cuja copa não muda, não solta mais folha.
+  - **Cogumelos:** recebem a luz rebatida do chão de dia e deixam passar luz pelo chapéu; na sombra da árvore
+    ficavam pretos.
 
-## Fase 3 — Frutas, arbustos e reflorestamento completo ⬜ · custo médio
+## Fase 3 — Frutas, arbustos e reflorestamento completo ✅ · custo médio
 - (S) **Frutas** caindo embaixo de árvores e **arbustos**. Elas viram fontes de comida no `Ecossistema` e
   apodrecem se ninguém comer.
 - (S) Reflorestamento, por partes:
   - ✅ semente → muda (a semente vem dos pássaros);
   - ✅ a muda cresce até árvore (`AmbienteVivo.plantas`);
-  - ⬜ jovem → adulta seguindo as estações reais;
-  - ⬜ o chão morto (queimado, corroído, limpo) se recupera sozinho quando a causa some.
+  - ✅ jovem → adulta seguindo as estações reais;
+  - ✅ o chão morto (queimado, corroído, limpo) se recupera sozinho quando a causa some.
 - (C) Chuva de sementes ao vento, na troca de estação.
 - **Por que antes dos bichos:** é a comida deles. Rato e pássaro precisam de fruta para ter o que fazer.
+- **Já existia:** o chão queimado volta sozinho em uns 14 minutos, a infestação some em 90 s quando a toca cai, e
+  a árvore queimada rebrota na primavera.
+- **Feito:**
+  - **Frutos:** a bolota cai do carvalho no outono, a pinha do pinheiro (mais no outono e no inverno) e a baga do
+    arbusto no verão e no outono. Caem perto da câmera, embaixo da copa, até `por_fonte` por planta e 90 perto da
+    câmera. São comida "fruta" no `Ecossistema`, que agora envelhece a comida: cada fruto tem uma vida, escurece e
+    encolhe apodrecendo, e some no fim (evento "apodreceu"). No 3D é um ponto redondo por cima do capim, com
+    tamanho mínimo em pixels; no 2D, 1 ou 2 pixels.
+  - **Pássaros comem fruto:** antes de decolar, o bando come os frutos em volta (um a cada 8 pássaros, até 4) e
+    leva a semente da árvore deles. Ao pousar, prefere lugar com fruto. A muda que nasce dessa semente é da mesma
+    espécie (a bolota vira carvalho).
+  - **Sementes no vento:** na troca de estação, a bétula e o pinheiro (no outono) e o salgueiro (na primavera)
+    soltam sementes. Até 8 mudas nascem a favor do vento, a 4 a 22 m, em chão aberto fora da sombra de outra
+    árvore e de preferência no chão morto (queimado, limpo ou sem vida). No começo da estação (o primeiro terço) as
+    sementes voam devagar no vento, subindo e descendo, e somem no capim.
+  - **A muda cresce pela estação:** rápido na primavera (1,3×), normal no verão, devagar no outono (0,55×) e quase
+    parando no inverno (0,2×), e até 30% mais com o chão molhado.
+  - **Chão morto:** a cicatriz de árvore que caiu, queimou ou foi corroída volta a ser mata pelas sementes do
+    vento e dos pássaros.
+  - **Mudas no 2D:** o 2D não desenhava as mudas nem as árvores plantadas (nem as do viveiro). Agora desenha o
+    sprite da espécie no tamanho do crescimento, com a copa pela estação.
+  - **Código:** `Frutos` (`ambiente/frutos.gd`) é a lógica de frutos e sementes. `Ecossistema.arbustos_perto`
+    funciona como `arvores_perto`, com a busca guardada por raio. `AmbienteVivo.plantar_em` planta num tile exato.
+    `DesenhoPlantas.modelo_de`, `pos_de` e `escala_de` são os mesmos para o 3D e o 2D. O roteiro é `-- roteiro
+    frutos`.
 
 ## Fase 4 — Ciclo da morte ⬜ · custo médio
 - (S) O animal morto fica no lugar: rato, pássaro, aranha e larva (pelo evento `morreu` da fase 0).

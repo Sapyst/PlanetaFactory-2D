@@ -59,6 +59,7 @@ var especies: Dictionary = {}        ## tile → espécie da muda (viveiro 2 / s
 var rapidas: Dictionary = {}         ## tile → fator de crescimento da muda (viveiro 2: 2×)
 var residuo_acum: Dictionary = {}    ## id → o que já recolheu/absorveu e ainda não virou 1 resíduo (fração)
 var _restaurou: Dictionary = {}      ## id do semeador de bioma → ciclos já transformados em restauração
+var ritmo_estacao := 1.0             ## patch fauna, fase 3: a muda cresce pela estação (e mais com o chão molhado)
 
 
 func _init(p_gerador: GeradorMundo, p_mapa: MapaOcupacao, semente := 9) -> void:
@@ -115,6 +116,8 @@ func _passo(fabrica: Fabrica, clima: Clima) -> void:
 	var secura := clima.secura() if clima != null else 0.0
 	if clima != null:
 		_rebrota(clima.estacao)
+		var es: Array = _d.plantas.get("estacoes", [1.0, 1.0, 1.0, 1.0])
+		ritmo_estacao = float(es[clampi(clima.estacao, 0, 3)]) * (1.0 + float(_d.plantas.get("molhado_bonus", 0.0)) * clima.molhado)
 	# fontes: quem trabalhou neste passo
 	for id in fabrica.emissao:
 		if not mapa.estruturas.has(id):
@@ -455,7 +458,19 @@ func plantar_perto(c: Vector2, raio: float, do_bioma := false, cresce := 1.0) ->
 	return melhor
 
 
-## Mudas crescem (mais devagar no chão sujo); planta crescida limpa o chão em volta e absorve poluição do ar.
+## Muda num tile exato (semente que o vento levou, fase 3 do patch fauna). `especie` = "arv_betula"… ("" = padrão).
+func plantar_em(t: Vector2i, especie := "") -> bool:
+	if plantas.size() >= int(_d.plantas.max) or not pode_plantar(t):
+		return false
+	plantas[t] = 0.05
+	if especie != "":
+		especies[t] = especie
+	versao_plantas += 1
+	return true
+
+
+## Mudas crescem (mais devagar no chão sujo; rápido na primavera, quase parando no inverno — `ritmo_estacao`); planta
+## crescida limpa o chão em volta e absorve poluição do ar.
 ## Construção em cima corta a planta; água do canal afoga.
 func _plantas() -> void:
 	if plantas.is_empty():
@@ -472,7 +487,7 @@ func _plantas() -> void:
 		var g: float = plantas[t]
 		if g < 1.0:
 			var suj := clampf(valor(t, SUJ) + valor(t, OLEO), 0.0, 1.0)
-			var novo := minf(1.0, g + (1.0 - 0.6 * suj) / float(p.cresce_s) * float(rapidas.get(t, 1.0)))
+			var novo := minf(1.0, g + (1.0 - 0.6 * suj) / float(p.cresce_s) * float(rapidas.get(t, 1.0)) * ritmo_estacao)
 			if int(novo * 10.0) != int(g * 10.0):
 				versao_plantas += 1
 			plantas[t] = novo

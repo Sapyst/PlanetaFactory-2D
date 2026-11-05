@@ -5,6 +5,7 @@ shader_type spatial;
 render_mode cull_disabled, diffuse_lambert, specular_disabled;
 
 uniform bool plano = false;
+uniform bool redondo = false;     // fase 3: fruto e semente no vento — ponto redondo, sombreado como bolinha
 varying vec4 cor;
 
 void vertex() {
@@ -18,12 +19,21 @@ void vertex() {
 }
 
 void fragment() {
-	// folha em losango com ponta: fora dele, nada
 	vec2 p = UV - 0.5;
-	if (abs(p.x) * 1.9 + abs(p.y) * 1.25 > 0.62) {
-		discard;
+	if (redondo) {
+		if (length(p) > 0.5) {
+			discard;
+		}
+		// bolinha: luz de cima à esquerda, borda de baixo mais escura
+		ALBEDO = cor.rgb * (1.0 - 0.35 * smoothstep(0.1, 0.5, length(p - vec2(-0.12, -0.14))));
+		ROUGHNESS = 0.7;
+	} else {
+		// folha em losango com ponta: fora dele, nada
+		if (abs(p.x) * 1.9 + abs(p.y) * 1.25 > 0.62) {
+			discard;
+		}
+		float nervura = 1.0 - smoothstep(0.0, 0.05, abs(p.x)) * 0.25;
+		ALBEDO = cor.rgb * (0.82 + 0.18 * nervura);
+		ROUGHNESS = 0.85;
 	}
-	float nervura = 1.0 - smoothstep(0.0, 0.05, abs(p.x)) * 0.25;
-	ALBEDO = cor.rgb * (0.82 + 0.18 * nervura);
-	ROUGHNESS = 0.85;
 }

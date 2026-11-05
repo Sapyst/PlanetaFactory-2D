@@ -7,7 +7,8 @@ extends RefCounted
 ##            das fontes — ninguém mexe por dentro do outro; quem precisa saber o que tem perto pergunta `perto()`.
 ##  eventos   `morreu`, `comeu`, `fugiu`: quem produz chama `avisar()`; no tick viram `eventos` (valem um passo).
 ##            As fases seguintes (carcaças, moscas, ratos) leem daqui.
-##  comida    fontes de comida no chão (fruta, semente, carcaça — fases 3 e 4); vai no save.
+##  comida    fontes de comida no chão (fruta, semente, carcaça — fases 3 e 4); vai no save. Envelhece no tick: a que
+##            tem `vida` e passou dela apodrece e some (evento "apodreceu").
 ##  saúde     quanto o chão está vivo (mato, árvore, sem cinza, ácido, teia, fábrica): decide onde a vida pequena,
 ##            os pássaros e, depois, os ratos ficam. Era dos Passaros; agora é de todos.
 ##  orçamento `detalhe(p)`: 2 = perto da câmera (lógica e desenho completos), 1 = meio, 0 = longe (só contagem).
@@ -24,6 +25,7 @@ var eventos: Array[Dictionary] = []      ## os avisos do último tick
 var _novos: Array[Dictionary] = []
 var _indice: Dictionary = {}             ## célula (Vector2i) → Array[{tipo, id, pos, especie, n}]
 var _t := 0.0
+var _t_comida := 0.0
 var _prox_comida := 1
 var _d: Dictionary
 
@@ -54,6 +56,10 @@ func tick(dt: float, p_foco: Vector2) -> void:
 	if _t <= 0.0:
 		_t = _n("indice_s", 0.5)
 		reindexar()
+	_t_comida += dt
+	if _t_comida >= 1.0:
+		envelhecer(_t_comida)
+		_t_comida = 0.0
 
 
 func reindexar() -> void:
@@ -122,6 +128,26 @@ func por_comida(tipo: String, pos: Vector2, valor := 1.0) -> int:
 	_prox_comida += 1
 	comida[id] = {"id": id, "tipo": tipo, "pos": pos, "valor": valor, "idade": 0.0}
 	return id
+
+
+## A comida envelhece; a que tem `vida` e passou dela apodrece e some.
+func envelhecer(dt: float) -> void:
+	var podres: Array = []
+	for f in comida.values():
+		f.idade = float(f.idade) + dt
+		if float(f.get("vida", 0.0)) > 0.0 and float(f.idade) >= float(f.vida):
+			podres.append(f)
+	for f in podres:
+		comida.erase(int(f.id))
+		avisar({"tipo": "apodreceu", "comida": f.tipo, "especie": String(f.get("especie", "")), "pos": f.pos})
+
+
+## 0..1: quanto já apodreceu (0 até `inicio` da vida, 1 no fim). Comida sem `vida` não apodrece.
+static func podre(f: Dictionary, inicio := 0.65) -> float:
+	var v := float(f.get("vida", 0.0))
+	if v <= 0.0:
+		return 0.0
+	return clampf((float(f.idade) / v - inicio) / (1.0 - inicio), 0.0, 1.0)
 
 
 func comida_perto(c: Vector2, raio: float, tipo := "") -> Array:
@@ -199,19 +225,45 @@ func perto_da_agua(t: Vector2i, r: int) -> bool:
 	return false
 
 
-# ------------------------------------------------------------------ árvores perto (fase 2: folhas, galhos, cogumelos)
-const CADUCAS := ["arv_carvalho", "arv_betula", "arv_acacia", "arv_salgueiro", "arvore_campina"]   ## perdem a folha no outono
-var _arv_cache := {}
-var _arv_chave := ""
+# ------------------------------------------------------------------ árvores e arbustos perto (fases 2 e 3)
+## Perfil da folhagem pela árvore, o mesmo do material 3D (Materiais.PERFIL_FOLHA, pelo material de cada modelo):
+## -1 copa que não muda (campina, fungo), 0 perene (pinheiro), 1 caduca laranja (carvalho), 2 salgueiro (amarela e
+## perde um pouco no inverno), 3 acácia (seca e perde no verão), 4 caduca amarela (bétula).
+const PERFIS := {"arv_carvalho": 1, "arv_betula": 4, "arv_salgueiro": 2, "arv_acacia": 3, "arv_pinheiro": 0}
+var _veg_cache := {}             ## "arvore|raio" / "arbusto|raio" → {chave, lista}
+
+
+static func perfil_folha(nome: String) -> int:
+	for pre in PERFIS:
+		if nome.begins_with(pre):
+			return PERFIS[pre]
+	return -1
+
+
+## Espécie da árvore pelo nome do modelo ("arv_carvalho_3" → "arv_carvalho"), a mesma de AmbienteVivo.especies.
+static func especie_arvore(nome: String) -> String:
+	var u := nome.get_slice("_", nome.get_slice_count("_") - 1)
+	return nome.substr(0, nome.length() - u.length() - 1) if u.is_valid_int() else nome
 
 
 ## Árvores de pé (não queimadas, caídas, corroídas nem limpas) a até `raio` de `c`:
-## [{tile, pos: Vector2, nome, alto (m), copa (raio m), caduca: bool}]. Guarda a última busca (a câmera parada não
-## refaz) e refaz quando o mapa muda.
+## [{tile, pos: Vector2, nome, alto (m), copa (raio m), perfil (perfil_folha), caduca: perde folha em alguma
+## estação}]. Guarda a última busca de cada raio (a câmera parada não refaz) e refaz quando o mapa muda.
 func arvores_perto(c: Vector2, raio: float) -> Array:
-	var chave := "%s|%d|%d|%d|%d" % [str(Vector2i((c / 3.0).floor())), int(raio), mapa.versao, mapa.arvores.size(), mapa.limpos.size()]
-	if chave == _arv_chave:
-		return _arv_cache.lista
+	return _vegetacao_perto(c, raio, false)
+
+
+## Arbustos de pé a até `raio` de `c` (fase 3: dão bagas), no mesmo formato.
+func arbustos_perto(c: Vector2, raio: float) -> Array:
+	return _vegetacao_perto(c, raio, true)
+
+
+func _vegetacao_perto(c: Vector2, raio: float, arbusto: bool) -> Array:
+	var k := "%s|%d" % ["arbusto" if arbusto else "arvore", int(raio)]
+	var chave := "%s|%d|%d|%d" % [str(Vector2i((c / 3.0).floor())), mapa.versao, mapa.arvores.size(), mapa.limpos.size()]
+	var cc: Dictionary = _veg_cache.get(k, {})
+	if cc.get("chave", "") == chave:
+		return cc.lista
 	var out: Array = []
 	var r := int(ceil(raio))
 	var ct := Vector2i(c.round())
@@ -225,18 +277,17 @@ func arvores_perto(c: Vector2, raio: float) -> Array:
 				continue
 			var nome := String(o.nome)
 			var md: Dictionary = Registro.modelos.get(nome, {})
-			if md.get("categoria", "") != "mapa/vegetacao" or not (nome.begins_with("arv") or nome.begins_with("arvore")):
+			if md.get("categoria", "") != "mapa/vegetacao" or nome.begins_with("arbusto") != arbusto:
+				continue
+			if not arbusto and not nome.begins_with("arv"):          # "arv_*" e "arvore_*"
 				continue
 			if nome == "arvore_morta" or not mapa.arvores.get(t, {}).is_empty():
 				continue
 			var dims: Array = md.get("dims", [1, 1, 2])
-			var caduca := false
-			for pre in CADUCAS:
-				caduca = caduca or nome.begins_with(pre)
+			var perfil := perfil_folha(nome)
 			out.append({"tile": t, "pos": Vector2(t) + Vector2(0.5, 0.5), "nome": nome, "alto": float(dims[2]),
-					"copa": maxf(float(dims[0]), float(dims[1])) * 0.5, "caduca": caduca})
-	_arv_chave = chave
-	_arv_cache = {"lista": out}
+					"copa": maxf(float(dims[0]), float(dims[1])) * 0.5, "perfil": perfil, "caduca": perfil >= 1})
+	_veg_cache[k] = {"chave": chave, "lista": out}
 	return out
 
 
