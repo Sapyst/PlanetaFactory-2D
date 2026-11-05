@@ -32,6 +32,9 @@ var _historico: Array[Dictionary] = []
 ## `cobrar` = false no modo livre (demonstração e testes antigos).
 var cobrar := false
 var inventario: Dictionary = {}
+## Patch RTS: o plano vira encomenda para os drones construtores (Obras). A falta de recurso não pinta de vermelho —
+## a obra fica esperando como fantasma até o núcleo ter o que ela custa.
+var fila_de_obras := false
 var pesquisa: Pesquisa = null
 ## Postos avançados (núcleos-filhos): func(tile) -> {id, estoque: Dictionary} do posto que cobre o tile ({} = nenhum).
 ## A obra que cai perto de um posto paga primeiro com o estoque dele; o que faltar sai do núcleo (`inventario`).
@@ -502,7 +505,7 @@ func _cobrar_plano(plano: Array[Dictionary], escolhido: String) -> Array[Diction
 			if not loc.is_empty():
 				tem_l = maxi(0, int(loc.estoque.get(k, 0)) - int(gasto_l.get(loc.id, {}).get(k, 0)))
 			do_l[k] = mini(tem_l, int(c[k]))
-			if int(gasto.get(k, 0)) + int(c[k]) - int(do_l[k]) > int(inventario.get(k, 0)):
+			if int(gasto.get(k, 0)) + int(c[k]) - int(do_l[k]) > int(inventario.get(k, 0)) and not fila_de_obras:
 				cabe = false
 		if not cabe:
 			it.motivo = "sem_recursos"

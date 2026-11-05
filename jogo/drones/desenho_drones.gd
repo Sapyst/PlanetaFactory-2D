@@ -15,7 +15,8 @@ extends Node3D
 ##  logístico  a garra balança em pêndulo (aceleração do drone) com o item que leva (modelo do item);
 ##  derrubado  gira descontrolado soltando fumaça, bate no chão (faíscas, poeira) e fica como sucata fumegando.
 
-const MODELOS := {"reparo": "drone_reparo", "combate": "drone_defesa", "logistico": "drone_logistico"}
+const MODELOS := {"reparo": "drone_reparo", "combate": "drone_defesa", "logistico": "drone_logistico",
+		"construtor": "drone_reparo"}          ## construtor (patch RTS): o de reparo, que tem o braço de solda
 const VERMELHO := Color(1.0, 0.06, 0.03)
 const HOLO := preload("res://render/shaders/holograma.gdshader")
 const SCAN := preload("res://render/shaders/scan_reparo.gdshader")
@@ -74,7 +75,7 @@ func atualizar(eventos: Array[Dictionary], delta: float) -> void:
 	var vistos := {}
 	for id in drones.drones:
 		var d: Dictionary = drones.drones[id]
-		if d.e == Drones.E.HANGAR or not mapa.estruturas.has(d.est) and d.e != Drones.E.CAINDO:
+		if d.e == Drones.E.HANGAR and d.tipo != "construtor" or not mapa.estruturas.has(d.est) and d.e != Drones.E.CAINDO:
 			continue
 		vistos[id] = true
 		var n: Dictionary = _nos.get(id, {})
@@ -170,7 +171,8 @@ func _desenhar(d: Dictionary, n: Dictionary, delta: float) -> void:
 	n.vel = vel
 	n.pos = pos
 	var ac: Vector3 = n.ac
-	var voando: bool = d.e in [Drones.E.DECOLANDO, Drones.E.INDO, Drones.E.TRABALHANDO, Drones.E.VOLTANDO, Drones.E.POUSANDO]
+	var voando: bool = d.e in [Drones.E.DECOLANDO, Drones.E.INDO, Drones.E.TRABALHANDO, Drones.E.VOLTANDO, Drones.E.POUSANDO] \
+			or d.tipo == "construtor" and d.e == Drones.E.HANGAR          # construtor parado orbita o cristal
 	# inclina para onde acelera (e um pouco com a velocidade, como freio aerodinâmico); mola passa do ponto e volta
 	var quer := Vector2(ac.x, ac.z) * 0.055 + Vector2(vel.x, vel.z) * 0.03
 	if voando:                                                   # rajadas: balanço de quem paira
@@ -208,7 +210,7 @@ func _desenhar(d: Dictionary, n: Dictionary, delta: float) -> void:
 	raiz.global_transform = Transform3D(b, pos + Vector3(0, bob, 0))
 	_rotores(d, n, dt, voando)
 	match String(d.tipo):
-		"reparo": _braco_solda(d, n, dt)
+		"reparo", "construtor": _braco_solda(d, n, dt)
 		"combate": _torre(d, n, dt)
 		"logistico": _pendulo(d, n, dt)
 	_nascer(d, n, dt)
@@ -224,6 +226,9 @@ func _olhar_para(d: Dictionary) -> Vector2:
 			if mapa.estruturas.has(d.alvo):
 				var e: Dictionary = mapa.estruturas[d.alvo]
 				return Grade.centro_da_area(e.minimo, e.area, e.rot)
+		"construtor":
+			if drones.obras != null and drones.obras.obras.has(int(d.alvo)):
+				return drones.obras.obras[int(d.alvo)].pos
 		"combate":
 			if drones.colonia.aranhas.has(d.alvo):
 				return drones.colonia.aranhas[d.alvo].pos
@@ -286,6 +291,8 @@ func _nascer(d: Dictionary, n: Dictionary, dt: float) -> void:
 			var o := (g as GeometryInstance3D).material_overlay as ShaderMaterial
 			if o != null:
 				o.set_shader_parameter("forca", f)
+	if d.tipo == "construtor":                       # nasce na órbita do cristal do núcleo (sem projetores)
+		return
 	# no fim desce para dentro da fabricadora
 	var desce := clampf((t - tot * 0.8) / (tot * 0.2), 0.0, 1.0)
 	raiz.global_position.y -= desce * desce * 0.6
@@ -304,7 +311,8 @@ func _nascer(d: Dictionary, n: Dictionary, dt: float) -> void:
 
 # ------------------------------------------------------------------ reparo: braço de solda + scan
 func _braco_solda(d: Dictionary, n: Dictionary, dt: float) -> void:
-	var trabalha: bool = d.e == Drones.E.TRABALHANDO and mapa.estruturas.has(d.alvo)
+	var obra: Dictionary = drones.obras.obras.get(int(d.alvo), {}) if d.tipo == "construtor" and drones.obras != null else {}
+	var trabalha: bool = d.e == Drones.E.TRABALHANDO and (mapa.estruturas.has(d.alvo) if d.tipo != "construtor" else not obra.is_empty())
 	var t := _t
 	# trabalhando: braço baixa até a peça e a tocha vai e volta no cordão; no voo: a pose do modelo (esticado para a
 	# frente abaixo do corpo, entre os patins e acima do chão quando pousado — não cruza nada)
@@ -337,7 +345,10 @@ func _braco_solda(d: Dictionary, n: Dictionary, dt: float) -> void:
 	if float(n.faisca_t) <= 0.0:
 		n.faisca_t = 0.12
 		_faiscas(ponta, 6, Color(1.0, 0.55, 0.15), 1.6)
-	_scan_em(int(d.alvo), d, n)
+	if d.tipo != "construtor":
+		_scan_em(int(d.alvo), d, n)
+	elif obra.acao == "remover" and mapa.estruturas.has(int(obra.item.get("id", -1))):
+		_scan_em(int(obra.item.id), d, n)              # desmontando: a folha de laser corre pela peça
 
 
 ## Marca a estrutura como escaneada neste quadro e desenha o contorno da folha de laser e o leque do olho.

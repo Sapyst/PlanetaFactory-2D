@@ -46,7 +46,9 @@ var drones: Dictionary = {}        ## id → {id, est, tipo, e, t, pos: Vector2,
                                    ##        item, n, de, para, fase}
 var pago: Dictionary = {}          ## id da estrutura → ♥ já pagos (placas gastas) e ainda não soldados
 var eventos: Array[Dictionary] = []
+var obras: Obras = null            ## patch RTS: fila dos drones construtores do núcleo (tipo "construtor")
 var _prox := 1
+var _relogio := 0.0
 var _versao := -1
 var _lista: Array[int] = []
 var _t_tarefa := 0.0
@@ -104,6 +106,8 @@ func pode_voar() -> bool:
 
 
 func tipo_de(est: int) -> String:
+	if mapa.estruturas.get(est, {}).get("nome", "") == "nucleo":
+		return "construtor"
 	var t: String = String(mapa.estruturas.get(est, {}).get("drones_tipo", "reparo"))
 	if t == "logistico" and not logistica_liberada():
 		return "reparo"
@@ -130,6 +134,9 @@ func ponto_estacao(est: int, local: Vector2) -> Vector2:
 
 
 func berco(d: Dictionary) -> Vector2:
+	if d.tipo == "construtor":                         # parado: orbita o cristal do núcleo
+		var a := float(d.id) * 2.39996 + _relogio * obras.n("giro_orbita", 0.35)
+		return centro(d.est) + Vector2.from_angle(a) * obras.n("orbita", 1.9)
 	var bs: Array = _r.get("bercos", [[0.5, 0.5], [0.5, -0.5]])
 	var b: Array = bs[int(d.id) % bs.size()]
 	return ponto_estacao(d.est, Vector2(float(b[0]), float(b[1])))
@@ -174,6 +181,7 @@ func estacoes() -> Array[int]:
 # ------------------------------------------------------------------ tick
 func tick(dt: float) -> void:
 	eventos.clear()
+	_relogio += dt
 	_listas()
 	for est in _lista:
 		_montar(est)
@@ -187,6 +195,8 @@ func tick(dt: float) -> void:
 		if voa:
 			for est in _lista:
 				_lancar(est)
+	if obras != null:
+		obras.tick(dt, voa)
 
 
 ## Drone pronto na saída da máquina entra na frota (até o máximo).
@@ -217,6 +227,16 @@ func _drone(d: Dictionary, dt: float, voa: bool) -> void:
 			return
 		elif d.e != E.CAINDO:
 			_derrubar(d)
+	if d.tipo == "construtor" and d.e in [E.HANGAR, E.NASCENDO]:
+		d.pos = berco(d)
+		d.alt = obras.n("alt_orbita", 3.1)
+		if d.e == E.NASCENDO:
+			d.t = float(d.t) + dt
+			if d.t >= obras.n("nascer_s", 4.0):
+				d.e = E.HANGAR
+		else:
+			d.vida = minf(obras.n("vida", 40.0), float(d.vida) + obras.n("vida", 40.0) / 15.0 * dt)   # o núcleo conserta
+		return
 	match int(d.e):
 		E.HANGAR:
 			var en := fabrica.energia(d.est)
@@ -238,6 +258,8 @@ func _drone(d: Dictionary, dt: float, voa: bool) -> void:
 		E.POUSANDO:
 			d.t = float(d.t) + dt
 			var alvo_alt := float(_r.get("alt_pouso", 0.97)) + (0.04 if d.tipo == "logistico" else 0.0)   # garra recolhida
+			if d.tipo == "construtor":
+				alvo_alt = obras.n("alt_orbita", 3.1)
 			d.alt = move_toward(float(d.alt), alvo_alt, 1.4 * dt)
 			d.pos = (d.pos as Vector2).move_toward(berco(d), 2.0 * dt)
 			if d.t >= float(_r.get("pousar_s", 1.0)) and absf(float(d.alt) - alvo_alt) < 0.02:
@@ -251,6 +273,17 @@ func _drone(d: Dictionary, dt: float, voa: bool) -> void:
 				drones.erase(d.id)
 			return
 	# no ar
+	if d.tipo == "construtor":                         # sem bateria (o núcleo é a casa); raios: volta
+		if not voa:
+			_voltar(d)
+		if d.e != E.VOLTANDO:
+			obras.trabalhar(d, dt)
+		_mordidas(d, dt)
+		if d.e == E.VOLTANDO and drones.has(d.id) and d.e != E.CAINDO:
+			if _voar_para(d, berco(d), obras.n("alt_orbita", 3.1), dt):
+				d.e = E.POUSANDO
+				d.t = 0.0
+		return
 	d.bateria = float(d.bateria) - dt
 	if d.e != E.VOLTANDO:
 		var volta := (berco(d) - (d.pos as Vector2)).length() / velocidade() + float(_r.get("folga_s", 6.0))
@@ -274,9 +307,12 @@ func _voar_para(d: Dictionary, alvo: Vector2, alt_alvo: float, dt: float) -> boo
 	var dif := alvo - (d.pos as Vector2)
 	var dist := dif.length()
 	var alt_desejada := alt_alvo if dist < float(_r.get("perto", 4.0)) else maxf(alt_alvo, float(_r.get("alt_voo", 4.0)))
+	if d.tipo == "construtor" and dist >= float(_r.get("perto", 4.0)):
+		alt_desejada = maxf(alt_alvo, obras.n("alt_voo", 4.0))
 	d.alt = move_toward(float(d.alt), alt_desejada, float(_r.get("subida", 1.6)) * 1.5 * dt)
 	if dist > 1e-4:
-		d.pos = (d.pos as Vector2) + dif / dist * minf(dist, velocidade() * dt)
+		var v := obras.n("velocidade", 8.0) * (1.0 + _b("drones_velocidade")) if d.tipo == "construtor" else velocidade()
+		d.pos = (d.pos as Vector2) + dif / dist * minf(dist, v * dt)
 	return dist < 0.3 and absf(float(d.alt) - alt_alvo) < 0.35
 
 
@@ -288,6 +324,8 @@ func _voltar(d: Dictionary) -> void:
 
 
 func _derrubar(d: Dictionary) -> void:
+	if d.tipo == "construtor" and obras != null:
+		obras.liberar(d, true)
 	d.e = E.CAINDO
 	d.t = 0.0
 	eventos.append({"tipo": "drone_abatido", "id": d.id, "pos": d.pos, "alt": d.alt})
@@ -295,6 +333,8 @@ func _derrubar(d: Dictionary) -> void:
 
 ## Pousou: entra no hangar. O que estava na garra (logístico) vai para o núcleo.
 func _guardar(d: Dictionary) -> void:
+	if d.tipo == "construtor" and obras != null:
+		obras.liberar(d, false)
 	d.e = E.HANGAR
 	d.alvo = -1
 	d.fase = ""
@@ -311,8 +351,12 @@ func _decolar(d: Dictionary) -> void:
 	d.e = E.DECOLANDO
 	d.t = 0.0
 	d.pos = berco(d)
-	d.alt = float(_r.get("alt_pouso", 0.97))
-	d.tipo = tipo_de(d.est)
+	if d.tipo == "construtor":
+		d.alt = obras.n("alt_orbita", 3.1)
+		d.t = 1.0                                      # já está no ar: segue direto
+	else:
+		d.alt = float(_r.get("alt_pouso", 0.97))
+		d.tipo = tipo_de(d.est)
 	eventos.append({"tipo": "drone_decolou", "id": d.id, "est": d.est})
 
 

@@ -45,6 +45,8 @@ var _teia_chunks: Dictionary = {}        ## chunk → nó DesenhoChunk que já r
 var _t_teia := 0.0
 var drones: Drones                      ## drones das estações (reparo, combate, logística)
 var _desenho_drones: DesenhoDrones
+var obras: Obras                        ## patch RTS: obras encomendadas que os drones construtores do núcleo fazem
+var _desenho_obras: DesenhoObras
 var _eventos_drones: Array[Dictionary] = []
 var grafo := GrafoTrilhos.new()
 var trens: Array[Trem] = []
@@ -197,6 +199,10 @@ func _ready() -> void:
 		var p := fabrica.posto_que_cobre(t)
 		return {} if p < 0 else {"id": p, "estoque": fabrica.baus[p]}
 	construtor.estoque_do_posto = func(p: int) -> Variant: return fabrica.baus.get(p)
+	obras = Obras.new(mapa, construtor, drones, inventario)
+	obras.cobrar = construtor.cobrar
+	obras.aplicar = sincronizar
+	construtor.fila_de_obras = true
 	colonia.destruir = func(id: int) -> void: _destruido(id)
 	if not dados.is_empty():
 		_carregar(dados)
@@ -262,6 +268,7 @@ func _comecar_novo() -> void:
 			mapa.limpar_obstaculo(NUCLEO_EM + Vector2i(x, y))
 	_no_nucleo = _instanciar("nucleo", NUCLEO_EM, 0)
 	inventario.merge(Registro.progressao.get("kit_inicial", {}))
+	obras.dar_iniciais()
 	fabrica.reconstruir()
 	camera.alvo = Grade.ponto_mundo(Vector2(NUCLEO_EM) + Vector2(1.5, 1.5))
 	camera.posicionar()
@@ -337,7 +344,7 @@ func _dados_salvar() -> Dictionary:
 	return {"modo": modo, "semente": semente, "tempo": _tempo,
 			"camera": [camera.alvo, camera.distancia, camera.angulo],
 			"mapa": {"estruturas": mapa.estruturas, "limpos": mapa.limpos.keys(), "prox": mapa._prox_id, "arvores": mapa.arvores},
-			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(),
+			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(),
 			"estoques": estoques, "inventario": inventario, "pesquisa": pesquisa.estado(),
 			"trens": trens.map(func(t: Trem): return t.para_salvar()), "prox_trem": _prox_trem}
 
@@ -388,6 +395,8 @@ func _carregar(d: Dictionary) -> void:
 	agua.encher_tudo()
 	colonia.restaurar(d.colonia)
 	drones.restaurar(d.get("drones", {}))
+	obras.restaurar(d.get("obras", {}))
+	obras.dar_iniciais()                          # save de antes do patch RTS: ganha os construtores uma vez
 	for id in mapa.estruturas:
 		var nome: String = mapa.estruturas[id].nome
 		if not Colonia.eh_toca(nome) and nome != "pilar":
@@ -448,6 +457,10 @@ func _criar_desenhos() -> void:
 	_desenho_drones.desenho_colonia = _desenho_colonia
 	_desenho_drones.no_estrutura = func(id: int) -> Node3D: return _nos.get(id)
 	add_child(_desenho_drones)
+	_desenho_obras = DesenhoObras.new()
+	_desenho_obras.obras = obras
+	_desenho_obras.mapa = mapa
+	add_child(_desenho_obras)
 	_desenho_trens = DesenhoTrens.new()
 	add_child(_desenho_trens)
 	_desenho_itens = DesenhoItens.new()
@@ -1103,6 +1116,7 @@ func _montar_fabrica() -> void:
 	fabrica.reconstruir()
 	_fabrica_suja = false
 	construtor._historico.clear()                 # a demo não entra no desfazer do jogador
+	obras.dar_iniciais()
 	if g >= 0:
 		fabrica.combustivel[g] = 300.0
 	if bau >= 0:
@@ -1145,6 +1159,7 @@ func _process(delta: float) -> void:
 	for ev in _eventos_drones:
 		if ev.tipo == "drone_sem_placa" and is_instance_valid(controle):
 			controle._avisar("Drones de reparo sem placas de ferro no núcleo")
+	_eventos_obras(delta)
 	eventos_desenho.emit(_eventos_drones)             # versão 2D: tiro dos drones
 	_desenho_drones.atualizar(_eventos_drones, delta)
 	_eventos_drones.clear()
@@ -1687,6 +1702,8 @@ func _tick_mundo(dt: float) -> void:
 	silo.eventos.clear()
 	drones.tick(dt)
 	_eventos_drones.append_array(drones.eventos)
+	_obras_eventos.append_array(obras.eventos)
+	obras.eventos.clear()
 	_tempo += dt
 	if _relatorio:
 		_t_rel -= dt
@@ -1848,6 +1865,15 @@ func remover_estrutura(id: int, forcar: bool = false) -> bool:
 		pedir_confirmacao_remocao_bau(id)
 		return false
 	_confirmando_remocao_bau = -1
+	if obras != null:                             # patch RTS: o drone vai lá desmontar
+		if not obras.remover(id):
+			return false
+		Som.tocar("remover")
+		if is_instance_valid(controle):
+			controle._avisar("Remoção encomendada: o drone construtor vai desmontar")
+		_sel = {}
+		_detalhe()
+		return true
 	var e: Dictionary = mapa.estruturas[id]
 	var plano: Array[Dictionary] = []
 	for it in construtor.plano_remocao(e.minimo, e.minimo):
@@ -2402,6 +2428,7 @@ func _detalhe() -> void:
 				linhas_n.append("%s: %d" % [_nome_item(k), inventario[k]])
 		linhas.append("Estoque (o que entra pelas bocas vira material de construção):")
 		linhas.append("\n".join(linhas_n) if not linhas_n.is_empty() else "vazio")
+		_detalhe_construtores(linhas, opcoes)
 	elif Registro.estruturas.get(e.nome, {}).get("grupo", "") == "logica":
 		_opcoes_logica(id, e, linhas, botoes)
 	elif not fabrica.rede_de(id).is_empty():
@@ -2988,6 +3015,61 @@ func _avisar_furia() -> void:
 		if not _furiosos.has(id):
 			controle._avisar("⚠ Ninho furioso (%d%%): chão sujo em volta. Veja em Recursos → Sujeira." % roundi(float(colonia.ninhos[id].furia) * 100))
 	_furiosos = agora
+
+
+# ------------------------------------------------------------------ patch RTS: drones construtores
+var _obras_eventos: Array[Dictionary] = []
+var _t_som_obra := 0.0
+
+
+## Plano confirmado na construção: vira encomenda para os drones construtores (limpar/aplainar seguem na hora).
+func encomendar(plano: Array[Dictionary]) -> Dictionary:
+	var r := obras.encomendar(plano)
+	if not (r.rel as Dictionary).is_empty():
+		sincronizar(r.rel)
+	return r
+
+
+func _eventos_obras(delta: float) -> void:
+	_t_som_obra -= delta
+	for ev in _obras_eventos:
+		match ev.tipo:
+			"obra_pronta":
+				if _t_som_obra <= 0.0:
+					_t_som_obra = 0.25                   # traço longo de esteira não vira metralhadora de som
+					Som.tocar("construir", Grade.ponto_mundo(ev.pos))
+			"obra_removida":
+				if _t_som_obra <= 0.0:
+					_t_som_obra = 0.25
+					Som.tocar("remover", Grade.ponto_mundo(ev.pos))
+			"obra_falhou":
+				if is_instance_valid(controle):
+					controle._avisar("Não deu para construir %s ali — os itens voltam com o drone" % _nome_item(ev.nome))
+			"carga_perdida":
+				if is_instance_valid(controle):
+					controle._avisar("Drone construtor derrubado: a carga se perdeu")
+	_obras_eventos.clear()
+
+
+func _detalhe_construtores(linhas: Array[String], opcoes: Array) -> void:
+	var lista := obras.construtores()
+	var fora := 0
+	for d in lista:
+		if d.e != Drones.E.HANGAR and d.e != Drones.E.NASCENDO:
+			fora += 1
+	linhas.append("Drones construtores: %d de %d (%d trabalhando)%s" % [lista.size(), obras.frota_max(), fora,
+			"" if drones.pode_voar() else " — RAIOS: ficam no núcleo"])
+	if obras.pendentes() > 0:
+		var esp := obras.esperando()
+		linhas.append("Obras na fila: %d%s" % [obras.pendentes(), (" (%d esperando recurso)" % esp) if esp > 0 else ""])
+	var motivo := obras.pode_fabricar()
+	var custo := _lista_itens(obras.custo_drone())
+	opcoes.append({"texto": "Fabricar drone construtor (%s)%s" % [custo, "" if motivo == "" else " — " + motivo],
+			"acao": func():
+				if obras.fabricar() >= 0:
+					Som.tocar("construir")
+				_detalhe(),
+			"secao": "acoes", "icone_txt": "✚ Drone"})
 
 
 func _hud() -> void:

@@ -204,7 +204,17 @@ func cancelar() -> void:
 	_atualizar()
 
 
+func _obras() -> Obras:
+	return mundo.get("obras") if mundo != null else null
+
+
 func desfazer() -> void:
+	var ob := _obras()
+	if ob != null and ob.cancelar_ultimo():         # patch RTS: cancela a última encomenda que ainda não foi feita
+		_avisar("Encomenda cancelada")
+		_chave_plano = ""
+		_atualizar()
+		return
 	if not construtor.pode_desfazer():
 		return
 	mundo.sincronizar(construtor.desfazer())
@@ -270,20 +280,26 @@ func _confirmar() -> void:
 			_chave_plano = ""
 			return
 	var n := Construtor.contar(_plano)
-	var rel := construtor.executar(_plano)
-	mundo.sincronizar(rel)
+	var enc := 0
+	if _obras() != null and mundo.has_method("encomendar"):
+		enc = int(mundo.encomendar(_plano).n)              # patch RTS: o drone construtor sai do núcleo e faz
+	else:
+		mundo.sincronizar(construtor.executar(_plano))
 	if n.ok > 0 and peca == "esteira_rampa":
 		mudar_nivel(1)                        # subiu: o próximo traço já é no alto
 	elif n.ok > 0 and peca == "rampa_desce":
 		mudar_nivel(-1)
 	if removendo:
-		_avisar("Removido: %d" % _plano.size())
+		_avisar(("Remoção encomendada: %d" % enc) if enc > 0 else ("Removido: %d" % _plano.size()))
 		Som.tocar("remover")
 	elif peca == APLAINAR or peca == ESCAVAR:
 		if n.ok > 0:
 			Som.tocar("construir")
 		_avisar("%s: %d tile(s)%s" % ["Escavado" if peca == ESCAVAR else "Aplainado", n.ok,
 				"  ·  %d bloqueado(s)" % n.bloqueados if n.bloqueados > 0 else ""])
+	elif enc > 0:
+		Som.tocar("construir")
+		_avisar("Encomendado: %d — o drone sai do núcleo%s" % [enc, "  ·  %d bloqueada(s)" % n.bloqueados if n.bloqueados > 0 else ""])
 	elif n.ok > 0:
 		Som.tocar("construir")
 		_avisar("Construído: %d%s" % [n.ok, "  ·  %d bloqueada(s)" % n.bloqueados if n.bloqueados > 0 else ""])
@@ -538,7 +554,7 @@ func _mirar(tela: Vector2) -> void:
 
 # ------------------------------------------------------------------ plano + fantasma + dica
 func _atualizar() -> void:
-	barra.pode_desfazer(construtor.pode_desfazer())
+	barra.pode_desfazer(construtor.pode_desfazer() or (_obras() != null and _obras().pendentes() > 0))
 	barra.modo_construcao(_texto_modo())
 	if _pendente and not _usa_pendente():
 		_pendente = false

@@ -53,6 +53,7 @@ func _ready() -> void:
 		"combate": _roteiro_combate()
 		"clima": _roteiro_clima()
 		"drones": _roteiro_drones()
+		"obras": _roteiro_obras()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -2175,6 +2176,62 @@ static func _farol_do_posto(m: MapaOcupacao, ids: Dictionary) -> int:
 		if m.estruturas[i].nome == "farol_cristal" and (melhor < 0 or i > melhor):
 			melhor = i
 	return melhor
+
+
+## Patch RTS (-- novo roteiro obras): encomenda uma linha de esteira, máquinas, postes sem cobre (âmbar) e uma
+## remoção; os construtores saem do núcleo, soldam, voltam e buscam o resto. Imprime OBRAS a cada 2 s.
+func _roteiro_obras() -> void:
+	var w := [Vector2i(9999, 0)]
+	em(2, func():
+		Sessao.config.fps = false
+		var g := Grade.gerador
+		var m: MapaOcupacao = cena.mapa
+		for r in range(4, 40):
+			for k in 32:
+				if w[0].x != 9999:
+					break
+				var t := Vector2i(3, -6) + Vector2i((Vector2.from_angle(k * TAU / 32.0) * r).round())
+				var ok := true
+				for i in range(0, 14):
+					for j in range(0, 10):
+						var q := t + Vector2i(i, j)
+						if g.terreno(q) != GeradorMundo.Terreno.TERRA or g.nivel(q) != g.nivel(t) or g.em_encosta(q) or m.tiles.has(q):
+							ok = false
+				if ok:
+					w[0] = t
+		var o: Vector2i = w[0]
+		print("OBRAS chão ", o)
+		_sem_ninhos(o)
+		var ks := {}
+		for i in range(-1, 15):
+			for j in range(-1, 11):
+				m.limpar_obstaculo(o + Vector2i(i, j))
+				ks[Grade.chunk_de(o + Vector2i(i, j))] = true
+		for k in ks:
+			cena._redesenhar_chunk(k)
+		var con: Construtor = cena.construtor
+		var velho: int = cena._instanciar_id("bau", o + Vector2i(12, 8), 0)      # este o drone vai desmontar
+		cena.inventario["placa_cobre"] = 0                                   # postes ficam âmbar até chegar cobre
+		cena.encomendar(con.plano_linha("esteira", o + Vector2i(0, 2), o + Vector2i(10, 2), 0))
+		cena.encomendar(con.plano_peca("fornalha", o + Vector2i(2, 4), 0))
+		cena.encomendar(con.plano_peca("bau", o + Vector2i(6, 4), 0))
+		cena.encomendar(con.plano_peca("poste_energia", o + Vector2i(0, 7), 0))
+		cena.encomendar(con.plano_peca("poste_energia", o + Vector2i(6, 7), 0))
+		if velho >= 0:
+			cena.obras.remover(velho)
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo((Vector2(o) + Vector2(5, 3) + Vector2(cena.NUCLEO_EM)) * 0.5 + Vector2(1, 1))
+		cam.distancia = 30.0
+		cam.posicionar())
+	em(150, func():                                  # pedido depois da saída: buscam no núcleo e voltam
+		var o: Vector2i = w[0]
+		cena.encomendar(cena.construtor.plano_peca("montadora", o + Vector2i(9, 4), 0)))
+	em(330, func(): cena.inventario["placa_cobre"] = 20)     # chegou cobre: os postes âmbar saem
+	for q in range(60, 900, 60):
+		em(q, func():
+			var ob: Obras = cena.obras
+			var fora := ob.construtores().filter(func(d): return d.e != Drones.E.HANGAR).size()
+			print("OBRAS q=%d fila=%d esperando=%d drones_fora=%d" % [q, ob.pendentes(), ob.esperando(), fora]))
 
 
 func _sem_ninhos(w: Vector2i) -> void:

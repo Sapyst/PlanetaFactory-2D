@@ -16,6 +16,8 @@ var estruturas: Dictionary = {}     ## id → {nome, minimo, rot, area}
 var limpos: Dictionary = {}         ## tiles cujo obstáculo natural já foi removido
 var arvores: Dictionary = {}        ## tile → {e: "queimada"}, {e: "caida", dir: Vector2} (fogo) ou {e: "corroida"} (ácido das larvas); some ao limpar
 var altos: Dictionary = {}          ## Vector3i(x, y, nível 1..2) → id (esteira elevada / rampa de cima)
+var reservas: Dictionary = {}       ## tile → id da obra encomendada (patch RTS: ainda não construída, ninguém põe em cima)
+var reservas_altas: Dictionary = {} ## Vector3i(x, y, nível) → id da obra elevada encomendada
 const NIVEIS := 2                   ## até 1,0 m
 const FOLGA := 0.25
 var _prox_id := 1
@@ -40,7 +42,7 @@ func motivo_bloqueio(nome: String, minimo: Vector2i, rot: int) -> String:
 	for t in Grade.tiles_da_area(minimo, area, rot):
 		if gerador.nivel(t) != nivel0:
 			return "desnivel"                          # (encosta pode: a construção aplaina o chão)
-		if tiles.has(t):
+		if tiles.has(t) or reservas.has(t):
 			return "ocupado"
 		var ter := gerador.terreno(t)
 		if gerador.eh_agua(ter) and (Colonia.eh_toca(nome) or not ter in AGUA_RASA):
@@ -111,7 +113,7 @@ func sobre_agua(minimo: Vector2i, area: Vector2i, rot: int) -> bool:
 
 ## Esteira/rampa no nível n ≥ 1 (só peças 1×1 de esteira): livre naquele nível, estrutura de baixo mais baixa.
 func motivo_alto(t: Vector2i, n: int) -> String:
-	if altos.has(Vector3i(t.x, t.y, n)):
+	if altos.has(Vector3i(t.x, t.y, n)) or reservas_altas.has(Vector3i(t.x, t.y, n)):
 		return "ocupado"
 	if altura_no_tile(t) > n * 0.5 - FOLGA:
 		return "estrutura_alta_embaixo"

@@ -46,6 +46,7 @@ var _fant_spr: Array[Sprite2D] = []
 var _fant_peg: Array[Polygon2D] = []
 var _fant_txt: Array[Label] = []
 var _fant_seta: Array[Polygon2D] = []
+var _obra_spr: Dictionary = {}          ## id da obra (patch RTS) → Sprite2D do holograma
 var _assin_fios := ""
 var efeitos := Node2D.new()
 var ef := Efeitos2D.new()           ## efeitos de combate (disparo, projétil, impacto, sangue, cápsula, luz)
@@ -114,6 +115,7 @@ func _process(delta: float) -> void:
 	_sincronizar_passaros()
 	_sincronizar_fios()
 	_sincronizar_fantasma()
+	_sincronizar_obras()
 	_sincronizar_portas()
 	_sincronizar_voos(delta)
 	_atualizar_efeitos(delta)
@@ -653,13 +655,22 @@ func _solda(id: int, nome: String, corpo: Node3D) -> void:
 	if dr == null or not dr.drones.has(id):
 		return
 	var d: Dictionary = dr.drones[id]
-	if int(d.e) != Drones.E.TRABALHANDO or int(d.get("alvo", -1)) < 0 or not mundo.mapa.estruturas.has(int(d.alvo)):
+	if int(d.e) != Drones.E.TRABALHANDO or int(d.get("alvo", -1)) < 0:
 		return
+	var alvo: Vector3
+	if d.tipo == "construtor":                       # patch RTS: solda na obra (o holograma)
+		var ob = mundo.get("obras")
+		if ob == null or not ob.obras.has(int(d.alvo)):
+			return
+		alvo = Grade.ponto_mundo(ob.obras[int(d.alvo)].pos, 0.6)
+	else:
+		if not mundo.mapa.estruturas.has(int(d.alvo)):
+			return
+		var e: Dictionary = mundo.mapa.estruturas[int(d.alvo)]
+		alvo = Grade.ponto_mundo(Grade.centro_da_area(e.minimo, e.area, e.rot), 0.8)
 	if _t < float(_t_solda.get(id, 0.0)):
 		return
-	_t_solda[id] = _t + 0.7
-	var e: Dictionary = mundo.mapa.estruturas[int(d.alvo)]
-	var alvo := Grade.ponto_mundo(Grade.centro_da_area(e.minimo, e.area, e.rot), 0.8)
+	_t_solda[id] = _t + (0.35 if d.tipo == "construtor" else 0.7)
 	ef.disparar("reparo", corpo.global_position + Vector3(0, -0.15, 0), alvo, "estrutura", 0.6)
 
 
@@ -767,6 +778,47 @@ static func _branco() -> Texture2D:
 		im.fill(Color.WHITE)
 		_tex_branca = ImageTexture.create_from_image(im)
 	return _tex_branca
+
+
+# ------------------------------------------------------------------ obras encomendadas (patch RTS): holograma do sprite
+## O mesmo DesenhoObras do 3D: cada obra tem o modelo instanciado no lugar; aqui vira o sprite da peça tingido
+## (azul na fila, âmbar esperando recurso, vermelho remoção), pulsando; soldando, fica mais aceso.
+func _sincronizar_obras() -> void:
+	var dob = mundo.get("_desenho_obras")
+	var ob = mundo.get("obras")
+	var vistos := {}
+	if dob != null and ob != null:
+		for id in dob._nos:
+			var n: Dictionary = dob._nos[id]
+			var no: Node3D = n.get("no")
+			if no == null or not is_instance_valid(no) or not ob.obras.has(id):
+				continue
+			var nome := _nome_do_arquivo(no)
+			if not Catalogo2D.tem(nome):
+				continue
+			vistos[id] = true
+			var s: Sprite2D = _obra_spr.get(id)
+			if s == null:
+				s = Sprite2D.new()
+				s.centered = false
+				s.region_enabled = true
+				fantasmas.add_child(s)
+				_obra_spr[id] = s
+			var m := Catalogo2D.meta(nome)
+			var g := no.global_transform
+			s.texture = Catalogo2D.folha(nome, "atras" if String(m.get("animacao", "")) == "braco" else "")
+			s.region_rect = Catalogo2D.regiao(m, Catalogo2D.linha_do_angulo(m, g.basis.get_euler().y), 0)
+			s.position = Camera2DJogo.projetar(g.origin)
+			s.offset = -Vector2(m.ancora[0], m.ancora[1])
+			var o: Dictionary = ob.obras[id]
+			var c: Color = DesenhoObras.VERMELHO if o.acao == "remover" else (DesenhoObras.AMBAR if o.espera else DesenhoObras.AZUL)
+			var soldando: bool = float(o.prog) > 0.0
+			var a := (0.62 if soldando else 0.45) + 0.08 * sin(_t * 3.0 + float(id))
+			s.modulate = Color(c.r * 0.55 + 0.45, c.g * 0.55 + 0.45, c.b * 0.55 + 0.45, a)
+	for id in _obra_spr.keys():
+		if not vistos.has(id):
+			(_obra_spr[id] as Node).queue_free()
+			_obra_spr.erase(id)
 
 
 # ------------------------------------------------------------------ fantasma da construção (o mesmo plano do 3D)
