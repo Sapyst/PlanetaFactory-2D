@@ -8,6 +8,15 @@
  "nasce_s": 6.0,
  "medo": {"fogo": 13, "monstro": 9, "rajada": 1.15, "construcao": 5, "susto_min": 6},
  "semente": {"chance_s": 0.55, "por_bando": 2, "raio": 2.5},
+ "ecossistema": {"_nota": "fase 0: índice espacial refeito a cada indice_s a partir das fontes; células de cel m; detalhe 2 até raio_perto, 1 até raio_medio, 0 além", "indice_s": 0.5, "cel": 8, "raio_perto": 40, "raio_medio": 80},
+ "vida_pequena": {
+  "_nota": "fase 1: vagalumes (noite), insetos (dia), olhos no mato (noite) perto da câmera, em enxames presos em tiles de chão saudável (saude_min), mais perto da água (agua_bonus), longe de ninho/cratera (longe_toca m); estacoes = [primavera, verão, outono, inverno]; tamanho em pixels de tela (px) para o pontinho não sumir de longe; liga = desliga sem mexer no código",
+  "liga": true,
+  "vagalumes": {"liga": true, "raio": 34, "passo": 3, "densidade": 0.07, "agua_bonus": 2.5, "por_enxame": [3, 7], "max": 120, "estacoes": [0.7, 1.0, 0.45, 0.0], "saude_min": 0.3, "longe_toca": 14, "px": 2.6, "halo_px": 15.0},
+  "insetos": {"liga": true, "raio": 26, "passo": 3, "densidade": 0.07, "agua_bonus": 3.0, "por_enxame": [3, 6], "max": 90, "estacoes": [0.8, 1.0, 0.55, 0.05], "saude_min": 0.3, "longe_toca": 14, "px": 2.4, "zoom_max": 55},
+  "olhos": {"liga": true, "raio": 22, "max_pares": 3, "slot_s": 7.0, "vida_s": [2.5, 5.5], "chance": 0.55, "px": 1.6},
+  "sons": {"liga": true, "grilos": [0.55, 1.0, 0.7, 0.05], "insetos_dia": [0.35, 1.0, 0.45, 0.0], "silencio_toca": [12, 34], "silencio_alien": 15, "sapo_s": [1.6, 4.5], "sapo_molhado": 0.25}
+ },
  "especies": {
   "pardelo":  {"peso": 4.0, "bando": [12, 28], "vel": 6.5, "alt": [4.0, 8.0], "pousa_s": [10, 26], "canto": "pardelo_canto", "canto_s": 5.0, "estacoes": [1.0, 1.0, 1.0, 0.8], "sementes": true},
   "cobrico":  {"peso": 2.0, "bando": [8, 18], "vel": 7.0, "alt": [4.0, 7.0], "pousa_s": [8, 20], "canto": "cobrico_canto", "canto_s": 6.0, "estacoes": [1.0, 1.0, 1.0, 0.4], "sementes": true},

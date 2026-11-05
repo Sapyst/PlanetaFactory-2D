@@ -46,6 +46,8 @@ var _fant_spr: Array[Sprite2D] = []
 var _fant_peg: Array[Polygon2D] = []
 var _fant_txt: Array[Label] = []
 var _fant_seta: Array[Polygon2D] = []
+var _camada_vida := CanvasLayer.new()  ## patch fauna, fase 1: vagalumes/insetos/olhos acima do escuro da noite
+var _vida2d := VidaPequena2D.new()
 var _obra_spr: Dictionary = {}          ## id da obra (patch RTS) → Sprite2D do holograma
 var _assin_fios := ""
 var efeitos := Node2D.new()
@@ -92,6 +94,10 @@ func _ready() -> void:
 	efeitos.add_child(ef)
 	add_child(fantasmas)
 	add_child(noite)
+	_camada_vida.layer = 2                        # acima do mundo (e do CanvasModulate dele), abaixo da interface
+	add_child(_camada_vida)
+	_vida2d.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_camada_vida.add_child(_vida2d)
 
 
 func _process(delta: float) -> void:
@@ -113,6 +119,7 @@ func _process(delta: float) -> void:
 	_sincronizar_aranhas(delta)
 	_sincronizar_afundando()
 	_sincronizar_passaros()
+	_sincronizar_vida()
 	_sincronizar_fios()
 	_sincronizar_fantasma()
 	_sincronizar_obras()
@@ -645,6 +652,13 @@ func _sincronizar_passaros() -> void:
 		if not vistos.has(no):
 			_soltar(_passaros[no])
 			_passaros.erase(no)
+
+
+## Vida pequena (fase 1 do patch fauna): os mesmos pontos do 3D, na camada própria com o enquadramento do mundo.
+func _sincronizar_vida() -> void:
+	if _vida2d.vida == null:
+		_vida2d.vida = mundo.get("_vida_pequena")
+	_camada_vida.transform = Transform2D(0.0, scale, 0.0, position)
 
 
 ## Drone de reparo trabalhando numa estrutura: feixe de solda vermelho e faíscas, de tempos em tempos.

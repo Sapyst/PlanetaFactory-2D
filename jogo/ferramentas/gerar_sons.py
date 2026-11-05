@@ -941,6 +941,86 @@ def solda_mig(rng):
     return reverb(x, 0.25, 0.08)
 
 
+# ==============================================================================
+# PATCH FAUNA, FASE 1: AMBIENTE VIVO (grilos, insetos de dia, sapos)
+# ==============================================================================
+def amb_grilos(rng):
+    """Grilos à noite (laço): coro de uns 12 grilos, cada um com o seu tom (3,9–5,2 kHz), o seu trilo (3 a 5 pulsos
+    a ~30/s) e o seu ritmo; os longe são mais baixos e abafados. Um deles, de outro mundo mas pé no chão, trila
+    mais grave e devagar. Ar da noite bem baixo por baixo."""
+    d = 9.0
+    n = int(d * TAXA)
+    t = tempo(d)
+    x = np.zeros(n)
+    L = int(0.022 * TAXA)
+    jan = np.sin(np.linspace(0, np.pi, L)) ** 2
+    for k in range(13):
+        estranho = k == 12
+        f = rng.uniform(2300, 2600) if estranho else rng.uniform(3900, 5200)
+        perto = rng.uniform(0.25, 1.0)
+        taxa = rng.uniform(14, 18) if estranho else rng.uniform(26, 38)
+        pulsos = int(rng.integers(5, 8)) if estranho else int(rng.integers(3, 6))
+        per = rng.uniform(1.4, 2.2) if estranho else rng.uniform(0.45, 1.1)
+        en = np.zeros(n)
+        tc = rng.uniform(0, per)
+        while tc < d:
+            for p in range(pulsos):
+                i0 = int((tc + p / taxa) * TAXA)
+                if i0 + L < n:
+                    en[i0:i0 + L] += jan * (1.0 - 0.08 * p)
+            tc += per * rng.uniform(0.92, 1.08)
+        som = np.sin(2 * np.pi * f * t + 0.6 * np.sin(2 * np.pi * f * 2.003 * t)) * en
+        som = pb(som, 3500 + 6000 * perto) * (0.2 + 0.8 * perto) ** 2
+        x += som * (0.6 if estranho else 1.0)
+    x += pb(rosa(n, rng), 700) * 0.015
+    return reverb(x, 0.9, 0.22, 7000)
+
+
+def amb_insetos_dia(rng):
+    """Insetos de dia (laço): duas cigarras longe que crescem e somem (ruído agudo pulsando a ~190 Hz), uma mosca
+    que passa zumbindo perto (serra grave com o tom mexendo) e o ar morno do campo."""
+    d = 9.0
+    n = int(d * TAXA)
+    t = tempo(d)
+    x = np.zeros(n)
+    for k in range(2):
+        t0, sobe, fica, desce = rng.uniform(0.3, 3.5), rng.uniform(1.2, 2.0), rng.uniform(1.5, 3.0), rng.uniform(1.0, 1.8)
+        en = np.clip((t - t0) / sobe, 0, 1) * np.clip(1 - (t - t0 - sobe - fica) / desce, 0, 1)
+        am = (0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(170, 210) * t)) ** 3
+        cig = banda(ruido(n, rng), rng.uniform(3600, 4200), rng.uniform(6000, 7000)) * am * en
+        x += pb(cig, 6500) * rng.uniform(0.35, 0.6)
+    ft = 210 * (1 + 0.04 * np.sin(2 * np.pi * 1.7 * t) + 0.02 * np.sin(2 * np.pi * 5.3 * t))
+    fase = np.cumsum(ft) / TAXA
+    mosca = pb(2 * (fase % 1.0) - 1.0, 1800)
+    passa = np.exp(-((t - rng.uniform(3.0, 6.0)) / 0.9) ** 2)
+    x += mosca * passa * 0.18
+    x += banda(rosa(n, rng), 200, 3000) * 0.03
+    return reverb(x, 0.6, 0.15, 7000)
+
+
+def sapo(rng):
+    """Sapo na beira d'água depois da chuva: 2 a 4 coaxos graves — pulsos estreitos (~85–120/s) passando pelas
+    ressonâncias da bolsa vocal (~450 Hz, ~1,2 kHz), cada coaxo subindo e descendo um pouco o tom."""
+    partes = []
+    at = 0.0
+    f0 = rng.uniform(85, 120)
+    for c in range(int(rng.integers(2, 5))):
+        d = rng.uniform(0.16, 0.28)
+        nn = int(d * TAXA)
+        tt = tempo(d)
+        f = f0 * (1 + 0.08 * np.sin(np.pi * tt / d))
+        fase = np.cumsum(f) / TAXA
+        pulso = pb((np.sin(2 * np.pi * fase) > 0.6).astype(float), 4000)
+        s = ressoa(pulso, rng.uniform(420, 520), 6) + ressoa(pulso, rng.uniform(1100, 1400), 5) * 0.5 \
+            + ressoa(pulso, 2400, 4) * 0.2
+        s = s * env(nn, 0.015, 0.06, d * 0.6)
+        k = int(0.03 * TAXA)                             # fecha a boca sem estalo
+        s[-k:] *= 0.5 + 0.5 * np.cos(np.linspace(0, np.pi, k))
+        partes.append((s, rng.uniform(0.8, 1.0), at))
+        at += d + rng.uniform(0.08, 0.16)
+    return reverb(junta(*partes), 0.7, 0.2)
+
+
 SONS = [
     ('clique', clique, -22, 0, 0.0005), ('construir', construir, -15, 0, 0.0005), ('remover', remover, -17, 0, 0.0005),
     ('alerta', alerta, -14, 0, 0.005), ('pesquisa', pesquisa, -15, 0, 0.001), ('derrota', derrota, -14, 0, 0.01),
@@ -964,11 +1044,13 @@ SONS = [
     ('azulao_canto', azulao_canto, -23, 0, 0.004), ('rubro_canto', rubro_canto, -23, 0, 0.003),
     ('planador_grito', planador_grito, -21, 0, 0.01), ('revoada', revoada, -18, 0, 0.003),
     ('solda_arco', solda_arco, -20, 0, 0.002), ('solda_mig', solda_mig, -20, 0, 0.002),
+    ('amb_grilos', amb_grilos, -24, 0.6, 0), ('amb_insetos_dia', amb_insetos_dia, -27, 0.6, 0),
+    ('sapo', sapo, -17, 0, 0.003),
 ]
 
 
 VARIACOES = {'aranha_passo': 4, 'pardelo_canto': 3, 'cobrico_canto': 3, 'azulao_canto': 3, 'rubro_canto': 2,
-             'planador_grito': 2, 'revoada': 2}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
+             'planador_grito': 2, 'revoada': 2, 'sapo': 3}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
 
 
 if __name__ == '__main__':

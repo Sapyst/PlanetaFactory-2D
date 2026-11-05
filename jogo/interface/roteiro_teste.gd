@@ -54,6 +54,7 @@ func _ready() -> void:
 		"clima": _roteiro_clima()
 		"drones": _roteiro_drones()
 		"obras": _roteiro_obras()
+		"vida": _roteiro_vida()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -2176,6 +2177,59 @@ static func _farol_do_posto(m: MapaOcupacao, ids: Dictionary) -> int:
 		if m.estruturas[i].nome == "farol_cristal" and (melhor < 0 or i > melhor):
 			melhor = i
 	return melhor
+
+
+## Patch fauna, fase 1 (-- novo roteiro vida): campo de capim saudável perto do núcleo; noite de verão com
+## vagalumes e olhos no mato (perto e mais longe), depois meio-dia com os mosquitos de perto. Imprime VIDA a cada 2 s.
+func _roteiro_vida() -> void:
+	var w := [Vector2.ZERO]
+	em(2, func():
+		Sessao.config.fps = false
+		var eco: Ecossistema = cena.ecossistema
+		var nota := -1.0
+		for y in range(-70, 71, 8):
+			for x in range(-70, 71, 8):
+				if Vector2(x, y).length() < 14.0:
+					continue
+				var s := 0.0
+				for j in range(-8, 9, 4):
+					for i in range(-8, 9, 4):
+						s += eco.saude(Vector2i(x + i, y + j)) + (0.3 if eco.perto_da_agua(Vector2i(x + i, y + j), 2) else 0.0)
+				if s > nota:
+					nota = s
+					w[0] = Vector2(x, y)
+		print("VIDA campo ", w[0])
+		_sem_ninhos(Vector2i(w[0]))
+		cena.clima.ciclo = false
+		cena.clima.tempo_real = false
+		cena.clima.estacao = 1
+		cena.clima.hora = 0.0
+		cena.clima.forcar("limpo", true)
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(w[0])
+		cam.distancia = 16.0
+		cam.posicionar())
+	em(240, func():
+		var cam = cena.camera
+		cam.distancia = 32.0
+		cam.posicionar())
+	em(420, func(): cena.clima.hora = 0.5)
+	em(440, func():                                  # de dia: câmera de perto num enxame de mosquitos
+		var v: DesenhoVidaPequena = cena._vida_pequena
+		var cam = cena.camera
+		if not v._enx_i.is_empty():
+			cam.alvo = Grade.ponto_mundo(v._enx_i[0].c)
+		cam.distancia = 9.0
+		cam.posicionar())
+	for q in range(60, 600, 60):
+		em(q, func():
+			var v: DesenhoVidaPequena = cena._vida_pequena
+			var olhos := v.olhos.filter(func(o): return float(o.brilho) > 0.0).size()
+			print("VIDA q=%d vagalumes=%d insetos=%d olhos=%d silencio=%.2f" % [q, v.vagalumes.size(), v.insetos.size(), olhos, v.fatores.silencio]))
+	for q in [200, 330, 560]:                        # PNG sem compressão (o vídeo borra a cor de ponto de 1 pixel)
+		em(q, func():
+			DirAccess.make_dir_recursive_absolute("user://fotos_vida")
+			get_viewport().get_texture().get_image().save_png("user://fotos_vida/vida_%d.png" % q))
 
 
 ## Patch RTS (-- novo roteiro obras): encomenda uma linha de esteira, máquinas, postes sem cobre (âmbar) e uma

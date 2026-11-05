@@ -34,7 +34,7 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
 
 ---
 
-## Fase 0 — Fundação do ecossistema ⬜ · custo baixo · não muda nada na tela
+## Fase 0 — Fundação do ecossistema ✅ · custo baixo · não muda nada na tela
 - **`Ecossistema`** (lógica pura, `jogo/ambiente/ecossistema.gd`):
   - índice espacial por chunk de quem está vivo (tipo, posição);
   - consulta `perto(centro, raio, tipo)`;
@@ -48,8 +48,15 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
   - perto da câmera, bicho com lógica completa;
   - longe, só a contagem por chunk (é assim que o celular aguenta).
 - **Por que primeiro:** frutas, carcaças, ratos, moscas e aliens dependem disso.
+- **Feito:**
+  - `jogo/ambiente/ecossistema.gd` com as fontes "passaro", "alien" e "toca".
+  - A saúde do chão saiu dos `Passaros` e foi para o `Ecossistema`; os pássaros só chamam.
+  - A morte de aranha e de larva vira o evento `morreu`.
+  - A comida vai no save.
+- **Bug corrigido de passagem:** no jogo, os pássaros eram criados antes do ambiente. Por isso não viam fogo, cinza
+  nem chão morto, e nunca plantavam semente. Nos testes funcionava porque lá o ambiente é passado.
 
-## Fase 1 — Vida pequena e noite viva ⬜ · custo baixo · só leitura do mundo
+## Fase 1 — Vida pequena e noite viva ✅ · custo baixo · só leitura do mundo
 - (S) **Vagalumes à noite** sobre a grama e perto da água: pontinho com luz micro que pulsa e se destaca.
   - Já existem vagalumes na flor luminosa; esta fase estende o mesmo efeito.
 - (S) **Insetos de dia:** pontinhos com rastro curto, sem detalhe.
@@ -59,6 +66,15 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
   - silêncio estranho perto de ninhos e crateras.
 - (C) Olhos brilhando no mato à noite (sem bicho ainda: só o brilho, raro).
 - **Por que aqui:** só lê o clima, a hora, o bioma e os ninhos. Não muda nenhuma regra, e o risco é quase zero.
+- **Feito:** `DesenhoVidaPequena`.
+  - Enxames ficam presos em tiles fixos do mundo (sorteio por hash), refeitos só quando a câmera anda.
+  - O desenho usa 3 MultiMesh, um buffer por quadro, com orçamento de 120 vagalumes e 90 insetos.
+  - Os sons novos são `amb_grilos` e `amb_insetos_dia` (laços) e o `sapo` (3 variações).
+  - No 2D, `VidaPequena2D` desenha os mesmos pontos em pixel, numa camada acima do escuro da noite.
+  - Os números e o liga/desliga ficam em `fauna.json → vida_pequena`.
+- **Mudou do plano:** não entrou no `PoolEfeitos`. Aquele pool cria uma planta inteira por efeito (a flor, o
+  cogumelo); para centenas de pontinhos ele pesaria muito mais que um MultiMesh. Os vagalumes da flor luminosa
+  continuam lá.
 
 ## Fase 2 — Plantas que reagem ⬜ · custo baixo · shaders e clima
 - (C) Grama mais verde e alta por uns dias depois da chuva; amarela na seca.

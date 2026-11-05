@@ -40,6 +40,7 @@ const INTERVALO := {
 	"faisca": 0.15,
 	"solda_arco": 0.1,
 	"solda_mig": 0.1,
+	"sapo": 1.0,
 }
 
 const MAX_VOZES := {
@@ -69,6 +70,9 @@ const MAX_VOZES := {
 }
 
 const SONS_AMBIENTE := {
+	"amb_grilos": true,
+	"amb_insetos_dia": true,
+	"sapo": true,
 	"chuva": true,
 	"trovao": true,
 	"vento_forte": true,

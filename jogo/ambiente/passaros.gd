@@ -21,6 +21,7 @@ var mapa: MapaOcupacao
 var ambiente: AmbienteVivo
 var colonia: Colonia
 var infestacao: Infestacao
+var eco: Ecossistema                   ## fundação do patch fauna (saúde do chão, índice, eventos)
 var bandos: Dictionary = {}           ## id → bando (ver _novo)
 var eventos: Array[Dictionary] = []
 var plantadas := 0                     ## mudas que os pássaros plantaram (contagem)
@@ -40,6 +41,8 @@ func _init(p_gerador: GeradorMundo, p_mapa: MapaOcupacao, p_ambiente: AmbienteVi
 	infestacao = p_infestacao
 	_rng.seed = semente
 	_d = Registro.fauna
+	eco = Ecossistema.new(gerador, mapa, ambiente, infestacao)     # o mundo troca pelo dele (o mesmo de todos)
+	eco.registrar_fonte("passaro", para_ecossistema)
 
 
 ## Algo assustou (tiro, explosão, trovão, construção): os bandos no raio fogem dali.
@@ -177,52 +180,30 @@ func poleiros_em(c: Vector2) -> Array:
 
 
 # ------------------------------------------------------------------ o lugar
-## Saúde do lugar (0..1): mato e árvore (de pé, de muda crescida) contam; cinza, sujeira, ácido, teia, construção e
-## água tiram. É o que decide onde os pássaros vivem e onde pousam.
+## Saúde do chão, chão morto e fábrica perto: agora são do Ecossistema (fase 0 do patch fauna), o mesmo para todos
+## os bichos. Os nomes ficam aqui para quem já usava (testes, desenho).
 func saude(t: Vector2i) -> float:
-	var soma := 0.0
-	for j in range(-2, 3, 2):
-		for i in range(-2, 3, 2):
-			soma += _saude_tile(t + Vector2i(i, j))
-	return soma / 9.0
+	return eco.saude(t)
 
 
 func _saude_tile(t: Vector2i) -> float:
-	if mapa.tiles.has(t) or gerador.aplainado_em(t) != null:
-		return 0.0
-	if gerador.terreno(t) != GeradorMundo.Terreno.TERRA:
-		return 0.15
-	var v := 0.4
-	if not mapa.limpos.has(t):
-		var o := gerador.distribuicao.obstaculo(t)
-		if not o.is_empty() and Registro.modelos.get(o.nome, {}).get("categoria", "") == "mapa/vegetacao":
-			v = 1.0 if mapa.arvores.get(Vector2i(o.ancora), {}).is_empty() else 0.2
-	if ambiente != null:
-		if float(ambiente.plantas.get(t, 0.0)) > 0.3:
-			v = 1.0
-		v *= (1.0 - ambiente.valor(t, AmbienteVivo.QUEIM)) * (1.0 - 0.7 * ambiente.valor(t, AmbienteVivo.SUJ))
-		if ambiente.fogo.has(t):
-			return 0.0
-	if infestacao != null:
-		v *= 1.0 - infestacao.valor(t)
-	return clampf(v, 0.0, 1.0)
+	return eco.saude_tile(t)
 
 
-## Chão morto onde a semente pega: dá para plantar, está queimado ou sem vida em volta, e o ácido/teia já não está ali.
 func morto(t: Vector2i) -> bool:
-	if ambiente == null or not ambiente.pode_plantar(t):
-		return false
-	if infestacao != null and infestacao.valor(t) > 0.15:
-		return false
-	return ambiente.valor(t, AmbienteVivo.QUEIM) > 0.15 or saude(t) < 0.3
+	return eco.morto(t)
 
 
 func _perto_de_construcao(t: Vector2i, r: int) -> bool:
-	for j in range(-r, r + 1, 2):
-		for i in range(-r, r + 1, 2):
-			if mapa.tiles.has(t + Vector2i(i, j)):
-				return true
-	return false
+	return eco.perto_de_construcao(t, r)
+
+
+## Os bandos como o Ecossistema os vê (fonte "passaro"): posição, espécie e quantos.
+func para_ecossistema() -> Array:
+	var out: Array = []
+	for b in bandos.values():
+		out.append({"id": b.id, "pos": b.pos, "especie": b.especie, "n": b.n})
+	return out
 
 
 ## Melhor lugar para pousar e comer perto de `de` (sorteia candidatos; longe de fábrica, fogo e monstro).
