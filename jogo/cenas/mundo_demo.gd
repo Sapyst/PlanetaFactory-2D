@@ -48,6 +48,7 @@ var _desenho_carcacas: DesenhoCarcacas
 var ratos: Ratos                         ## patch fauna, fase 5: tocas e ratos do mato (comem fruto, enterram semente)
 var _desenho_ratos: DesenhoRatos
 var ninhos_passaros: NinhosPassaros      ## patch fauna, fase 6: ninhos nas árvores (obra, ovos, filhotes que voam)
+var disturbio: DisturbioFabrica          ## patch fauna, fase 7: barulho de máquina e fumaça no ar (a fauna se afasta)
 var _desenho_ninhos: DesenhoNinhosPassaros
 var _desenho_passaros: DesenhoPassaros
 var _raios_passaros := 0
@@ -166,6 +167,10 @@ func _ready() -> void:
 	ratos = Ratos.new(ecossistema, ambiente, semente + 67)
 	ecossistema.registrar_fonte("rato", ratos.para_ecossistema)
 	passaros.ratos = ratos                               # fase 6: o planador caça rato em campo aberto
+	ratos.cabos = _cabos_baixos                          # fase 7: o rato pode roer a ponta baixa do cabo
+	disturbio = DisturbioFabrica.new(mapa, fabrica, poluicao)
+	ecossistema.fonte_disturbio = disturbio.em
+	ecossistema.fonte_fuligem = disturbio.fuligem
 	ninhos_passaros = NinhosPassaros.new(passaros, semente + 71)
 	ecossistema.registrar_fonte("toca", func() -> Array:
 		var out: Array = []
@@ -306,6 +311,79 @@ func _comecar_novo() -> void:
 	fabrica.reconstruir()
 	camera.alvo = Grade.ponto_mundo(Vector2(NUCLEO_EM) + Vector2(1.5, 1.5))
 	camera.posicionar()
+
+
+# ------------------------------------------------------------------ patch fauna, fase 7: rato roendo cabo
+var _cabos_cache := {"ass": "", "lista": []}
+var _t_roidos := 0.0
+
+
+## Os cabos de verdade (não feixe sem fio), com a ponta mais baixa de cada um: é ali que um rato alcança.
+func _cabos_baixos() -> Array:
+	var n := 0
+	for id in mapa.estruturas:
+		n += mapa.estruturas[id].get("fios", []).size()
+	var ass := "%d|%d" % [mapa.versao, n]
+	if ass == _cabos_cache.ass:
+		return _cabos_cache.lista
+	var lista: Array = []
+	for id in mapa.estruturas:
+		var e: Dictionary = mapa.estruturas[id]
+		for o in e.get("fios", []):
+			if o <= id or not mapa.estruturas.has(o):
+				continue
+			var f: Dictionary = mapa.estruturas[o]
+			if Fiacao.liga_sem_cabo(e, f):
+				continue
+			var a := Fiacao.ponto_fio(e, Fiacao.centro(f))
+			var b := Fiacao.ponto_fio(f, Fiacao.centro(e))
+			var ha := a.y - Grade.altura_em(Vector2(a.x, -a.z))
+			var hb := b.y - Grade.altura_em(Vector2(b.x, -b.z))
+			if ha > hb:
+				var tmp := a
+				a = b
+				b = tmp
+			# a mordida: do terminal baixo, ao longo do cabo (que verga como no desenho), até sair de cima da máquina
+			var flecha := minf(0.06 * a.distance_to(b), 0.7)
+			var vao := Vector2(b.x - a.x, b.z - a.z).length()
+			for k in 12:
+				var t := minf(1.0, (0.15 + 0.12 * k) / maxf(vao, 0.01))
+				var q := a.lerp(b, t) - Vector3.UP * flecha * 4.0 * t * (1.0 - t)
+				var g := Vector2(q.x, -q.z)
+				if not mapa.tiles.has(Vector2i(g.floor())):
+					lista.append({"chave": "%d|%d" % [id, o], "a": id, "b": o, "pos": g, "alt": q.y - Grade.altura_em(g)})
+					break
+	_cabos_cache = {"ass": ass, "lista": lista}
+	return lista
+
+
+## O rato partiu um cabo: a ligação sai (a rede divide), a máquina da ponta fica danificada (reparar religa) e avisa.
+func _ratos_e_cabos(dt: float) -> void:
+	for ev in ratos.eventos:
+		if ev.tipo != "cortou" or not Fiacao.cortar(mapa, int(ev.a), int(ev.b)):
+			continue
+		_fabrica_suja = true
+		var alvo := int(ev.a)
+		if Fiacao.papel(mapa.estruturas[alvo].nome) == "poste" and Fiacao.papel(mapa.estruturas[int(ev.b)].nome) != "poste":
+			alvo = int(ev.b)                                # o dano fica na máquina (a ponta baixa)
+		var nome: String = mapa.estruturas[alvo].nome
+		var vmax := float(Registro.estruturas.get(nome, {}).get("vida", 100))
+		var dano := float(Registro.fauna.get("ratos", {}).get("roer", {}).get("dano", 15.0))
+		colonia.vida[alvo] = maxf(1.0, minf(float(colonia.vida.get(alvo, vmax)), vmax - dano))
+		mapa.estruturas[alvo]["roido"] = true
+		Som.tocar("faisca", Grade.ponto_mundo(ev.pos, 0.3), -4.0)
+		if is_instance_valid(controle):
+			controle._avisar("🐀 Um rato roeu o cabo de energia de %s: repare para religar" % Bloqueios.nome_peca(nome).to_lower())
+	_t_roidos -= dt
+	if _t_roidos > 0.0:
+		return
+	_t_roidos = 1.0
+	for id in mapa.estruturas:                         # reparada (à mão ou pelo drone): o cabo volta
+		var e: Dictionary = mapa.estruturas[id]
+		if bool(e.get("roido", false)) and not colonia.vida.has(id):
+			e.erase("roido")
+			Fiacao.consertar(mapa, id)
+			_fabrica_suja = true
 
 
 ## Reparo: 1 placa de ferro a cada 25 pontos de integridade que faltam (vazio = inteira).
@@ -1710,9 +1788,11 @@ func _tick_mundo(dt: float) -> void:
 			passaros.ferir(qp, float(mr.get("raio", 3.0)), float(mr.get("chance", 0.9)), "raio")   # antes do susto
 			passaros.assustar(qp, 30.0)
 			ratos.assustar(qp, 18.0)
+	disturbio.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z))
 	ratos.tick(dt, clima, Vector2(camera.alvo.x, -camera.alvo.z))
 	passaros.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z), clima)
 	ninhos_passaros.tick(dt, clima, Vector2(camera.alvo.x, -camera.alvo.z))
+	_ratos_e_cabos(dt)
 	for ev in colonia.eventos:                          # quem morre avisa o ecossistema (fase 4: vira carcaça)
 		if ev.tipo == "aranha_morta":
 			ecossistema.morreu("alien", String(ev.get("especie", "aranha")), ev.pos, {"id": ev.id})

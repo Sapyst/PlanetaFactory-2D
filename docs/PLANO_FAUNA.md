@@ -284,13 +284,54 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
   - **Fica para depois:** medir no celular. O raminho até a bolsa não aparece no 2D (é fino demais para o
     sprite). Do céu, a revoada de migração vista de cima ainda lembra "X" no capim.
 
-## Fase 7 — A natureza reage à IA do jogador ⬜ · custo médio
-- (C) A fauna se afasta do barulho e da poluição; em volta da fábrica fica quieto e cinza.
-- (C) **Recuperação em etapas** quando a área é limpa: insetos → mato → ratos → pássaros → árvores.
-  - Usa todas as fases anteriores, por isso vem depois delas.
-- (C) Espécies que se adaptam à fábrica: ninho em torre velha, rato roendo cabo.
-  - Roer cabo vira regra de jogo e mexe na energia.
-  - Fica por último dentro da fase, com número baixo e liga/desliga no `fauna.json`.
+## Fase 7 — A natureza reage à IA do jogador ✅ · custo médio
+- ✅ (C) A fauna se afasta do barulho e da poluição; em volta da fábrica fica quieto e cinza.
+- ✅ (C) **Recuperação em etapas** quando a área é limpa: insetos → mato → ratos → pássaros → árvores.
+- ✅ (C) Espécies que se adaptam à fábrica: ninho em torre velha (poste, silo), rato roendo cabo.
+  - Roer cabo é regra de jogo: o cabo parte e a máquina fica sem energia até ser reparada. Número baixo e
+    `ratos.roer.liga` no `fauna.json`.
+- **Feito (2026-11-05):**
+  - **Distúrbio** (`ambiente/disturbio_fabrica.gd`): cada máquina trabalhando faz barulho até um raio que cresce com
+    o tamanho dela (broca 1,4×, fornalha 1,2×, montadora 1,1×, turbina 0,7×, painel solar nada). Máquinas juntas
+    somam sem passar de 1. A fumaça no ar (poluição do chunk, interpolada entre os centros, em escala log) também
+    conta, com peso menor. O Ecossistema pergunta `disturbio(p)` e `fuligem(p)`.
+  - **A fauna se afasta:**
+    - os pássaros evitam pousar ali, a região aguenta menos bandos e o bando pousado foge quando a máquina do lado
+      começa a trabalhar;
+    - o rato não faz toca e abandona a que tinha;
+    - o ninho não é feito;
+    - os enxames de inseto e de vagalume somem;
+    - o som de grilo e de inseto se cala perto das máquinas.
+  - **Cinza:** a fumaça no ar deixa o capim cinza e sem viço, no 3D e no 2D (canal G do `rebrota_mapa`).
+  - **Recuperação em etapas** (`Ecossistema.recuperacao`, por célula de 8 m):
+    - a célula que morre (saúde < 0,2: fogo, cinza, sujeira, ácido) e depois é limpa (saúde ≥ 0,33, sem distúrbio
+      forte) volta pelo relógio: insetos já, mato em 90 s, ratos em 4 min, pássaros em 7 min, árvores em 12 min;
+    - nas árvores brotam mudas do bioma e a célula está completa;
+    - o capim volta baixo e ralo e vai fechando (canal R do `rebrota_mapa`: a grama 3D encolhe e falha; no chão 2D
+      é terra com tufos que fecham);
+    - célula de fábrica ou de água não conta. Vai no save.
+  - **Ninho em estrutura:** o pardelo, que se adapta, faz ninho no alto de poste de energia, poste alto e silo,
+    longe de máquina barulhenta, sentado no topo do corpo (medido no modelo, sem o anel). Enquanto ocupado, suja a
+    estrutura (encardido). Cai se a estrutura sai.
+  - **Rato roendo cabo:**
+    - de vez em quando (4% das escolhas) o rato vai roer a ponta baixa de um cabo perto da toca, num lugar quieto;
+    - a mordida é logo fora da máquina, ao longo do cabo, onde ele ainda está a até 0,9 m do chão. Cabo de poste a
+      poste fica alto demais;
+    - em 3 sessões o cabo parte: a ligação sai dos dois lados e fica marcada em "cortados" (não religa sozinha);
+    - a máquina leva 15 de dano (aparece a barra), sai faísca e aparece o aviso "🐀 Um rato roeu o cabo de energia
+      de …";
+    - a ponta presa no poste cai até o chão, e a da máquina fica num toco curto (3D e 2D);
+    - reparada a máquina (à mão ou pelo drone), o cabo volta;
+    - som `rato_roendo` (a candidata A, dentes raspando; a B, mastigando a capa, ficou guardada).
+  - **Código:** `DisturbioFabrica`, `Ecossistema` (recuperação, `fonte_disturbio`, `fonte_fuligem`), `Fiacao.cortar` e
+    `consertar`, `Ratos` (`cabos`, `desgaste`, `_ir_roer`), `NinhosPassaros._fazer_em_estrutura`, `DesenhoFios`
+    (`_soltos`), `DesenhoRatos` (`rebrota_mapa`) e, no mundo, `_cabos_baixos` e `_ratos_e_cabos`. Números em
+    `fauna.json`: "disturbio", "recuperacao", "ratos.roer" e "ninhos.estruturas". Testes em
+    `test_natureza_reage.gd`. Roteiro `-- roteiro natureza7`.
+  - **Fica para depois:**
+    - o rato não sobe no poste (rói só a ponta baixa, perto da máquina);
+    - no 2D, o ninho no alto do poste é tão pequeno que não dá para conferir na foto;
+    - "quieto" (insetos e sons) não aparece em foto: está só nos testes e no código.
 
 ## Fase 8 — Comportamento e guerra das espécies alienígenas ⬜ · custo alto · mexe no combate
 - (S) Comportamento próprio por espécie, com um perfil `comportamento` no `inimigos.json`:

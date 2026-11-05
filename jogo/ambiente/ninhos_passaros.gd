@@ -10,6 +10,8 @@ extends RefCounted
 ## Vazio na primavera/verão, o ninho é usado de novo quando a espécie volta; no inverno, o ninho velho desmancha e cai.
 ## Se a árvore some (cortada, queimada, caída, corroída), pega fogo ou encostam construção, o ninho cai junto.
 ## Os bandos gostam de ficar perto dos ninhos da espécie (Passaros._lugar_bom).
+## Fase 7: quem se adapta à fábrica (o pardelo) também faz ninho no alto de poste e silo (`estruturas` no fauna.json)
+## longe de máquina barulhenta; enquanto ocupado, o ninho suja a estrutura (encardido). Cai se a estrutura sai.
 ## Eventos para o desenho/som: "novo", "fase", "visita", "voaram", "caiu".
 
 enum F { OBRA, OVOS, FILHOTES, VAZIO }
@@ -65,11 +67,16 @@ func tick(dt: float, clima: Clima, foco: Vector2) -> void:
 		_t = _n("olha_s", 2.0)
 		_conferir()
 		_fazer(est, dia, foco)
+		_fazer_em_estrutura(est, dia, foco)
 
 
 func _avancar(n: Dictionary, dt: float, est: int, dia: bool) -> void:
 	n.idade = float(n.idade) + dt
 	n.t = float(n.t) + dt
+	if n.has("estrutura") and int(n.fase) != F.VAZIO and passaros.ambiente != null:   # o ninho suja a estrutura
+		var amb := passaros.ambiente
+		var id := int(n.estrutura)
+		amb.encardido[id] = minf(1.0, float(amb.encardido.get(id, 0.0)) + dt * float(_d.get("estruturas", {}).get("suja_s", 0.00015)))
 	match int(n.fase):
 		F.OBRA:
 			_visitas(n, dt, dia, "graveto")
@@ -151,6 +158,11 @@ func _conferir() -> void:
 	for t in ninhos.keys():
 		var n: Dictionary = ninhos[t]
 		var motivo := ""
+		if n.has("estrutura"):
+			var es: Dictionary = passaros.mapa.estruturas.get(int(n.estrutura), {})
+			if es.is_empty() or Vector2i(es.minimo) != t:
+				_cair(n, "construcao")
+			continue
 		if eco.arvore_em(t) == "":
 			motivo = "arvore"
 		elif amb != null and amb.fogo.has(t):
@@ -219,12 +231,64 @@ func _fazer(est: int, dia: bool, foco: Vector2) -> void:
 			break
 
 
+## Fase 7: o pardelo pousado perto de poste ou silo (sem máquina barulhenta em volta) faz ninho no alto dele.
+func _fazer_em_estrutura(est: int, dia: bool, foco: Vector2) -> void:
+	var c: Dictionary = _d.get("estruturas", {})
+	var fe: Array = _d.get("estacoes", [1.0, 0.6, 0.0, 0.0])
+	if not bool(c.get("liga", true)) or not dia or float(fe[est % fe.size()]) <= 0.0:
+		return
+	var tipos: Array = c.get("tipos", [])
+	var esps: Array = c.get("especies", ["pardelo"])
+	var raio := float(c.get("raio", 12.0))
+	var ja := ninhos.values().filter(func(n): return n.has("estrutura") and (n.pos as Vector2).distance_to(foco) < float(passaros._d.raio_vida)).size()
+	for b in passaros.bandos.values():
+		if ja >= int(c.get("max", 3)):
+			return
+		if int(b.estado) != Passaros.E.POUSADO or not String(b.especie) in esps or bool(b.get("migra", false)):
+			continue
+		if _rng.randf() > float(c.get("chance_s", 0.03)) * float(fe[est % fe.size()]):
+			continue
+		var melhor := -1
+		var dm := raio
+		for id in passaros.mapa.estruturas:
+			var e: Dictionary = passaros.mapa.estruturas[id]
+			if not String(e.nome) in tipos or ninhos.has(Vector2i(e.minimo)):
+				continue
+			var p := Grade.centro_da_area(e.minimo, e.area, e.rot)
+			var d := p.distance_to(b.pos)
+			if d < dm and passaros.eco.disturbio(p) <= float(c.get("disturbio_max", 0.55)) and _longe_de_ninhos(p):
+				dm = d
+				melhor = id
+		if melhor < 0:
+			continue
+		var e: Dictionary = passaros.mapa.estruturas[melhor]
+		var t := Vector2i(e.minimo)
+		var alto := float(c.get("topo", {}).get(String(e.nome), Registro.modelos.get(String(e.nome), {}).get("dims", [1, 1, 2])[2]))
+		var n := {"id": _prox, "tile": t, "estrutura": melhor, "arvore": "", "pos": Grade.centro_da_area(e.minimo, e.area, e.rot),
+				"alto": alto, "especie": b.especie, "tipo": "taca", "n": 1, "fase": F.OBRA, "t": 0.0, "idade": 0.0, "ovos": 0,
+				"ninhadas": 0, "t_visita": 1.0}
+		_prox += 1
+		ninhos[t] = n
+		eventos.append({"tipo": "novo", "tile": t, "id": n.id, "pos": n.pos, "alto": alto, "especie": n.especie,
+				"tipo_ninho": "taca", "estrutura": melhor})
+		ja += 1
+
+
+func _longe_de_ninhos(pos: Vector2) -> bool:
+	for n in ninhos.values():
+		if (n.pos as Vector2).distance_to(pos) < _n("dist_min", 5.0):
+			return false
+	return true
+
+
 func _lugar_ok(t: Vector2i, pos: Vector2) -> bool:
 	var eco := passaros.eco
 	if eco.arvore_em(t) == "" or eco.perto_de_construcao(t, int(_n("longe_construcao", 6))):
 		return false
 	if eco.saude(t) < float(passaros._d.saude_min) + _n("saude_extra", 0.1):
 		return false
+	if eco.etapa_em(pos) < Ecossistema.Rec.PASSAROS or eco.disturbio(pos) > _n("disturbio_max", 0.2):
+		return false                                     # fase 7: longe do barulho e do chão que ainda está voltando
 	for n in ninhos.values():
 		if (n.pos as Vector2).distance_to(pos) < _n("dist_min", 5.0):
 			return false

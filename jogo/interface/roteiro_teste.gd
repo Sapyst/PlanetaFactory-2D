@@ -62,6 +62,7 @@ func _ready() -> void:
 		"passaros6": _roteiro_passaros6()
 		"semente": _roteiro_semente()
 		"passaros90": _roteiro_passaros90()
+		"natureza7": _roteiro_natureza7()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -3015,6 +3016,140 @@ func _roteiro_passaros90() -> void:
 				tp += float(m[0])
 				dc += float(m[1])
 			print("PASSAROS90 %s processo %.2f ms chamadas %.0f (%d quadros)" % [k, tp / med[k].size() * 1000.0, dc / med[k].size(), med[k].size()]))
+
+
+## Patch fauna, fase 7: o capim cinza com a fumaça, o chão queimado voltando em etapas (o capim cresce), o pardelo
+## com ninho no alto do poste e o rato roendo o cabo da máquina até partir (a ponta cai no chão).
+func _roteiro_natureza7() -> void:
+	var w := {"campo": Vector2.ZERO, "k": Vector2i.ZERO, "obra": Vector2i.ZERO, "poste": -1, "braco": -1}
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_natureza7")
+		get_viewport().get_texture().get_image().save_png("user://fotos_natureza7/%s.png" % nome)
+		print("NATUREZA7 foto ", nome)
+	var olhar := func(p: Vector2, dist: float) -> void:
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(p)
+		cam.distancia = dist
+		cam.posicionar()
+	em(2, func():
+		Sessao.config.fps = false
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = 1
+		cl.hora = 0.42
+		cl.forcar("limpo", true)
+		cl.restante = 1.0e9
+		var eco: Ecossistema = cena.ecossistema
+		var m: MapaOcupacao = cena.mapa
+		var melhor := INF
+		for y in range(-12, 13):                          # uma célula de mato saudável perto do núcleo
+			for x in range(-12, 13):
+				var k := Vector2i(x, y)
+				var c := (Vector2(k) + Vector2(0.5, 0.5)) * 8.0
+				if c.length() < 20.0 or c.length() > melhor or eco._ocupada(k) or eco.saude_celula(k) < 0.5:
+					continue
+				melhor = c.length()
+				w.k = k
+				w.campo = c
+		for raio in range(10, 50, 2):                     # chão livre (sem obstáculo/jazida) para poste e braço
+			for q in 24:
+				var t := Vector2i((w.campo + Vector2.from_angle(TAU * q / 24.0) * raio).floor())
+				if w.poste >= 0:
+					break
+				var ok := true
+				for j in range(-1, 3):
+					for i in range(-1, 6):
+						var tt := t + Vector2i(i, j)
+						ok = ok and m.gerador.terreno(tt) == GeradorMundo.Terreno.TERRA and not m.tiles.has(tt) \
+								and m.gerador.distribuicao.jazida(tt).is_empty() and not eco.perto_de_construcao(tt, 2)
+				if not ok:
+					continue
+				for j in range(-1, 3):
+					for i in range(-1, 6):
+						m.limpar_obstaculo(t + Vector2i(i, j))
+				var con: Construtor = cena.construtor
+				var pp := con.plano_peca("poste_energia", t, 0)
+				var pb := con.plano_peca("braco", t + Vector2i(3, 0), 0)
+				if pp[0].motivo != "" or pb[0].motivo != "":
+					continue
+				var r1 := con.executar(pp)
+				cena.sincronizar(r1)
+				var r2 := con.executar(pb)
+				cena.sincronizar(r2)
+				if not r1.colocados.is_empty() and not r2.colocados.is_empty():
+					w.poste = int(r1.colocados[0])
+					w.braco = int(r2.colocados[0])
+					w.obra = t
+					Fiacao.ligar(m, w.poste, w.braco)
+		print("NATUREZA7 campo ", w.campo, " poste ", w.poste, " braco ", w.braco, " em ", w.obra)
+		olhar.call(w.campo, 7.0))
+	em(150, func(): foto.call("1_campo_antes"))
+	em(152, func():                                      # fumaça no ar em volta: o capim fica cinza
+		var pol: Poluicao = cena.poluicao
+		pol.emitir(Vector2i(w.campo.floor()), 600.0))
+	em(240, func(): foto.call("2_capim_cinza_fumaca"))
+	em(242, func():
+		var pol: Poluicao = cena.poluicao
+		pol.valores.clear()
+		var amb: AmbienteVivo = cena.ambiente
+		for y in 8:
+			for x in 8:
+				amb.somar(Vector2i(w.k.x * 8 + x, w.k.y * 8 + y), AmbienteVivo.QUEIM, 1.0))
+	em(320, func(): foto.call("3_queimado"))
+	em(322, func():                                      # limpo pelo semeador: começa a voltar
+		var amb: AmbienteVivo = cena.ambiente
+		for y in 8:
+			for x in 8:
+				amb.somar(Vector2i(w.k.x * 8 + x, w.k.y * 8 + y), AmbienteVivo.QUEIM, -1.0)
+		(cena.ecossistema as Ecossistema).recuperacao[w.k] = 15.0)
+	em(400, func(): foto.call("4_voltando_capim_baixo"))
+	em(402, func(): (cena.ecossistema as Ecossistema).recuperacao[w.k] = 60.0)
+	em(480, func(): foto.call("5_capim_crescendo"))
+	em(482, func(): (cena.ecossistema as Ecossistema).recuperacao[w.k] = 300.0)
+	em(560, func(): foto.call("6_mato_de_volta"))
+	em(562, func():                                      # pardelo com ninho no alto do poste
+		var nn: NinhosPassaros = cena.ninhos_passaros
+		var e: Dictionary = (cena.mapa as MapaOcupacao).estruturas[w.poste]
+		nn.ninhos[Vector2i(e.minimo)] = {"id": 977, "tile": Vector2i(e.minimo), "estrutura": w.poste, "arvore": "",
+				"pos": Grade.centro_da_area(e.minimo, e.area, e.rot), "alto": float(Registro.fauna.ninhos.estruturas.topo.poste_energia),
+				"especie": "pardelo", "tipo": "taca", "n": 1, "fase": NinhosPassaros.F.FILHOTES, "t": 0.0, "idade": 0.0,
+				"ovos": 3, "ninhadas": 0, "t_visita": 1.0}
+		olhar.call(Vector2(w.obra) + Vector2(0.5, 1.4), 6.5))
+	em(640, func(): foto.call("7_ninho_no_poste"))
+	em(642, func():                                      # um rato roendo a ponta baixa do cabo
+		var r: Ratos = cena.ratos
+		r._d = r._d.duplicate(true)
+		r._d.roer.roer_s = [3.0, 3.0]
+		r._t_toca = 1.0e9                                  # (a toca do roteiro fica do lado da máquina)
+		var lista: Array = cena._cabos_baixos()
+		print("NATUREZA7 cabos baixos ", lista)
+		for cb in lista:
+			if (int(cb.a) == w.poste and int(cb.b) == w.braco) or (int(cb.b) == w.poste and int(cb.a) == w.braco):
+				var t := r.nova_toca(Vector2(cb.pos) + Vector2(3.5, 2.0), "pardo")
+				var x: Dictionary = {}
+				for id in r.ratos:
+					if int(r.ratos[id].toca) == t:
+						x = r.ratos[id]
+				x.estado = Ratos.E.COMENDO
+				x.pos = Vector2(cb.pos)
+				x.rumo = PI
+				x.roer = String(cb.chave)
+				x.roer_ab = [int(cb.a), int(cb.b)]
+				x.t = 3.0
+				r.desgaste[String(cb.chave)] = 0.7
+		olhar.call(Vector2(w.obra) + Vector2(2.5, 0.5), 2.6))
+	em(680, func(): foto.call("8_rato_roendo"))
+	for q in range(650, 760, 15):
+		em(q, func():
+			for x in (cena.ratos as Ratos).ratos.values():
+				if String(x.get("roer", "")) != "" or x.estado == Ratos.E.COMENDO:
+					print("NATUREZA7 q=%d rato %s t=%.1f roer=%s pos %s" % [Engine.get_process_frames(), Ratos.E.keys()[int(x.estado)], float(x.t), str(x.get("roer", "")), str(x.pos)]))
+	em(760, func():
+		var e: Dictionary = (cena.mapa as MapaOcupacao).estruturas[w.braco]
+		print("NATUREZA7 depois: fios do braço ", e.get("fios", []), " cortados ", e.get("cortados", []), " vida ", (cena.colonia as Colonia).vida.get(w.braco, -1))
+		olhar.call(Vector2(w.obra) + Vector2(2.0, 0.5), 3.4))
+	em(800, func(): foto.call("9_cabo_partido"))
 
 
 func _sem_ninhos(w: Vector2i) -> void:

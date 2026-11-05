@@ -1,6 +1,8 @@
 {
  "_nota": "Patch fauna: pássaros nativos. Bandos vivem em volta de onde a câmera olha (raio_vida tiles), só onde a natureza está viva (saude_min); fogem de fogo, rajada, trovão, tiro, explosão e monstros; comem em área saudável e levam semente, que cai em chão morto e vira muda (AmbienteVivo.plantar_perto). estacoes = quanto de cada espécie fica em [primavera, verão, outono, inverno] (o resto migrou).",
  "raio_vida": 55,
+ "disturbio_peso": 1.2,
+ "disturbio_foge": 0.55,
  "bandos_max": 7,
  "bando_max_n": 40,
  "junta_dist": 6.0,
@@ -30,7 +32,10 @@
   "vel": 0.55, "vel_fuga": 2.4, "raio_busca": 12, "raio_vagar": 8, "sair_s": 0.8, "entrar_s": 0.6, "comer_s": [4, 8], "cavar_s": 2.5,
   "leva_chance": 0.45, "esquece_chance": 0.35, "medo_raio": 6, "pego_raio": 0.7, "trilha_passo": 0.03, "trilha_some_s": 1800,
   "aberto_chance": 0.5, "pasto_chance": 0.35,
-  "especies": {"pardo": {"alerta": 0.4}, "saltador": {"vel": 0.85, "vel_fuga": 3.2, "raio_vagar": 13, "alerta": 0.6}}
+  "especies": {"pardo": {"alerta": 0.4}, "saltador": {"vel": 0.85, "vel_fuga": 3.2, "raio_vagar": 13, "alerta": 0.6}},
+  "disturbio_max": 0.25, "disturbio_foge": 0.55,
+  "roer": {"_nota": "fase 7: rato roendo cabo (regra de jogo: mexe na energia). A cada escolha de para onde ir, com chance, o rato vai à ponta baixa (até alt_max m do chão) de um cabo a até raio_busca da toca, num lugar quieto (distúrbio ≤ disturbio_max); rói roer_s s; em sessoes sessões o cabo parte: a ligação sai, a máquina leva dano (reparar religa). liga = false desliga", "liga": true,
+   "chance": 0.04, "alt_max": 0.9, "disturbio_max": 0.5, "sessoes": 3, "roer_s": [6, 10], "dano": 15, "som_s": 2.4}
  },
  "carcacas": {
   "_nota": "fase 4: quem morre fica. Carne (larva; rato e pássaro depois) vira comida 'carcaca' no Ecossistema e apodrece pela idade: inteiro até etapas[0] da vida, inchado até etapas[1], restos até o fim; quando some, aduba adubo_raio m em volta (adubo = quanto). Aranha é máquina: sucata que vaza oleo, enferruja e afunda. max por espécie (a mais velha some). moscas = desenho em volta da carne; carniceiro = o planador desce a alt m e circula com giro m por cima da carcaça com carne a até raio m",
@@ -60,12 +65,26 @@
   "liga": true, "intervalo_s": [120, 240], "bando": [25, 45], "bando_chega": [18, 32], "alt": [16, 24], "vel": 9.0,
   "vai_depois": 0.5, "chega_ate": 0.5
  },
+ "disturbio": {
+  "_nota": "fase 7: o quanto a fábrica perturba a natureza (0..1). Barulho: cada máquina trabalhando, raio = base + por_tile × lado maior (× o fator do tipo pelo começo do nome, até max m), cai até zero na borda, forca no centro; grade de cel m refeita a cada passo_s até raio m da câmera. Fumaça: poluição do ar do chunk em escala log (poluicao_ref = máximo), peso poluicao_peso; ela deixa o capim cinza. Quem lê: pássaros (fogem acima de passaros.disturbio_foge, evitam pelo disturbio_peso), ratos (toca só abaixo de ratos.disturbio_max), ninhos, vida pequena e a recuperação",
+  "liga": true, "passo_s": 1.0, "cel": 4.0, "raio": 70, "poluicao_ref": 150, "poluicao_peso": 0.6,
+  "barulho": {"base": 5.0, "por_tile": 1.8, "max": 16, "forca": 0.9, "tipos": {"broca": 1.4, "fornalha": 1.2, "montadora": 1.1, "turbina": 0.7, "solar": 0.0, "painel": 0.0}}
+ },
+ "recuperacao": {
+  "_nota": "fase 7: o chão que morre (saúde da célula < morta: fogo, cinza, sujeira, ácido) e é limpo volta em etapas, por célula do índice (ecossistema.cel m), a cada passo_s perto da câmera (raio m): começa quando a saúde fica ≥ boa sem distúrbio forte (disturbio_max); etapas_s = s desde então para [insetos, mato, ratos, pássaros, árvores]; nas árvores brotam mudas do bioma na célula e ela está completa. Célula de fábrica ou água não conta",
+  "liga": true, "passo_s": 2.0, "raio": 56, "morta": 0.2, "boa": 0.33, "disturbio_max": 0.35,
+  "etapas_s": [0, 90, 240, 420, 720], "mudas": 2
+ },
  "ninhos": {
   "_nota": "fase 6: bando pousado em copa (primavera/verão: estacoes) faz ninho com chance_s a cada olha_s; até max ninhos ativos perto da câmera, a dist_min m um do outro, longe_construcao tiles de construção, saúde do chão ≥ saude_min + saude_extra. obra_s → ovos (ovos) → ovos_s → filhotes → filhotes_s → voam (entram no bando da espécie). Visita de adulto a cada visita_s (bando a até visita_raio m). Vazio no inverno há velho_s: cai (em média cai_s). Bolsa: até bolsas_max por árvore. Cai junto com a árvore, fogo ou construção a cai_construcao tiles. Som dos filhotes: piado_s, até som_dist m",
   "liga": true, "olha_s": 2.0, "chance_s": 0.04, "estacoes": [1.0, 0.6, 0.0, 0.0], "max": 8, "dist_min": 5.0,
   "longe_construcao": 6, "saude_extra": 0.1, "obra_s": 240, "ovos_s": 600, "filhotes_s": 600, "ovos": [2, 4],
   "visita_s": [12, 25], "visita_raio": 40, "velho_s": 3600, "cai_s": 600, "bolsas_max": 3, "cai_construcao": 2,
-  "piado_s": [3, 7], "som_dist": 18
+  "piado_s": [3, 7], "som_dist": 18,
+  "estruturas": {"_nota": "fase 7: quem se adapta à fábrica (especies) faz ninho no alto destas estruturas, a até raio m do bando pousado, se o distúrbio ali ≤ disturbio_max; até max perto da câmera; ocupado, suja a estrutura (suja_s de encardido por s)", "liga": true,
+   "tipos": ["poste_energia", "poste_alto", "silo_granel"], "especies": ["pardelo"], "raio": 12, "chance_s": 0.03, "max": 3,
+   "disturbio_max": 0.55, "suja_s": 0.00015,
+   "topo": {"_nota": "altura (m) do alto do corpo de cada uma, medida no modelo (sem anel nem lâmpada em cima): o ninho senta ali", "poste_energia": 2.25, "poste_alto": 4.93, "silo_granel": 3.8}}
  },
  "frutos": {
   "_nota": "fase 3: frutos caem embaixo das plantas perto da câmera (a cada intervalo_s, chance × estacoes [primavera, verão, outono, inverno] por planta, até por_fonte embaixo de cada uma e max perto da câmera) e viram comida no Ecossistema; apodrecem em vida_s. Sementes no vento: na troca de estação, cada árvore da espécie solta com chance × peso da estação; pegam a dist m a favor do vento, até max_por_vez mudas. voando = o desenho (janela = fração do começo da estação em que voam)",

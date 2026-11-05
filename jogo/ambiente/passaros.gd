@@ -120,7 +120,9 @@ func lotacao(foco: Vector2) -> int:
 	var soma := 0.0
 	for i in 16:
 		var p := foco + Vector2.from_angle(TAU * i / 16.0 + 0.3) * float(_d.raio_vida) * (0.25 + 0.6 * float(i % 4) / 3.0)
-		soma += saude(Vector2i(p.floor()))
+		if eco.etapa_em(p) < Ecossistema.Rec.PASSAROS:
+			continue                                       # fase 7: chão voltando não aguenta pássaro ainda
+		soma += saude(Vector2i(p.floor())) * (1.0 - eco.disturbio(p))
 	var media := soma / 16.0
 	return int(round(float(_d.bandos_max) * clampf((media - 0.12) / 0.45, 0.0, 1.0)))
 
@@ -240,7 +242,10 @@ func _lugar_bom(b: Dictionary, de: Vector2, foco: Vector2, alcance: float) -> Va
 			continue
 		if _ameaca_em(p, 3.0) != null:
 			continue
+		if eco.etapa_em(p) < Ecossistema.Rec.PASSAROS:
+			continue                                       # fase 7: chão voltando ainda não tem pássaro
 		var s := saude(t) + _rng.randf() * 0.05 + (0.3 if not poleiros_em(p).is_empty() else 0.0)   # gostam de árvore
+		s -= float(_d.get("disturbio_peso", 1.2)) * eco.disturbio(p)   # barulho e fumaça da fábrica: longe
 		if comem_fruta and not eco.comida_perto(p, 2.5, "fruta").is_empty():
 			s += 0.45                                                                  # e de fruto no chão
 		if ninhos != null and ninhos.da_especie_perto(String(b.especie), p, 8.0):
@@ -334,6 +339,8 @@ func _bando(b: Dictionary, dt: float, foco: Vector2, clima: Clima, noite: bool) 
 				de = (b.pos as Vector2) - clima.direcao_vento * 10.0       # a rajada empurra: foge vento abaixo
 			if de == null and b.estado == E.POUSADO and _perto_de_construcao(Vector2i((b.pos as Vector2).floor()), 3):
 				de = b.pos                                                  # construíram do lado
+			if de == null and b.estado == E.POUSADO and eco.disturbio(b.pos) > float(_d.get("disturbio_foge", 0.55)):
+				de = b.pos                                                  # fase 7: a máquina do lado começou a fazer barulho
 			if de != null:
 				_fugir(b, de, foco)
 	match int(b.estado):

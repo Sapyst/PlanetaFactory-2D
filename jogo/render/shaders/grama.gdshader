@@ -21,6 +21,11 @@ global uniform vec3 alvo_camera;
 // volta da câmera (4 pixels por tile): R = trilha (o chão também gasta), G = aberto agora em volta de um rato
 global uniform sampler2D trilha_mapa : filter_linear, hint_default_black;
 global uniform vec3 trilha_origem;     // x, y = canto (grade), z = lado (tiles)
+// patch fauna, fase 7: o capim voltando no chão que foi limpo (Ecossistema.mato_em), um pixel por célula de 8 m em
+// volta da câmera: R = quanto falta crescer (1 = pelado, 0 = cheio; fora do mapa, cheio); G = fumaça no ar (fuligem:
+// o capim perto da fábrica fica cinza e sem viço)
+global uniform sampler2D rebrota_mapa : filter_linear, hint_default_black;
+global uniform vec3 rebrota_origem;    // x, y = canto (grade), z = lado (m)
 #include "res://render/shaders/clima.gdshaderinc"
 
 varying float altura;
@@ -92,6 +97,12 @@ void vertex() {
 	float trilha = smoothstep(0.1, 0.75, trg.r + sorte * 0.25);
 	float tr = max(trilha, smoothstep(0.05, 0.6, trg.g));
 	VERTEX.y *= 1.0 - 0.85 * tr;
+	vec2 rbt = textureLod(rebrota_mapa, (g + torto * 2.0 - rebrota_origem.xy) / max(rebrota_origem.z, 1.0), 0.0).rg;
+	float falta = rbt.r;
+	float fuli = smoothstep(0.15, 0.85, rbt.g);
+	tom = mix(tom, vec3(dot(tom, vec3(0.3, 0.5, 0.2))) * vec3(0.8, 0.8, 0.78), fuli * 0.85);   // cinza de fuligem
+	VERTEX.y *= 1.0 - 0.8 * falta;                              // o capim que volta nasce baixo e ralo
+	some = max(some, smoothstep(0.35, 0.95, falta + sorte * 0.8));
 	some = max(some, smoothstep(0.6, 1.0, trilha + sorte * 0.6) * 0.7);    // na trilha batida alguns tufos somem
 	VERTEX.xz += normalize(vec2(_h(g * 5.1) - 0.5, _h(g * 6.3) - 0.5) + vec2(1e-4)) * UV.y * 0.06 * tr;
 	tom *= mix(vec3(1.0), vec3(1.15, 1.05, 0.75), tr);

@@ -14,6 +14,13 @@ extends RefCounted
 ##  saúde     quanto o chão está vivo (mato, árvore, sem cinza, ácido, teia, fábrica): decide onde a vida pequena,
 ##            os pássaros e, depois, os ratos ficam. Era dos Passaros; agora é de todos.
 ##  orçamento `detalhe(p)`: 2 = perto da câmera (lógica e desenho completos), 1 = meio, 0 = longe (só contagem).
+##  recuperação (fase 7) o chão que morreu (fogo, cinza, sujeira, ácido, construção) e foi limpo volta em etapas, por
+##            célula de `cel` m: insetos → mato → ratos → pássaros → árvores (`etapa_em`). Quem nunca foi ferido está
+##            completo. Quando a célula chega às árvores, brotam mudas do bioma nela (a mata volta). Vai no save.
+##  distúrbio (fase 7) barulho de máquina trabalhando e poluição do ar (`disturbio`): a fauna se afasta; em volta da
+##            fábrica fica quieto.
+
+enum Rec { MORTA, INSETOS, MATO, RATOS, PASSAROS, ARVORES }
 
 var gerador: GeradorMundo
 var mapa: MapaOcupacao
@@ -31,6 +38,8 @@ var _t := 0.0
 var _t_comida := 0.0
 var _prox_comida := 1
 var _d: Dictionary
+var recuperacao: Dictionary = {}         ## célula (Vector2i) → s desde que voltou a ficar boa (−1 = morta ainda)
+var _t_rec := 0.0
 
 
 func _init(p_gerador: GeradorMundo, p_mapa: MapaOcupacao, p_ambiente: AmbienteVivo = null, p_infestacao: Infestacao = null) -> void:
@@ -63,6 +72,11 @@ func tick(dt: float, p_foco: Vector2) -> void:
 	if _t_comida >= 1.0:
 		envelhecer(_t_comida)
 		_t_comida = 0.0
+	_t_rec -= dt
+	if _t_rec <= 0.0:
+		var passo := float(_r().get("passo_s", 2.0))
+		_t_rec = passo
+		recuperar(passo)
 
 
 func reindexar() -> void:
@@ -334,9 +348,133 @@ func _vegetacao_perto(c: Vector2, raio: float, arbusto: bool) -> Array:
 	return out
 
 
+# ------------------------------------------------------------------ recuperação em etapas (fase 7)
+func _r() -> Dictionary:
+	return Registro.fauna.get("recuperacao", {})
+
+
+func celula_de(p: Vector2) -> Vector2i:
+	var cel := _n("cel", 8.0)
+	return Vector2i(floori(p.x / cel), floori(p.y / cel))
+
+
+## Saúde média da célula (9 pontos dentro dela).
+func saude_celula(k: Vector2i) -> float:
+	var cel := _n("cel", 8.0)
+	var soma := 0.0
+	for j in 3:
+		for i in 3:
+			soma += saude_tile(Vector2i(floori((k.x + 0.17 + 0.33 * i) * cel), floori((k.y + 0.17 + 0.33 * j) * cel)))
+	return soma / 9.0
+
+
+## Um passo da recuperação: perto do foco, a célula que está morta (saúde abaixo de `morta`) volta para o começo; a
+## que está ferida e já ficou boa (saúde ≥ `boa`, sem distúrbio forte) anda no relógio. Longe da câmera o relógio só
+## anda. Ao passar de cada etapa avisa ("etapa"); nas árvores, brotam mudas do bioma e a célula sai da lista.
+func recuperar(dt: float) -> void:
+	var r := _r()
+	if not bool(r.get("liga", true)):
+		return
+	var cel := _n("cel", 8.0)
+	var raio := int(ceil(float(r.get("raio", 56.0)) / cel))
+	var k0 := celula_de(foco)
+	var vistas := {}
+	for j in range(-raio, raio + 1):
+		for i in range(-raio, raio + 1):
+			if i * i + j * j > raio * raio:
+				continue
+			var k := k0 + Vector2i(i, j)
+			vistas[k] = true
+			var h := saude_celula(k)
+			var centro := (Vector2(k) + Vector2(0.5, 0.5)) * cel
+			if h < float(r.get("morta", 0.2)):
+				if not recuperacao.has(k) and _ocupada(k):
+					continue                                 # fábrica ou água: não é chão ferido
+				recuperacao[k] = -1.0
+			elif recuperacao.has(k):
+				var t := float(recuperacao[k])
+				if t < 0.0:
+					if h >= float(r.get("boa", 0.33)) and disturbio(centro) < float(r.get("disturbio_max", 0.35)):
+						recuperacao[k] = 0.0
+						avisar({"tipo": "etapa", "cel": k, "etapa": Rec.INSETOS, "pos": centro})
+				else:
+					_andar(k, t, dt, centro)
+	for k in recuperacao.keys():                         # longe: o relógio de quem já está voltando só anda
+		if not vistas.has(k) and float(recuperacao[k]) >= 0.0:
+			_andar(k, float(recuperacao[k]), dt, (Vector2(k) + Vector2(0.5, 0.5)) * cel)
+
+
+func _andar(k: Vector2i, t: float, dt: float, centro: Vector2) -> void:
+	var antes := _etapa_de(t)
+	t += dt
+	var agora := _etapa_de(t)
+	recuperacao[k] = t
+	if agora != antes:
+		avisar({"tipo": "etapa", "cel": k, "etapa": agora, "pos": centro})
+		if agora == Rec.ARVORES:
+			recuperacao.erase(k)                             # completa
+			if ambiente != null:                             # a mata volta: mudas do bioma brotam na célula
+				for i in int(_r().get("mudas", 2)):
+					ambiente.plantar_perto(centro, _n("cel", 8.0) * 0.45, true)
+
+
+## A célula é mais fábrica (piso, máquina) ou água que chão: não conta como chão morto a recuperar.
+func _ocupada(k: Vector2i) -> bool:
+	var cel := _n("cel", 8.0)
+	var n := 0
+	for j in 3:
+		for i in 3:
+			var t := Vector2i(floori((k.x + 0.17 + 0.33 * i) * cel), floori((k.y + 0.17 + 0.33 * j) * cel))
+			if mapa.tiles.has(t) or gerador.terreno(t) != GeradorMundo.Terreno.TERRA:
+				n += 1
+	return n >= 5
+
+
+func _etapa_de(t: float) -> int:
+	if t < 0.0:
+		return Rec.MORTA
+	var e: Array = _r().get("etapas_s", [0, 90, 240, 420, 720])
+	var et := Rec.INSETOS
+	for i in range(1, e.size()):
+		if t >= float(e[i]):
+			et = Rec.INSETOS + i
+	return mini(et, Rec.ARVORES)
+
+
+## Em que etapa da volta está o chão em `p`: ARVORES (completo) se nunca foi ferido; MORTA se ainda está morto.
+func etapa_em(p: Vector2) -> int:
+	var k := celula_de(p)
+	if not recuperacao.has(k):
+		return Rec.ARVORES
+	return _etapa_de(float(recuperacao[k]))
+
+
+## O capim voltando (0 = ainda pelado, 1 = cheio): cresce do começo da volta até a etapa do mato.
+func mato_em(p: Vector2) -> float:
+	var k := celula_de(p)
+	if not recuperacao.has(k):
+		return 1.0
+	var t := float(recuperacao[k])
+	var e: Array = _r().get("etapas_s", [0, 90, 240, 420, 720])
+	return 0.0 if t < 0.0 else clampf(t / maxf(1.0, float(e[Rec.MATO - 1])), 0.0, 1.0)
+
+
+## Distúrbio em `p` (0..1): barulho de máquina trabalhando e poluição do ar. Preenchido pelo mundo (`fonte_disturbio`);
+## sem ela, 0.
+var fonte_disturbio: Callable
+var fonte_fuligem: Callable             ## a fumaça no ar (0..1): o capim fica cinza (fase 7)
+
+func disturbio(p: Vector2) -> float:
+	return clampf(float(fonte_disturbio.call(p)), 0.0, 1.0) if fonte_disturbio.is_valid() else 0.0
+
+
+func fuligem(p: Vector2) -> float:
+	return clampf(float(fonte_fuligem.call(p)), 0.0, 1.0) if fonte_fuligem.is_valid() else 0.0
+
+
 # ------------------------------------------------------------------ salvamento
 func estado() -> Dictionary:
-	return {"comida": comida, "prox": _prox_comida, "fertil": fertil}
+	return {"comida": comida, "prox": _prox_comida, "fertil": fertil, "recuperacao": recuperacao}
 
 
 func restaurar(d: Dictionary) -> void:
@@ -345,6 +483,7 @@ func restaurar(d: Dictionary) -> void:
 	for k in c:
 		comida[int(k)] = c[k]
 	_prox_comida = int(d.get("prox", 1))
+	recuperacao = d.get("recuperacao", {}).duplicate()
 	fertil.clear()
 	var fe: Dictionary = d.get("fertil", {})
 	for k in fe:

@@ -19,6 +19,7 @@ var fabrica: Fabrica
 var faiscas_ligadas := true            ## medição sem as faíscas
 var forcar_faiscas := false            ## medição (roteiro carga): todo cabo conta como energizado
 var _lista: Array = []                 ## cabos de verdade: [a, b, flecha, id, o]
+var _soltos: Array = []                ## fase 7: pedaços de cabo roído caídos (Array de pontos), do poste até o chão
 var _faiscas: Array = []               ## em cena: {a, b, flecha, ini, fim, t, vida, cor}
 var _espera := 0.0
 var _malha_faisca := ImmediateMesh.new()
@@ -68,9 +69,11 @@ func _process(delta: float) -> void:
 		return
 	_atualizar_faiscas(delta)
 	var n := 0
+	var nc := 0
 	for id in mapa.estruturas:
 		n += mapa.estruturas[id].get("fios", []).size()
-	var ass := "%d|%d" % [mapa.versao, n]
+		nc += mapa.estruturas[id].get("cortados", []).size()
+	var ass := "%d|%d|%d" % [mapa.versao, n, nc]
 	if ass == _assinatura:
 		return
 	_assinatura = ass
@@ -100,6 +103,19 @@ func refazer() -> void:
 				_fita(cabos, a, b, minf(0.06 * a.distance_to(b), 0.7), LARGURA, false)
 				_lista.append([a, b, minf(0.06 * a.distance_to(b), 0.7), id, o])
 				tem_cabo = true
+	_soltos.clear()
+	for id in mapa.estruturas:                         # fase 7: cabo roído — cada ponta pende partida até o chão
+		var e: Dictionary = mapa.estruturas[id]
+		for o in e.get("cortados", []):
+			if not mapa.estruturas.has(o):
+				continue
+			var f: Dictionary = mapa.estruturas[o]
+			var a := Fiacao.ponto_fio(e, Fiacao.centro(f))
+			var b := Fiacao.ponto_fio(f, Fiacao.centro(e))
+			var pts := _pedaco_caido(a, b, 0.3 if a.y - Grade.altura_em(Vector2(a.x, -a.z)) > b.y - Grade.altura_em(Vector2(b.x, -b.z)) else 0.12)
+			_linha(cabos, pts, LARGURA)
+			_soltos.append(pts)
+			tem_cabo = true
 	_cabos.mesh = cabos.commit() if tem_cabo else null
 	_feixes.mesh = feixes.commit() if tem_feixe else null
 
@@ -126,6 +142,37 @@ func _fita(st: SurfaceTool, a: Vector3, b: Vector3, flecha: float, largura: floa
 			if uv:
 				st.set_uv(v[k][1])
 			st.add_vertex(v[k][0])
+
+
+## O pedaço que sobrou presa em `a` depois de partir: vai um trecho (`frac` do vão) na direção de `b`, verga e cai até
+## o chão, onde fica deitado um pouco.
+func _pedaco_caido(a: Vector3, b: Vector3, frac: float) -> Array:
+	var h := Vector3(b.x - a.x, 0.0, b.z - a.z)
+	var comp := h.length() * frac
+	h = h.normalized() if h.length() > 1e-4 else Vector3.RIGHT
+	var pts: Array = []
+	for i in 8:
+		var t := i / 7.0
+		var p := a + h * comp * t
+		var chao := Grade.altura_em(Vector2(p.x, -p.z)) + 0.015
+		p.y = maxf(lerpf(a.y, chao, pow(t, 1.4)), chao)         # verga e cai: mais rápido perto do fim
+		pts.append(p)
+	var fim: Vector3 = pts[-1]
+	pts.append(Vector3(fim.x, Grade.altura_em(Vector2(fim.x, -fim.z)) + 0.015, fim.z) + h * 0.25)
+	return pts
+
+
+func _linha(st: SurfaceTool, pts: Array, largura: float) -> void:
+	for i in pts.size() - 1:
+		var p0: Vector3 = pts[i]
+		var p1: Vector3 = pts[i + 1]
+		var d := p1 - p0
+		var lado := Vector3(-d.z, 0, d.x).normalized() * largura * 0.5
+		if lado.length() < 1e-5:
+			lado = Vector3(largura * 0.5, 0, 0)
+		for q in [p0 - lado, p0 + lado, p1 + lado, p0 - lado, p1 + lado, p1 - lado]:
+			st.set_normal(Vector3.UP)
+			st.add_vertex(q)
 
 
 ## Está passando energia por este cabo? Devolve a cor da rede ou null.

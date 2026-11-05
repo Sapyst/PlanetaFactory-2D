@@ -897,8 +897,11 @@ func _sincronizar_ninhos() -> void:
 		if rz[1] == "taca" and not bool(rz[2]):
 			var t3 := Grade.tile_de_mundo((raiz.get_child(0) as Node3D).global_position) if raiz.get_child_count() > 0 else Vector2i.ZERO
 			var o: Dictionary = mundo.gerador.distribuicao.obstaculo(t3)
-			var perfil := Ecossistema.perfil_folha(String(o.get("nome", ""))) if not o.is_empty() else 0
-			ralo = 1.0 if est in COPA_RALA.get(perfil, []) else 0.0
+			if o.is_empty() or not Distribuicao.eh_arvore(String(o.nome)):
+				ralo = 1.0                                     # fase 7: ninho no alto do poste/silo, sempre à vista
+			else:
+				var perfil := Ecossistema.perfil_folha(String(o.get("nome", "")))
+				ralo = 1.0 if est in COPA_RALA.get(perfil, []) else 0.0
 		for piv: Node3D in raiz.get_children():
 			if not piv.has_meta("piv"):
 				continue                                       # o raminho até a bolsa (fica de fora no 2D: fino demais)
@@ -995,7 +998,7 @@ func _sincronizar_fios() -> void:
 	var df = mundo.get("_fios")
 	if df == null:
 		return
-	var assin: String = str(df._assinatura) + str(df._lista.size())
+	var assin: String = str(df._assinatura) + str(df._lista.size()) + "|" + str(df._soltos.size())
 	if assin == _assin_fios:
 		return
 	_assin_fios = assin
@@ -1012,6 +1015,14 @@ func _sincronizar_fios() -> void:
 		for k in 13:
 			var t := k / 12.0
 			l.add_point(Camera2DJogo.projetar(a.lerp(b, t) - Vector3(0, flecha * 4.0 * t * (1.0 - t), 0)))
+		fios.add_child(l)
+	for pts in df._soltos:                             # fase 7: cabo roído, as pontas caídas até o chão
+		var l := Line2D.new()
+		l.width = 1.0
+		l.default_color = Color(0.07, 0.06, 0.06, 0.95)
+		l.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		for p in pts:
+			l.add_point(Camera2DJogo.projetar(p))
 		fios.add_child(l)
 
 

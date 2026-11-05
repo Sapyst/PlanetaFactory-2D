@@ -7,6 +7,9 @@ class_name Fiacao
 ## Máquina já ligada NÃO troca de poste quando aparece um novo — a não ser que o jogador aceite mais fontes
 ## (painel da máquina: "fontes"). Removeu um poste: quem ficou sem fonte procura outro dentro do alcance.
 ## As ligações moram no mapa (campo "fios" de cada estrutura): vão no salvamento e o desenho só lê.
+## Patch fauna, fase 7: um rato pode roer o cabo baixo (perto da máquina) até partir (`cortar`): a ligação sai dos
+## dois lados e fica marcada em "cortados" nas duas pontas — não religa sozinha; `consertar` devolve quando a estrutura
+## é reparada (à mão ou pelo drone de reparo).
 
 const MAX_POSTES := 5
 
@@ -83,6 +86,8 @@ static func fios(e: Dictionary) -> Array:
 static func ligar(mapa: MapaOcupacao, a: int, b: int) -> void:
 	var ea: Dictionary = mapa.estruturas[a]
 	var eb: Dictionary = mapa.estruturas[b]
+	if ea.get("cortados", []).has(b) or eb.get("cortados", []).has(a):
+		return                                       # cabo roído: só volta com o conserto
 	if not fios(ea).has(b):
 		ea.fios.append(b)
 	if not fios(eb).has(a):
@@ -197,6 +202,40 @@ static func mudar_vagas(mapa: MapaOcupacao, id: int, n: int) -> void:
 		fios(e).erase(postes[i][1])
 		fios(mapa.estruturas[postes[i][1]]).erase(id)
 	_procurar_fontes(mapa, id)
+
+
+## Cabo roído partiu (fase 7): tira a ligação a–b e marca nas duas pontas, para não religar sozinho.
+static func cortar(mapa: MapaOcupacao, a: int, b: int) -> bool:
+	if not mapa.estruturas.has(a) or not mapa.estruturas.has(b) or not fios(mapa.estruturas[a]).has(b):
+		return false
+	for par in [[a, b], [b, a]]:
+		var e: Dictionary = mapa.estruturas[par[0]]
+		fios(e).erase(par[1])
+		if not e.has("cortados"):
+			e["cortados"] = []
+		if not (e.cortados as Array).has(par[1]):
+			e.cortados.append(par[1])
+	return true
+
+
+## Conserto da estrutura `id`: os cabos roídos dela voltam (se a outra ponta ainda existe e alcança).
+static func consertar(mapa: MapaOcupacao, id: int) -> int:
+	if not mapa.estruturas.has(id):
+		return 0
+	var e: Dictionary = mapa.estruturas[id]
+	var n := 0
+	for o in e.get("cortados", []).duplicate():
+		e.cortados.erase(o)
+		if mapa.estruturas.has(o):
+			var f: Dictionary = mapa.estruturas[o]
+			f.get("cortados", []).erase(id)
+			if f.has("cortados") and (f.cortados as Array).is_empty():
+				f.erase("cortados")
+			if distancia(e, f) <= alcance(e, f) or distancia(f, e) <= alcance(f, e):
+				ligar(mapa, id, o)
+				n += 1
+	e.erase("cortados")
+	return n
 
 
 ## Para mapas sem fios ainda (demo montada direto, salvos antigos, testes): liga quem nunca foi ligado.

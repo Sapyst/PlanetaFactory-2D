@@ -139,3 +139,11 @@ trilha_origem={
 "type": "vec3",
 "value": Vector3(0, 0, 64)
 }
+rebrota_mapa={
+"type": "sampler2D",
+"value": ""
+}
+rebrota_origem={
+"type": "vec3",
+"value": Vector3(0, 0, 64)
+}

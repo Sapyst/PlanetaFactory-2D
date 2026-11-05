@@ -165,7 +165,14 @@ func _enxames(tipo: String, k: int) -> Array:
 				continue
 			if h >= dens and not eco.perto_da_agua(t, 3):
 				continue                                   # só a beira d'água tem a densidade a mais
-			if eco.saude(t) < float(c.get("saude_min", 0.45)) or eco.perto_de_construcao(t, 2):
+			if eco.perto_de_construcao(t, 2) or eco.disturbio(Vector2(t)) > float(c.get("disturbio_max", 0.3)):
+				continue                                   # fase 7: barulho e fumaça da fábrica espantam
+			var et := eco.etapa_em(Vector2(t))
+			if et == Ecossistema.Rec.MORTA:
+				continue
+			# fase 7: no chão que está voltando, os insetos são os primeiros (antes do mato fechar)
+			var s_min := float(c.get("saude_min", 0.45)) if et == Ecossistema.Rec.ARVORES else 0.25
+			if eco.saude(t) < s_min:
 				continue
 			if eco.distancia(Vector2(t), "toca", float(c.get("longe_toca", 14))) < INF:
 				continue
@@ -448,6 +455,7 @@ func _sons(passo: float) -> void:
 	var est := clampi(clima.estacao, 0, 3)
 	var chuva := float(clima.valores.get("chuva", 0.0))
 	var vivo := clampf(eco.saude(Vector2i(eco.foco.round())) * 1.6, 0.0, 1.0)      # chão morto, fábrica: quieto
+	vivo *= 1.0 - eco.disturbio(eco.foco)                  # fase 7: barulho e fumaça da fábrica calam o mato
 	var perto := clampf(1.25 - (camera.distancia if camera != null else 30.0) / 90.0, 0.25, 1.0)
 	var cala: float = 1.0 - float(fatores.silencio)
 	var gr: Array = cs.get("grilos", [1, 1, 1, 0])

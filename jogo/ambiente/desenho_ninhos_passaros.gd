@@ -64,10 +64,27 @@ static func da_arvore(g: GeradorMundo, t: Vector2i) -> Transform3D:
 	return Transform3D(Basis(Vector3.UP, Grade.angulo(o.rot)), Grade.ponto_mundo(centro, g.micro_em(centro - Vector2(0.5, 0.5))))
 
 
+## Pontos do ninho `n`: na árvore (pelo modelo) ou, na fase 7, no alto da estrutura (poste, silo).
+static func pontos_de(n: Dictionary) -> Array:
+	if n.has("estrutura"):
+		return [{"p": Vector3(0.0, float(n.alto), 0.0), "giro": 0.0}]
+	return pontos(String(n.arvore), String(n.tipo))
+
+
+## Transformação de onde o ninho está: a da árvore no tile, ou a da estrutura (centro, girada, no relevo).
+func transformacao(n: Dictionary) -> Transform3D:
+	if n.has("estrutura"):
+		var e: Dictionary = ninhos.passaros.mapa.estruturas.get(int(n.estrutura), {})
+		if not e.is_empty():
+			return Transform3D(Basis(Vector3.UP, Grade.angulo(e.rot)), Grade.ponto_mundo(Grade.centro_da_area(e.minimo, e.area, e.rot)))
+		return Transform3D(Basis(), Grade.ponto_mundo(n.pos))
+	return da_arvore(ninhos.passaros.gerador, n.tile)
+
+
 ## Onde fica (mundo) o ninho `n` (o primeiro ponto; a bolsa tem um por bolsa).
 func ponto_do_ninho(n: Dictionary, k := 0) -> Vector3:
-	var ps := pontos(String(n.arvore), String(n.tipo))
-	return da_arvore(ninhos.passaros.gerador, n.tile) * (ps[k % ps.size()].p as Vector3)
+	var ps := pontos_de(n)
+	return transformacao(n) * (ps[k % ps.size()].p as Vector3)
 
 
 func _process(delta: float) -> void:
@@ -119,8 +136,8 @@ func _garantir(n: Dictionary) -> Dictionary:
 	var raiz := Node3D.new()
 	raiz.set_meta("ninho", String(n.tipo))           # o 2D desenha o sprite do ninho
 	add_child(raiz)
-	var ps := pontos(String(n.arvore), String(n.tipo))
-	var tr := da_arvore(ninhos.passaros.gerador, n.tile)
+	var ps := pontos_de(n)
+	var tr := transformacao(n)
 	for k in mini(int(n.n), ps.size()):
 		var m: Node3D = cn.instantiate()
 		Materiais.converter(m)

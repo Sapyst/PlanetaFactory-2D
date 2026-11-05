@@ -28,6 +28,8 @@ var ratos: Dictionary = {}       ## id → {id, toca, especie, pos, rumo, estado
 var passagem: Dictionary = {}    ## célula de 25 cm (Vector2i(pos × TRILHA_RES)) → 0..1
 var eventos: Array = []
 var mortos: Dictionary = {}      ## id → s desde que morreu (os últimos segundos: o desenho deita o corpo)
+var cabos: Callable              ## fase 7: () -> Array[{chave, a, b, pos: Vector2, alt}] — cabos baixos (o mundo põe)
+var desgaste: Dictionary = {}    ## fase 7: chave do cabo ("a|b") → 0..1 roído; em 1 parte (evento "cortou")
 var versao_passagem := 0
 var enterradas := 0              ## sementes enterradas (contagem)
 var mudas := 0                   ## mudas que nasceram delas
@@ -81,6 +83,7 @@ func assustar_do_ceu(c: Vector2, raio: float) -> void:
 		r.t = 10.0
 		r.comida = -1
 		r.carga = ""
+		r.roer = ""
 		eventos.append({"tipo": "fugiu", "id": r.id, "pos": r.pos})
 
 
@@ -154,7 +157,8 @@ func _cuidar_tocas(foco: Vector2) -> void:
 		var tc: Dictionary = tocas[id]
 		var tl := Vector2i((tc.pos as Vector2).floor())
 		if (tc.pos as Vector2).distance_to(foco) <= raio and (eco.saude(tl) < _n("saude_min", 0.45) * 0.6 \
-				or eco.perto_de_construcao(tl, int(_n("longe_construcao", 6)) - 2)):
+				or eco.perto_de_construcao(tl, int(_n("longe_construcao", 6)) - 2) \
+				or eco.disturbio(tc.pos) > _n("disturbio_foge", 0.55)):
 			abandonar(id)
 	var perto := tocas.values().filter(func(tc): return (tc.pos as Vector2).distance_to(foco) <= raio)
 	if perto.size() >= int(_n("tocas_max", 6)):
@@ -182,6 +186,9 @@ func especie_de_toca(tl: Vector2i) -> String:
 	if not eco.gerador.distribuicao.obstaculo(tl).is_empty() and not eco.mapa.limpos.has(tl):
 		return ""
 	if eco.saude(tl) < _n("saude_min", 0.45) or eco.perto_de_construcao(tl, int(_n("longe_construcao", 6))):
+		return ""
+	var c0 := Vector2(tl) + Vector2(0.5, 0.5)                  # fase 7: só no chão que já voltou até os ratos, e quieto
+	if eco.etapa_em(c0) < Ecossistema.Rec.RATOS or eco.disturbio(c0) > _n("disturbio_max", 0.25):
 		return ""
 	if eco.perto_da_agua(tl, 1):
 		return ""
@@ -259,6 +266,10 @@ func _rato(r: Dictionary, dt: float, ativo: float) -> void:
 				if _rng.randf() < 0.15:
 					eventos.append({"tipo": "chiou", "id": r.id, "pos": r.pos})
 		E.COMENDO:
+			if r.t <= 0.0 and String(r.get("roer", "")) != "":
+				_roeu(r)
+				_voltar(r, casa)
+				return
 			if r.t <= 0.0:
 				var f: Dictionary = eco.comida.get(int(r.comida), {})
 				r.comida = -1
@@ -304,6 +315,8 @@ func _escolher(r: Dictionary, casa: Vector2, ativo: float) -> void:
 		return
 	r.fome = minf(1.0, float(r.fome) + 0.35)
 	var busca := _n("raio_busca", 12.0)
+	if _ir_roer(r, casa, busca):
+		return
 	if float(r.fome) > 0.3:
 		var melhor: Dictionary = {}
 		var d := INF
@@ -327,6 +340,47 @@ func _escolher(r: Dictionary, casa: Vector2, ativo: float) -> void:
 	r.t = _rng.randf_range(2.0, 5.0)
 
 
+## Fase 7: de vez em quando o rato vai roer um cabo baixo (a ponta que desce até a máquina) perto da toca, num lugar
+## quieto. `roer` no fauna.json (liga, chance por escolha, alt_max, sessões até partir, roer_s, disturbio_max).
+func _ir_roer(r: Dictionary, casa: Vector2, busca: float) -> bool:
+	var c: Dictionary = _d.get("roer", {})
+	if not bool(c.get("liga", true)) or not cabos.is_valid() or _rng.randf() > float(c.get("chance", 0.04)):
+		return false
+	var melhor: Dictionary = {}
+	var dm := busca
+	for cb in cabos.call():
+		var d := (cb.pos as Vector2).distance_to(casa)
+		if d < dm and float(cb.alt) <= float(c.get("alt_max", 0.9)) and eco.disturbio(cb.pos) <= float(c.get("disturbio_max", 0.5)):
+			dm = d
+			melhor = cb
+	if melhor.is_empty():
+		return false
+	r.roer = String(melhor.chave)
+	r.roer_ab = [int(melhor.a), int(melhor.b)]
+	r.comida = -1
+	r.alvo = (melhor.pos as Vector2) + ((casa - (melhor.pos as Vector2)).normalized() * 0.12)
+	if eco.mapa.tiles.has(Vector2i((r.alvo as Vector2).floor())):
+		r.alvo = melhor.pos                                  # (nunca em cima da máquina: lá ele foge)
+	r.estado = E.ANDANDO
+	r.t = 10.0
+	return true
+
+
+## Terminou uma sessão roendo: o cabo gasta; na última, parte.
+func _roeu(r: Dictionary) -> void:
+	var c: Dictionary = _d.get("roer", {})
+	var k := String(r.roer)
+	r.roer = ""
+	var v := float(desgaste.get(k, 0.0)) + 1.0 / maxf(1.0, float(c.get("sessoes", 3)))
+	eventos.append({"tipo": "roeu", "id": r.id, "pos": r.pos, "cabo": k, "desgaste": minf(v, 1.0)})
+	if v >= 0.999:
+		desgaste.erase(k)
+		var ab: Array = r.get("roer_ab", [-1, -1])
+		eventos.append({"tipo": "cortou", "id": r.id, "pos": r.pos, "cabo": k, "a": int(ab[0]), "b": int(ab[1])})
+	else:
+		desgaste[k] = v
+
+
 func _fruto_tomado(id: int, quem: int) -> bool:
 	for o in ratos.values():
 		if o.id != quem and int(o.comida) == id:
@@ -343,6 +397,11 @@ func _chegou(r: Dictionary, casa: Vector2, ativo: float) -> void:
 		r.pasto = false
 		r.estado = E.COMENDO
 		r.t = _rng.randf_range(2.5, 5.0)
+		return
+	if String(r.get("roer", "")) != "":                    # fase 7: chegou no cabo: senta e rói
+		r.estado = E.COMENDO
+		var rs: Array = _d.get("roer", {}).get("roer_s", [6.0, 10.0])
+		r.t = _rng.randf_range(float(rs[0]), float(rs[1]))
 		return
 	if int(r.comida) >= 0:
 		if eco.comida.has(int(r.comida)):
@@ -380,6 +439,7 @@ func _fugir(r: Dictionary, de: Vector2, casa: Vector2) -> void:
 	r.estado = E.FUGINDO
 	r.t = 10.0
 	r.comida = -1
+	r.roer = ""                                            # (fase 7: largou o cabo)
 	if String(r.carga) != "":
 		r.carga = ""                                       # largou a bolota correndo
 	eventos.append({"tipo": "fugiu", "id": r.id, "pos": r.pos})
@@ -476,7 +536,7 @@ func _marcar_e_desmarcar(dt: float) -> void:
 
 func estado() -> Dictionary:
 	return {"tocas": tocas, "ratos": ratos, "passagem": passagem, "prox": _prox, "rng": _rng.state,
-			"enterradas": enterradas, "mudas": mudas}
+			"enterradas": enterradas, "mudas": mudas, "desgaste": desgaste}
 
 
 func restaurar(d: Dictionary) -> void:
@@ -492,8 +552,10 @@ func restaurar(d: Dictionary) -> void:
 			r.especie = String(tocas.get(int(r.toca), {}).get("especie", "pardo"))
 		r.pos = tocas[int(r.toca)].pos if tocas.has(int(r.toca)) else r.pos
 		r.carga = ""
+		r.roer = ""
 		ratos[int(k)] = r
 	passagem = d.get("passagem", {})
+	desgaste = d.get("desgaste", {}).duplicate()
 	_prox = int(d.get("prox", 1))
 	_rng.state = int(d.get("rng", _rng.state))
 	enterradas = int(d.get("enterradas", 0))

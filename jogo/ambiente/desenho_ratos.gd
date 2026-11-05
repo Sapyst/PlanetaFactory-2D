@@ -170,6 +170,10 @@ func _trilha(delta: float) -> void:
 	_tex_trilha.update(_img_trilha)
 
 
+var _img_rebrota: Image
+var _tex_rebrota: ImageTexture
+var _t_rebrota := 0.0
+const LADO_REBROTA := 16      ## células (de 8 m) em volta da câmera no mapa do capim voltando (fase 7)
 var extras_capim: Callable    ## fase 6: [[posição, raio]…] de quem mais deita o capim (corpos, pássaros no chão; o mundo põe)
 
 
@@ -190,10 +194,38 @@ func _carimbo(img: Image, p: Vector2, raio: float, v: float) -> void:
 			img.set_pixel(x, y, Color(a.r, maxf(a.g, v * smoothstep(0.0, 0.6, k)), 0))
 
 
+## Fase 7: o capim voltando no chão que foi limpo (`rebrota_mapa` global, um pixel por célula do Ecossistema, filtrado:
+## a borda vira degradê). R = quanto falta crescer; G = fumaça no ar (o capim fica cinza).
+func _rebrota(delta: float) -> void:
+	_t_rebrota -= delta
+	if _t_rebrota > 0.0 or ratos.eco == null:
+		return
+	_t_rebrota = 1.0
+	var eco: Ecossistema = ratos.eco
+	var cel := eco._n("cel", 8.0)
+	if _img_rebrota == null:
+		_img_rebrota = Image.create(LADO_REBROTA, LADO_REBROTA, false, Image.FORMAT_RG8)
+		_tex_rebrota = ImageTexture.create_from_image(_img_rebrota)
+		RenderingServer.global_shader_parameter_set("rebrota_mapa", _tex_rebrota)
+	var foco: Vector2 = foco_de.call() if foco_de.is_valid() else Vector2.ZERO
+	var k0 := eco.celula_de(foco) - Vector2i(LADO_REBROTA / 2, LADO_REBROTA / 2)
+	for y in LADO_REBROTA:                               # G = fumaça no ar (o capim fica cinza perto da fábrica)
+		for x in LADO_REBROTA:
+			_img_rebrota.set_pixel(x, y, Color(0, eco.fuligem((Vector2(k0 + Vector2i(x, y)) + Vector2(0.5, 0.5)) * cel), 0))
+	for k: Vector2i in eco.recuperacao:
+		var l := k - k0
+		if l.x >= 0 and l.y >= 0 and l.x < LADO_REBROTA and l.y < LADO_REBROTA:
+			var px := _img_rebrota.get_pixel(l.x, l.y)
+			_img_rebrota.set_pixel(l.x, l.y, Color(1.0 - eco.mato_em((Vector2(k) + Vector2(0.5, 0.5)) * cel), px.g, 0))
+	_tex_rebrota.update(_img_rebrota)
+	RenderingServer.global_shader_parameter_set("rebrota_origem", Vector3(k0.x * cel, k0.y * cel, LADO_REBROTA * cel))
+
+
 func _process(delta: float) -> void:
 	if ratos == null:
 		return
 	_trilha(delta)
+	_rebrota(delta)
 	_ratos(delta)
 	_sons(delta)
 	var chave := "%d|%d" % [ratos.tocas.size(), ratos._prox]
@@ -281,12 +313,17 @@ func _sons(delta: float) -> void:
 		if ev.tipo in ["chiou", "fugiu"] and (ev.pos as Vector2).distance_to(foco) < 15.0:
 			Som.tocar("rato_chiado" if randf() < 0.5 else "rato_guincho", Grade.ponto_mundo(ev.pos, 0.1), -12.0)
 	for r in ratos.ratos.values():
-		if r.estado != Ratos.E.CAVANDO or (r.pos as Vector2).distance_to(foco) > 12.0:
+		var roendo: bool = r.estado == Ratos.E.COMENDO and String(r.get("roer", "")) != ""   # fase 7: roendo cabo
+		if not (r.estado == Ratos.E.CAVANDO or roendo) or (r.pos as Vector2).distance_to(foco) > 12.0:
 			continue
 		var n: Dictionary = nos.get(r.id, {})
 		if n.is_empty():
 			continue
 		n.t_som = float(n.get("t_som", 0.0)) - delta
 		if float(n.t_som) <= 0.0:
-			n.t_som = 1.25
-			Som.tocar("rato_cavar", Grade.ponto_mundo(r.pos), -14.0)
+			if roendo:
+				n.t_som = float(Registro.fauna.get("ratos", {}).get("roer", {}).get("som_s", 2.4))
+				Som.tocar("rato_roendo", Grade.ponto_mundo(r.pos, 0.1), -10.0)
+			else:
+				n.t_som = 1.25
+				Som.tocar("rato_cavar", Grade.ponto_mundo(r.pos), -14.0)

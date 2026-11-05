@@ -1145,6 +1145,23 @@ def rato_cavar(rng):
     return reverb(x, 0.3, 0.1, 6000)
 
 
+def rato_roendo(rng):
+    """Rato roendo cabo (fase 7): dentes raspando: rajadas de 6 a 10 cliques secos e agudos (3–7 kHz) a ~11 por segundo, com pausas curtas
+    entre as rajadas (ele para, olha e volta a roer)."""
+    partes = []
+    at = 0.0
+    for r in range(int(rng.integers(3, 5))):
+        for k in range(int(rng.integers(6, 11))):
+            d = rng.uniform(0.012, 0.022)
+            n = int(d * TAXA)
+            x = banda(ruido(n, rng), rng.uniform(2800, 3600), rng.uniform(6000, 7500)) * np.hanning(n) ** 0.5
+            x = x * 0.7 + ressoa(x, rng.uniform(3800, 4600), 6) * 0.5
+            partes.append((x, rng.uniform(0.6, 1.0), at))
+            at += 1.0 / rng.uniform(10.0, 12.5)
+        at += rng.uniform(0.18, 0.4)
+    return reverb(junta(*partes), 0.25, 0.08, 8000)
+
+
 def sapo(rng):
     """Sapo na beira d'água depois da chuva: 2 a 4 coaxos graves — pulsos estreitos (~85–120/s) passando pelas
     ressonâncias da bolsa vocal (~450 Hz, ~1,2 kHz), cada coaxo subindo e descendo um pouco o tom."""
@@ -1194,7 +1211,7 @@ SONS = [
     ('amb_grilos', amb_grilos, -24, 0.6, 0), ('amb_insetos_dia', amb_insetos_dia, -27, 0.6, 0),
     ('sapo', sapo, -17, 0, 0.003), ('amb_moscas', amb_moscas, -26, 0.6, 0),
     ('rato_chiado', rato_chiado, -20, 0, 0.001), ('rato_guincho', rato_guincho, -20, 0, 0.001),
-    ('rato_cavar', rato_cavar, -24, 0, 0.001),
+    ('rato_cavar', rato_cavar, -24, 0, 0.001), ('rato_roendo', rato_roendo, -24, 0, 0.002),
     ('filhotes', filhotes, -24, 0, 0.002), ('geado_canto', geado_canto, -24, 0, 0.002),
     ('bando_migrando', bando_migrando, -26, 0, 0.002),
 ]

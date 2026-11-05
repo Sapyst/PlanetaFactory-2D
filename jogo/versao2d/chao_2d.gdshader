@@ -27,6 +27,8 @@ global uniform float vico_grama;         // −1 seco … +1 viçoso depois da c
 global uniform vec3 sol_dir;             // y > 0 = dia (flor aberta)
 global uniform sampler2D trilha_mapa : filter_linear, hint_default_black;   // patch fauna, fase 5: R = trilha dos ratos
 global uniform vec3 trilha_origem;
+global uniform sampler2D rebrota_mapa : filter_linear, hint_default_black;   // fase 7: R = capim que falta voltar
+global uniform vec3 rebrota_origem;
 
 vec3 cor_estacao(float e) {
 	vec3 c[4] = vec3[4](vec3(0.94, 1.08, 0.9), vec3(1.0), vec3(1.12, 0.98, 0.66), vec3(0.86, 0.84, 0.74));
@@ -163,5 +165,12 @@ void fragment() {
 	float trl = texture(trilha_mapa, (grade - trilha_origem.xy) / max(trilha_origem.z, 1.0)).r;
 	trl = smoothstep(0.2, 0.8, trl + (_hp(floor(grade * 8.0)) - 0.5) * 0.3);
 	cor = mix(cor, vec3(0.21, 0.17, 0.12) * (0.85 + 0.3 * _hp(floor(grade * 8.0) + 3.0)), trl * 0.7);
+	// capim voltando (fase 7): terra com tufos esparsos que vão fechando
+	vec2 rbt = texture(rebrota_mapa, (grade - rebrota_origem.xy) / max(rebrota_origem.z, 1.0)).rg;
+	float falta = rbt.r;
+	float fuli = smoothstep(0.15, 0.85, rbt.g);
+	cor = mix(cor, vec3(dot(cor, vec3(0.3, 0.5, 0.2))) * vec3(0.8, 0.8, 0.78), fuli * 0.85);   // fuligem: cinza
+	float tufo = step(falta * 1.1, _hp(floor(grade * 6.0) + 7.0));
+	cor = mix(cor, vec3(0.20, 0.16, 0.11) * (0.85 + 0.3 * _hp(floor(grade * 8.0) + 5.0)), falta * (1.0 - tufo) * 0.85);
 	COLOR = vec4(cor * dados.b, 1.0);
 }
