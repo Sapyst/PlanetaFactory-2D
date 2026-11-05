@@ -473,6 +473,79 @@ func fuligem(p: Vector2) -> float:
 
 
 # ------------------------------------------------------------------ salvamento
+# ------------------------------------------------------------------ bicho grande andando (fase 9)
+var _passa: Dictionary = {}              ## tile → passável para bicho grande (refeito a cada 5 s: a fábrica muda)
+var _t_passa := 0.0
+
+
+## Um bicho grande (herbívoro, predador) passa por aqui? Sem construção, água, árvore ou rocha em pé.
+func passavel(p: Vector2) -> bool:
+	var tl := Vector2i(p.floor())
+	if _passa.has(tl):
+		return bool(_passa[tl])
+	var ok := not mapa.tiles.has(tl) and not gerador.eh_agua(gerador.terreno(tl))
+	if ok and not mapa.limpos.has(tl) and not gerador.distribuicao.obstaculo(tl).is_empty():
+		ok = false
+	_passa[tl] = ok
+	return ok
+
+
+func esquecer_passagem(dt: float) -> void:
+	_t_passa -= dt
+	if _t_passa <= 0.0:
+		_t_passa = 5.0
+		_passa.clear()
+
+
+## Linha passável de `a` até `b` (a cada metro).
+func linha_passavel(a: Vector2, b: Vector2) -> bool:
+	var n := int(ceil(a.distance_to(b)))
+	for i in range(1, n + 1):
+		if not passavel(a.lerp(b, float(i) / n)):
+			return false
+	return true
+
+
+## O bicho `b` ({pos, rumo}) anda até `alvo` a `vel` m/s desviando do que não passa e virando devagar (bicho grande
+## não gira no lugar). Devolve se chegou.
+func andar_grande(b: Dictionary, alvo: Vector2, vel: float, dt: float, chegou := 0.25) -> bool:
+	var p: Vector2 = b.pos
+	var d := alvo - p
+	if d.length() < chegou:
+		return true
+	var ang := d.angle()
+	var achou := false
+	for desvio in [0.0, 0.5, -0.5, 1.0, -1.0, 1.6, -1.6]:
+		if passavel(p + Vector2.from_angle(ang + desvio)):
+			ang += desvio
+			achou = true
+			break
+	if not achou:
+		return false
+	b.rumo = lerp_angle(float(b.rumo), ang, minf(1.0, dt * (3.0 if vel < 3.0 else 5.0)))
+	var anda := Vector2.from_angle(float(b.rumo)) * minf(d.length(), vel * dt)
+	if passavel(p + anda):
+		b.pos = p + anda
+	return (alvo - (b.pos as Vector2)).length() < chegou
+
+
+## Bichos não se atravessam: quem está a menos de `min_d` (× `fator(a, b)`) é empurrado, sem entrar no que não passa.
+func separar(lista: Array, min_d: float, fator := Callable()) -> void:
+	for i in lista.size():
+		for j in range(i + 1, lista.size()):
+			var a: Dictionary = lista[i]
+			var b: Dictionary = lista[j]
+			var d: Vector2 = (b.pos as Vector2) - (a.pos as Vector2)
+			var md := min_d * (float(fator.call(a, b)) if fator.is_valid() else 1.0)
+			if d.length() >= md or d.length() < 0.0001:
+				continue
+			var em := d.normalized() * (md - d.length()) * 0.5
+			if passavel((a.pos as Vector2) - em):
+				a.pos = (a.pos as Vector2) - em
+			if passavel((b.pos as Vector2) + em):
+				b.pos = (b.pos as Vector2) + em
+
+
 func estado() -> Dictionary:
 	return {"comida": comida, "prox": _prox_comida, "fertil": fertil, "recuperacao": recuperacao}
 

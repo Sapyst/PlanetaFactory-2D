@@ -87,7 +87,7 @@
  "comportamento": {
   "_nota": "patch fauna, fase 8: o jeito de cada espécie. ataque_raio = até onde o grupo vai atrás da fonte de poluição (a larva fica perto da cratera); caca = presas perto da toca (rato, pássaro no chão; a larva também come carcaça), raio m da toca, a cada olha_s com chance por toca, por_vez bichos (a aranha caça em dupla), espreita = anda devagar (espreita_vel × velocidade) e só é vista de perto (vista m) até bote_dist m, quando dá o bote (bote_vel m/s); desiste em desiste_s. procria = de onde vem a raiva que vira bicho: poluicao (fator sobre o que absorve), carcaca (raiva por carcaça comida até os ossos), arvore (por árvore dissolvida no chão corroído a até comida_raio m)",
   "aranha": {"ataque_raio": 160, "expande": true,
-   "caca": {"liga": true, "raio": 16, "olha_s": 3.0, "chance": 0.35, "por_vez": 2, "presas": ["rato", "passaro"],
+   "caca": {"liga": true, "raio": 16, "olha_s": 3.0, "chance": 0.35, "por_vez": 2, "presas": ["rato", "passaro", "herbivoro"],
     "espreita_vel": 0.45, "vista": 3.0, "bote_dist": 3.0, "bote_vel": 5.0, "pega": 0.8, "desiste_s": 25},
    "procria": {"poluicao": 1.0}},
   "larva": {"ataque_raio": 80, "expande": false,
@@ -95,8 +95,9 @@
     "comer_s": 8.0, "desiste_s": 30},
    "procria": {"poluicao": 0.6, "carcaca": 3.0, "arvore": 1.5, "comida_raio": 14}}
  },
- "relacoes": {"_nota": "fase 8: quem ataca quem entre os aliens (hostil = brigam quando se veem, disputam território e mandam grupo contra a toca do outro)",
-  "aranha": {"larva": "hostil"}, "larva": {"aranha": "hostil"}},
+ "relacoes": {"_nota": "fase 8: quem ataca quem entre os aliens; fase 9: e o predador nativo, uivador (hostil = brigam quando se veem, disputam território e mandam grupo contra a toca do outro)",
+  "aranha": {"larva": "hostil", "uivador": "hostil"}, "larva": {"aranha": "hostil", "uivador": "hostil"},
+  "uivador": {"aranha": "hostil", "larva": "hostil"}},
  "guerra": {
   "_nota": "fase 8: ve = m em que um bicho enxerga o inimigo (fora do ataque à fábrica) e vai brigar; dano_aranha = mordida em outro bicho ♥/s; raio_ninhos = tocas hostis a até isso disputam: o grupo pode ir contra a toca inimiga (se ela está mais perto que a fábrica); território: onde as manchas se encostam, a toca mais forte (bichos + 2) cresce até extra_max tiles a cresce tiles/s e a mais fraca perde dano_territorio ♥/s × encosto",
   "liga": true, "ve": 9.0, "olha_s": 0.5, "dano_aranha": 20, "raio_ninhos": 45,

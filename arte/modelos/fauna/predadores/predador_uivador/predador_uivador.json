@@ -1,0 +1,31 @@
+{
+ "nome": "predador_uivador",
+ "categoria": "fauna/predadores",
+ "tipo": "veiculo",
+ "area": [
+  1,
+  1
+ ],
+ "descricao": "Uivador: predador nativo de matilha (patch fauna, fase 9), canídeo com crista curta de placas ósseas; ações: andar (12), correr (12), espreitar (12), morder (12), comer (24), deitado (24), morto (2); metros por ciclo: andar 0.72, correr 1.7, espreitar 0.42.",
+ "ocupa_canto": false,
+ "partes": [
+  {
+   "nome": "corpo",
+   "pai": null,
+   "pivo": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "portas": [],
+ "tris": 1340,
+ "dims": [
+  1.377,
+  0.2,
+  0.823
+ ],
+ "anima": true,
+ "estudo": "estudo_fauna_grande.py"
+}

@@ -23,6 +23,7 @@ const AMARELO := Color(0.78, 1.0, 0.32)
 const OLHO := Color(0.85, 1.0, 0.55)
 const INSETO := Color(0.92, 0.9, 0.8)          ## asa pegando sol: de dia o mosquito aparece claro contra o chão
 const MOSCA := Color(0.06, 0.065, 0.05)        ## varejeira: escura, com brilho só no reflexo
+const ENXAME := Color(0.7, 0.68, 0.6)          ## fase 9: mosquito da nuvem do verão (visto de cima, a asa pega a luz)
 
 var eco: Ecossistema
 var clima: Clima
@@ -35,12 +36,14 @@ var vagalumes: Array = []      ## {pos: Vector3, brilho: 0..1, rastro: [Vector3,
 var insetos: Array = []        ## {pos: Vector3, rastro: [Vector3, Vector3]}
 var olhos: Array = []          ## {a: Vector3, b: Vector3, brilho}
 var moscas: Array = []         ## {pos: Vector3, rastro: [Vector3], pousada: bool}
-var fatores := {"vagalumes": 0.0, "insetos": 0.0, "moscas": 0.0, "noite": 0.0, "silencio": 0.0}
+var fatores := {"vagalumes": 0.0, "insetos": 0.0, "moscas": 0.0, "enxame": 0.0, "noite": 0.0, "silencio": 0.0}
 var _zumbido := 0.0            ## 0..1: o laço das moscas agora (a carcaça mais perto da câmera)
+var _zumbido_enxame := 0.0     ## fase 9: o laço do enxame (o mais perto da câmera)
 
 var _d: Dictionary
 var _enx_v: Array = []         ## {c: Vector2, y: float, n: int, s: float}
 var _enx_i: Array = []
+var _enx_s: Array = []         ## fase 9: nuvens de mosquito do verão úmido
 var _mato: Array = []          ## tiles de mato perto (olhos)
 var _foco_ancoras := Vector2.INF
 var _t_ancoras := 0.0
@@ -112,6 +115,19 @@ func _fatores() -> void:
 		zoom = clampf((float(_sub("insetos").get("zoom_max", 55)) - camera.distancia) / 15.0, 0.0, 1.0)
 	fatores.insetos = dia * float(ei[est]) * (1.0 - chuva) * (1.0 - clampf((vento - 0.45) / 0.35, 0.0, 1.0)) * zoom \
 			if _liga("insetos") else 0.0
+	# fase 9: enxames no verão úmido (depois das chuvas, mais no entardecer, mais onde o lugar é úmido)
+	var ce: Dictionary = _sub("enxame")
+	var ee: Array = ce.get("estacoes", [0.15, 1.0, 0.25, 0.0])
+	var umido := 0.0
+	if clima != null:
+		umido = clampf(maxf(clima.molhado, clima.vico * 1.4), 0.0, 1.0)
+		if eco != null:
+			umido *= 0.55 + 0.45 * eco.gerador.clima(Vector2i(eco.foco.round())).y
+	var u0 := float(ce.get("umido_min", 0.2))
+	var crep := clampf(1.0 - absf(luz - 0.5) / 0.22, 0.0, 1.0)
+	fatores.enxame = clampf((luz - 0.22) / 0.18, 0.0, 1.0) * (0.55 + 0.45 * crep) * float(ee[est]) \
+			* smoothstep(u0, u0 + 0.4, umido) * (1.0 - chuva) * (1.0 - clampf((vento - 0.35) / 0.3, 0.0, 1.0)) * zoom \
+			if _liga("enxame") else 0.0
 	var cm: Dictionary = Registro.fauna.get("carcacas", {}).get("moscas", {})
 	var em: Array = cm.get("estacoes", [1, 1, 1, 0])
 	fatores.moscas = clampf((luz - 0.3) / 0.2, 0.0, 1.0) * float(em[est]) * (1.0 - chuva) * (1.0 - clampf((vento - 0.6) / 0.35, 0.0, 1.0)) \
@@ -128,6 +144,7 @@ func _fatores() -> void:
 func _ancoras() -> void:
 	_enx_v = _enxames("vagalumes", 1) if fatores.vagalumes > 0.0 else []
 	_enx_i = _enxames("insetos", 2) if fatores.insetos > 0.0 else []
+	_enx_s = _enxames("enxame", 3) if fatores.enxame > 0.0 else []
 	_mato.clear()
 	if _liga("olhos") and fatores.noite > 0.5:
 		var r := int(_sub("olhos").get("raio", 22))
@@ -163,8 +180,8 @@ func _enxames(tipo: String, k: int) -> Array:
 			var h := _h(t, k)
 			if h >= dens * (1.0 + bonus):
 				continue
-			if h >= dens and not eco.perto_da_agua(t, 3):
-				continue                                   # só a beira d'água tem a densidade a mais
+			if (h >= dens or bool(c.get("so_agua", false))) and not eco.perto_da_agua(t, 3):
+				continue                                   # só a beira d'água tem a densidade a mais (o enxame, só ela)
 			if eco.perto_de_construcao(t, 2) or eco.disturbio(Vector2(t)) > float(c.get("disturbio_max", 0.3)):
 				continue                                   # fase 7: barulho e fumaça da fábrica espantam
 			var et := eco.etapa_em(Vector2(t))
@@ -237,6 +254,20 @@ func _pisca(e: Dictionary, j: int, t: float) -> float:
 		var sobe := clampf(ph / 0.06, 0.0, 1.0)
 		return sobe * sobe * exp(-maxf(ph - 0.06, 0.0) / 0.12)
 	return 0.3 + 0.7 * pow(0.5 + 0.5 * sin(ph * TAU), 3.0)
+
+
+## Mosquito j da nuvem do verão (fase 9): coluna densa que sobe e desce no lugar, cada um num zigue-zague rápido.
+func _voo_enxame(e: Dictionary, j: int, t: float) -> Vector3:
+	var s1 := _h(e.t, 200 + j)
+	var s2 := _h(e.t, 220 + j)
+	var s3 := _h(e.t, 240 + j)
+	var deriva := Vector2(sin(t * 0.21 + _h(e.t, 9) * TAU), cos(t * 0.17 + _h(e.t, 13) * TAU)) * 0.25
+	var r := 0.15 + 0.55 * sqrt(s1)
+	var a := s2 * TAU + t * (0.6 + 1.2 * s3) * (1.0 if s1 > 0.5 else -1.0)
+	var p: Vector2 = e.c + deriva + Vector2(cos(a), sin(a)) * r \
+			+ Vector2(sin(t * (9.0 + 5.0 * s2) + s3 * 30.0), cos(t * (10.0 + 4.0 * s1) + s2 * 30.0)) * 0.1
+	var h := 0.5 + 1.6 * s3 * (0.85 + 0.15 * sin(t * 0.9 + _h(e.t, 17) * TAU)) + 0.12 * sin(t * (6.0 + 4.0 * s1) + s2 * 20.0)
+	return Vector3(p.x, float(e.y) + h, -p.y)
 
 
 func _voo_inseto(e: Dictionary, j: int, t: float) -> Vector3:
@@ -313,6 +344,16 @@ func _calcular() -> void:
 				if _h(e.t, 120 + j) > fatores.insetos:
 					continue
 				insetos.append({"pos": _voo_inseto(e, j, _t), "rastro": [_voo_inseto(e, j, _t - 0.035), _voo_inseto(e, j, _t - 0.07)]})
+	_zumbido_enxame = 0.0
+	if fatores.enxame > 0.0:
+		var som := float(_sub("enxame").get("som_dist", 14.0))
+		for e in _enx_s:
+			_zumbido_enxame = maxf(_zumbido_enxame, float(fatores.enxame) * clampf(1.0 - (e.c as Vector2).distance_to(eco.foco) / som, 0.0, 1.0))
+			for j in int(e.n):
+				if _h(e.t, 120 + j) > fatores.enxame:
+					continue
+				insetos.append({"pos": _voo_enxame(e, j, _t), "rastro": [_voo_enxame(e, j, _t - 0.02), _voo_enxame(e, j, _t - 0.04)],
+						"enxame": true})
 	if _liga("olhos") and fatores.noite > 0.7 and ratos != null:
 		_olhos_de_ratos()
 	elif _liga("olhos") and fatores.noite > 0.7 and not _mato.is_empty() and fatores.silencio < 0.5:
@@ -398,7 +439,12 @@ func _desenhar() -> void:
 			bri.append([o.b, t, Color(OLHO, b)])
 	var pts: Array = []
 	var pxi := float(_sub("insetos").get("px", 1.4))
+	var pxe := float(_sub("enxame").get("px", 1.7))
 	for ins in insetos:
+		if ins.has("enxame"):                              # fase 9: mosquito de enxame, miúdo e mais apagado que o do dia
+			pts.append([ins.pos, _tam(ins.pos, pxe), Color(ENXAME, 0.7)])
+			pts.append([ins.rastro[0], _tam(ins.rastro[0], pxe * 0.7), Color(ENXAME, 0.3)])
+			continue
 		pts.append([ins.pos, _tam(ins.pos, pxi), Color(INSETO, 0.8)])
 		pts.append([ins.rastro[0], _tam(ins.rastro[0], pxi * 0.8), Color(INSETO, 0.4)])
 		pts.append([ins.rastro[1], _tam(ins.rastro[1], pxi * 0.6), Color(INSETO, 0.18)])
@@ -449,9 +495,11 @@ func _sons(passo: float) -> void:
 		Som.tocar_loop_ambiente("amb_grilos", 0.0)
 		Som.tocar_loop_ambiente("amb_insetos_dia", 0.0)
 		Som.tocar_loop_ambiente("amb_moscas", 0.0)
+		Som.tocar_loop_ambiente("amb_enxame", 0.0)
 		return
 	var perto_m := clampf(1.25 - (camera.distancia if camera != null else 30.0) / 60.0, 0.15, 1.0)
 	Som.tocar_loop_ambiente("amb_moscas", 0.6 * _zumbido * perto_m)
+	Som.tocar_loop_ambiente("amb_enxame", 0.55 * _zumbido_enxame * perto_m * (1.0 - eco.disturbio(eco.foco)))
 	var est := clampi(clima.estacao, 0, 3)
 	var chuva := float(clima.valores.get("chuva", 0.0))
 	var vivo := clampf(eco.saude(Vector2i(eco.foco.round())) * 1.6, 0.0, 1.0)      # chão morto, fábrica: quieto

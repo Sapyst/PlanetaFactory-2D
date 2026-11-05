@@ -96,6 +96,8 @@ func _garantir(k: String, f: Dictionary) -> Dictionary:
 				no = DesenhoRatos.corpo_morto(pos, float(f.ang), String(f.get("variante", "pardo")))
 			"passaro":
 				no = DesenhoPassaros.corpo_morto(pos, float(f.ang), String(f.get("variante", "pardelo")), f.get("bicho", ""))
+			"herbivoro", "predador", "peixe":                 # fase 9
+				no = DesenhoFaunaGrande.corpo_morto(String(f.especie), pos, float(f.ang), String(f.get("variante", "")))
 		if no == null:
 			return {}
 		if no.get_parent() == null:

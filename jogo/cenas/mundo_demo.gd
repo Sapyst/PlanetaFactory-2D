@@ -49,6 +49,10 @@ var ratos: Ratos                         ## patch fauna, fase 5: tocas e ratos d
 var _desenho_ratos: DesenhoRatos
 var ninhos_passaros: NinhosPassaros      ## patch fauna, fase 6: ninhos nas árvores (obra, ovos, filhotes que voam)
 var disturbio: DisturbioFabrica          ## patch fauna, fase 7: barulho de máquina e fumaça no ar (a fauna se afasta)
+var manadas: Manadas                     ## patch fauna, fase 9: herbívoros grandes em manada (galhudo)
+var predadores: Predadores               ## patch fauna, fase 9: predador nativo de matilha (uivador)
+var peixes: Peixes                       ## patch fauna, fase 9: peixes que pulam nos lagos (e morrem na água suja)
+var _desenho_fauna: DesenhoFaunaGrande
 var _desenho_ninhos: DesenhoNinhosPassaros
 var _desenho_passaros: DesenhoPassaros
 var _raios_passaros := 0
@@ -176,6 +180,17 @@ func _ready() -> void:
 	ecossistema.fonte_disturbio = disturbio.em
 	ecossistema.fonte_fuligem = disturbio.fuligem
 	ninhos_passaros = NinhosPassaros.new(passaros, semente + 71)
+	manadas = Manadas.new(ecossistema, ambiente, semente + 73)
+	predadores = Predadores.new(ecossistema, ambiente, semente + 79)
+	peixes = Peixes.new(ecossistema, ambiente, semente + 83)
+	predadores.manadas = manadas
+	predadores.ratos = ratos
+	predadores.carcacas = carcacas
+	predadores.colonia = colonia
+	colonia.manadas = manadas                            # fase 9: a aranha também caça herbívoro
+	colonia.fauna = predadores                           # e briga com o predador nativo
+	ecossistema.registrar_fonte("herbivoro", manadas.para_ecossistema)
+	ecossistema.registrar_fonte("predador", predadores.para_ecossistema)
 	ecossistema.registrar_fonte("toca", func() -> Array:
 		var out: Array = []
 		for id in colonia.ninhos:
@@ -460,7 +475,7 @@ func _dados_salvar() -> Dictionary:
 	return {"modo": modo, "semente": semente, "tempo": _tempo,
 			"camera": [camera.alvo, camera.distancia, camera.angulo],
 			"mapa": {"estruturas": mapa.estruturas, "limpos": mapa.limpos.keys(), "prox": mapa._prox_id, "arvores": mapa.arvores},
-			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(), "ecossistema": ecossistema.estado(), "plantas_reagem": plantas_reagem.estado(), "frutos": frutos.estado(), "carcacas": carcacas.estado(), "ratos": ratos.estado(), "ninhos_passaros": ninhos_passaros.estado(),
+			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(), "ecossistema": ecossistema.estado(), "plantas_reagem": plantas_reagem.estado(), "frutos": frutos.estado(), "carcacas": carcacas.estado(), "ratos": ratos.estado(), "ninhos_passaros": ninhos_passaros.estado(), "manadas": manadas.estado(), "predadores": predadores.estado(), "peixes": peixes.estado(),
 			"estoques": estoques, "inventario": inventario, "pesquisa": pesquisa.estado(),
 			"trens": trens.map(func(t: Trem): return t.para_salvar()), "prox_trem": _prox_trem}
 
@@ -518,6 +533,9 @@ func _carregar(d: Dictionary) -> void:
 	carcacas.restaurar(d.get("carcacas", {}))
 	ratos.restaurar(d.get("ratos", {}))
 	ninhos_passaros.restaurar(d.get("ninhos_passaros", {}))
+	manadas.restaurar(d.get("manadas", {}))
+	predadores.restaurar(d.get("predadores", {}))
+	peixes.restaurar(d.get("peixes", {}))
 	obras.dar_iniciais()                          # save de antes do patch RTS: ganha os construtores uma vez
 	for id in mapa.estruturas:
 		var nome: String = mapa.estruturas[id].nome
@@ -577,6 +595,12 @@ func _criar_desenhos() -> void:
 	_desenho_ratos.ratos = ratos
 	_desenho_ratos.foco_de = func() -> Vector2: return Vector2(camera.alvo.x, -camera.alvo.z)
 	add_child(_desenho_ratos)
+	_desenho_fauna = DesenhoFaunaGrande.new()            # fase 9: herbívoros, predadores e peixes
+	_desenho_fauna.manadas = manadas
+	_desenho_fauna.predadores = predadores
+	_desenho_fauna.peixes = peixes
+	_desenho_fauna.foco_de = func() -> Vector2: return Vector2(camera.alvo.x, -camera.alvo.z)
+	add_child(_desenho_fauna)
 	_desenho_carcacas = DesenhoCarcacas.new()
 	_desenho_carcacas.carcacas = carcacas
 	_desenho_carcacas.eco = ecossistema
@@ -590,9 +614,15 @@ func _criar_desenhos() -> void:
 	_desenho_ratos.extras_capim = func() -> Array:        # fase 6: corpos e pássaros no chão deitam o capim (aparecem)
 		var out: Array = _desenho_passaros.no_chao()
 		var foco := Vector2(camera.alvo.x, -camera.alvo.z)
-		var raios := {"passaro": 0.32, "rato": 0.3, "larva": 0.8}
+		var raios := {"passaro": 0.32, "rato": 0.3, "larva": 0.8, "herbivoro": 0.95, "predador": 0.7, "peixe": 0.0}
 		for f in ecossistema.comida_perto(foco, 40.0, "carcaca"):
 			out.append([f.pos, float(raios.get(String(f.especie), 0.4))])
+		for b in manadas.bichos.values():                  # fase 9: casco e pata abrem o capim
+			if (b.pos as Vector2).distance_to(foco) < 40.0:
+				out.append([b.pos, 0.55 * float(b.get("escala", 1.0))])
+		for b in predadores.bichos.values():
+			if (b.pos as Vector2).distance_to(foco) < 40.0:
+				out.append([b.pos, 0.75 if int(b.estado) == Predadores.E.DEITADO else 0.4])
 		return out
 	_desenho_plantas_reagem = DesenhoPlantasReagem.new()
 	_desenho_plantas_reagem.eco = ecossistema
@@ -1780,6 +1810,8 @@ func _tick_mundo(dt: float) -> void:
 		if ev.tipo == "tiro":
 			passaros.assustar(ev.de, 14.0)
 			ratos.assustar(ev.de, 10.0)
+			manadas.assustar(ev.de, 30.0)                   # fase 9: tiro espanta bicho grande de longe
+			predadores.assustar(ev.de, 20.0)
 		elif ev.tipo == "ninho_destruido" and String(ev.get("por", "")) != "" and is_instance_valid(controle):
 			# fase 8: uma espécie derrubou a toca da outra (o jogador pode usar a guerra a favor)
 			var quem := "As larvas" if String(ev.por) == "larva" else "As aranhas"
@@ -1788,6 +1820,8 @@ func _tick_mundo(dt: float) -> void:
 		elif ev.tipo == "explosao":
 			passaros.assustar(ev.pos, 16.0 + 6.0 * float(ev.get("raio", 1.0)))
 			ratos.assustar(ev.pos, 12.0 + 4.0 * float(ev.get("raio", 1.0)))
+			manadas.assustar(ev.pos, 35.0 + 8.0 * float(ev.get("raio", 1.0)))
+			predadores.assustar(ev.pos, 25.0 + 6.0 * float(ev.get("raio", 1.0)))
 			var me: Dictionary = Registro.fauna.get("morte", {}).get("explosao", {})   # fase 6: quem está perto cai
 			passaros.ferir(ev.pos, float(me.get("raio", 4.0)) * maxf(1.0, float(ev.get("raio", 1.0))), float(me.get("chance", 0.55)), "explosao")
 	while _raios_passaros < raios.total:
@@ -1798,10 +1832,15 @@ func _tick_mundo(dt: float) -> void:
 			passaros.ferir(qp, float(mr.get("raio", 3.0)), float(mr.get("chance", 0.9)), "raio")   # antes do susto
 			passaros.assustar(qp, 30.0)
 			ratos.assustar(qp, 18.0)
+			manadas.assustar(qp, 40.0)
+			predadores.assustar(qp, 25.0)
 	disturbio.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z))
 	ratos.tick(dt, clima, Vector2(camera.alvo.x, -camera.alvo.z))
 	passaros.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z), clima)
 	ninhos_passaros.tick(dt, clima, Vector2(camera.alvo.x, -camera.alvo.z))
+	manadas.tick(dt, clima, Vector2(camera.alvo.x, -camera.alvo.z))
+	predadores.tick(dt, clima, Vector2(camera.alvo.x, -camera.alvo.z))
+	peixes.tick(dt, clima, Vector2(camera.alvo.x, -camera.alvo.z))
 	_ratos_e_cabos(dt)
 	for ev in colonia.eventos:                          # quem morre avisa o ecossistema (fase 4: vira carcaça)
 		if ev.tipo == "aranha_morta":

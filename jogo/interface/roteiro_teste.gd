@@ -64,6 +64,7 @@ func _ready() -> void:
 		"passaros90": _roteiro_passaros90()
 		"natureza7": _roteiro_natureza7()
 		"guerra8": _roteiro_guerra8()
+		"fauna9": _roteiro_fauna9()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -3267,6 +3268,214 @@ func _roteiro_guerra8() -> void:
 					w.foto_bote = true
 					foto.call("6_bote"))
 	em(1000, func(): foto.call("7_depois_da_caca"))
+
+
+## Patch fauna, fase 9: manada pastando, matilha no covil, a caça (espreita, bote, comendo), briga com aranha, peixe
+## pulando, peixes mortos na água suja e enxame no verão úmido. Fotos em user://fotos_fauna9.
+func _roteiro_fauna9() -> void:
+	var w := {"pasto": Vector2.ZERO, "covil": Vector2.ZERO, "lago": {}, "mid": -1, "pid": -1}
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_fauna9")
+		get_viewport().get_texture().get_image().save_png("user://fotos_fauna9/%s.png" % nome)
+		print("FAUNA9 foto ", nome)
+	var olhar := func(p: Vector2, dist: float) -> void:
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(p)
+		cam.distancia = dist
+		cam.posicionar()
+	em(2, func():
+		Sessao.config.fps = false
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = 1
+		cl.hora = 0.42
+		cl.forcar("limpo", true)
+		cl.restante = 1.0e9
+		var h: Manadas = cena.manadas
+		var pr: Predadores = cena.predadores
+		h._t_nasce = 1.0e9
+		pr._t_nasce = 1.0e9
+		for id in h.manadas.keys():
+			h._tirar(int(id))
+		for id in pr.matilhas.keys():
+			pr._tirar(int(id))
+		var achou := false
+		for r in range(26, 80, 4):                          # pasto bom perto do núcleo, sem toca de alien perto
+			for k in 24:
+				var p := Vector2.from_angle(TAU * k / 24.0) * r
+				if h.bom_pasto(p) and (cena.ecossistema as Ecossistema).distancia(p, "toca", 50.0) == INF:
+					w.pasto = p
+					achou = true
+					break
+			if achou:
+				break
+		w.mid = h.nova_manada(w.pasto, "galhudo", true)
+		h.manadas[w.mid].t = 1.0e9                         # fica pastando
+		print("FAUNA9 pasto ", w.pasto, " bichos ", h.bichos.size())
+		olhar.call(w.pasto, 14.0))
+	em(120, func(): foto.call("1_manada_pastando"))
+	em(122, func():
+		var pr: Predadores = cena.predadores
+		var h: Manadas = cena.manadas
+		var dir := (w.pasto as Vector2).normalized()
+		w.covil = (w.pasto as Vector2) + dir * 26.0
+		for k in 16:                                       # covil passável, longe o bastante para não espantar
+			var q: Vector2 = (w.pasto as Vector2) + Vector2.from_angle(dir.angle() + (k - 8) * 0.2) * 26.0
+			if (cena.ecossistema as Ecossistema).passavel(q) and h.ameaca_em(w.pasto) == null:
+				w.covil = q
+				break
+		w.pid = pr.nova_matilha(w.covil, "uivador", 3)
+		pr.matilhas[w.pid].t = 1.0e9
+		for b in pr.bichos.values():
+			b.pos = (w.covil as Vector2) + (b.lugar as Vector2)
+			b.estado = Predadores.E.DEITADO
+		olhar.call(w.covil, 7.0))
+	em(240, func(): foto.call("2_matilha_no_covil"))
+	em(242, func():                                       # entardecer: saem com fome e acham a manada
+		var cl: Clima = cena.clima
+		cl.hora = 0.75
+		var pr: Predadores = cena.predadores
+		pr.matilhas[w.pid].fome = 1.0
+		pr.matilhas[w.pid].estado = Predadores.P.RONDA
+		pr.matilhas[w.pid].alvo = w.pasto
+		olhar.call(((w.covil as Vector2) + (w.pasto as Vector2)) * 0.5, 16.0))
+	for q in range(250, 900, 5):
+		em(q, func():
+			var pr: Predadores = cena.predadores
+			var h: Manadas = cena.manadas
+			if not pr.matilhas.has(w.pid):
+				return
+			var m: Dictionary = pr.matilhas[w.pid]
+			var lider: Dictionary = pr._lider(m)
+			if lider.is_empty():
+				return
+			if q % 60 == 0:
+				print("FAUNA9 q=", q, " matilha ", Predadores.P.keys()[int(m.estado)], " manada ",
+						Manadas.M.keys()[int(h.manadas[w.mid].estado)] if h.manadas.has(w.mid) else "-", " bichos ", h.bichos.size())
+			if int(m.estado) == Predadores.P.CACA and not bool(m.get("correndo", false)) and not w.has("f_esp"):
+				w.f_esp = q + 20
+				olhar.call(lider.pos, 9.0)
+			if w.has("f_esp") and q >= int(w.f_esp) and not w.has("feito_esp"):
+				w.feito_esp = true
+				foto.call("3_espreitando")
+			if int(m.estado) == Predadores.P.CACA and bool(m.get("correndo", false)) and not w.has("f_bote"):
+				w.f_bote = q + 10
+				olhar.call(lider.pos, 13.0)
+			if w.has("f_bote") and q >= int(w.f_bote) and not w.has("feito_bote"):
+				w.feito_bote = true
+				olhar.call(lider.pos, 13.0)
+				foto.call("4_bote_e_manada_fugindo")
+			if int(m.estado) == Predadores.P.COMER and not w.has("f_come"):
+				w.f_come = q + 60
+				olhar.call(m.alvo, 6.0)
+			if w.has("f_come") and q >= int(w.f_come) and not w.has("feito_come"):
+				w.feito_come = true
+				foto.call("5_comendo"))
+	em(905, func():                                       # aranhas chegam perto da matilha: briga
+		var pr: Predadores = cena.predadores
+		var c: Colonia = cena.colonia
+		if not pr.matilhas.has(w.pid):
+			return
+		var lider: Dictionary = pr._lider(pr.matilhas[w.pid])
+		var base: Vector2 = lider.pos if not lider.is_empty() else w.covil
+		var ni := -1
+		for id in c.ninhos:
+			ni = int(id)
+			break
+		if ni < 0:
+			ni = c._criar_ninho(Vector2i((base + Vector2(60, 60)).floor()), 1.0, "aranha")
+		for k in 2:
+			var a := c._nova_aranha(ni)
+			c.aranhas[a].pos = base + Vector2(7.0, 2.0 * k)
+			c.aranhas[a].estado = Colonia.E.PARADA
+		pr.matilhas[w.pid].estado = Predadores.P.RONDA
+		olhar.call(base + Vector2(3.5, 1.0), 8.0))
+	for q in range(910, 1060, 5):
+		em(q, func():
+			var pr: Predadores = cena.predadores
+			if not w.has("f_briga") and pr.bichos.values().any(func(b): return int(b.estado) == Predadores.E.MORDENDO):
+				w.f_briga = true
+				var b: Dictionary = pr.bichos.values().filter(func(b): return int(b.estado) == Predadores.E.MORDENDO)[0]
+				olhar.call(b.pos, 6.0)
+				foto.call("6_briga_com_aranha"))
+	em(1062, func():                                      # peixes: o lago mais perto
+		var g: GeradorMundo = cena.gerador
+		var md := INF
+		for lg in g.hidro.lagos(Vector2i(-160, -160), Vector2i(160, 160)):
+			var d: float = (lg.centro as Vector2).length()
+			# (perto de ninho de alien o mato fica quieto: sem enxame)
+			if float(lg.raio) >= 7.0 and d < md and (cena.ecossistema as Ecossistema).distancia(lg.centro, "toca", 30.0) == INF:
+				md = d
+				w.lago = lg
+		print("FAUNA9 lago ", w.lago.get("centro", Vector2.ZERO), " raio ", w.lago.get("raio", 0))
+		(cena.peixes as Peixes)._achar_lagos(w.lago.get("centro", Vector2.ZERO))
+		var cl: Clima = cena.clima
+		cl.hora = 0.3
+		olhar.call(w.lago.get("centro", Vector2.ZERO), 9.0))
+	for q in range(1080, 1200, 9):
+		em(q, func():
+			var pe: Peixes = cena.peixes
+			var k := Peixes.chave(w.lago.get("centro", Vector2.ZERO))
+			if pe.lagos.has(k) and pe.pulos.is_empty():
+				var p := pe.pular_em(pe.lagos[k])
+				if not p.is_empty() and not w.has("olhou_pulo"):
+					w.olhou_pulo = true
+					olhar.call(p.de, 4.0))
+	for q in range(1100, 1200, 1):
+		em(q, func():                                   # mira num quadro e tira no seguinte (a foto é do quadro já pintado)
+			var pe: Peixes = cena.peixes
+			if w.has("f_pulo"):
+				return
+			for p in pe.pulos:
+				var u := float(p.t) / float(p.dur)
+				if w.has("mirou") and int(w.mirou) < q and u > 0.3 and u < 0.75:
+					w.f_pulo = true
+					foto.call("7_peixe_pulando")
+					return
+				if u > 0.15 and u < 0.45:
+					w.mirou = q
+					olhar.call((p.de as Vector2).lerp(p.para, 0.5), 4.0)
+					return)
+	em(1202, func():                                      # água suja: peixes mortos boiando
+		var pe: Peixes = cena.peixes
+		var amb: AmbienteVivo = cena.ambiente
+		var k := Peixes.chave(w.lago.get("centro", Vector2.ZERO))
+		if not pe.lagos.has(k):
+			return
+		for qq: Vector2 in pe.lagos[k].pontos:
+			amb.somar(Vector2i(qq.floor()), AmbienteVivo.AGUA, 0.7)
+		var primeiro := Vector2.INF
+		for i in 5:
+			var p := pe.boiar_em(pe.lagos[k])
+			if primeiro == Vector2.INF:
+				primeiro = p
+		if primeiro != Vector2.INF:
+			olhar.call(primeiro, 3.5))
+	em(1288, func():
+		var eco: Ecossistema = cena.ecossistema
+		var dc: DesenhoCarcacas = cena._desenho_carcacas
+		for f in eco.comida.values():
+			if f.tipo == "carcaca" and String(f.especie) == "peixe":
+				var n: Dictionary = dc.nos.get("c%d" % int(f.id), {})
+				var y := Grade.altura_em(f.pos)
+				print("FAUNA9 peixe morto ", f.pos, " idade ", f.idade, " nó ", (n.no as Node3D).global_position if not n.is_empty() and is_instance_valid(n.no) else "nenhum", " chão ", y))
+	em(1290, func(): foto.call("8_peixes_mortos_na_agua_suja"))
+	em(1292, func():                                      # verão depois da chuva, entardecer, beira do lago
+		var cl: Clima = cena.clima
+		cl.molhado = 1.0
+		cl.hora = 0.72
+		var lg: Dictionary = w.lago
+		olhar.call((lg.get("centro", Vector2.ZERO) as Vector2) + Vector2(float(lg.get("raio", 8.0)) * 0.8, 0.0), 6.0))
+	em(1340, func():                                      # a nuvem mais perto
+		var v: DesenhoVidaPequena = cena._vida_pequena
+		if not v._enx_s.is_empty():
+			olhar.call(v._enx_s[0].c, 4.5))
+	em(1378, func():
+		var v: DesenhoVidaPequena = cena._vida_pequena
+		print("FAUNA9 enxame fator ", v.fatores.enxame, " pontos ", v.insetos.filter(func(i): return i.has("enxame")).size(), " nuvens ", v._enx_s.size()))
+
+	em(1380, func(): foto.call("9_enxame_no_verao_umido"))
 
 
 func _sem_ninhos(w: Vector2i) -> void:

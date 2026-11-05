@@ -1185,6 +1185,349 @@ def sapo(rng):
     return reverb(junta(*partes), 0.7, 0.2)
 
 
+# ==============================================================================
+# PATCH FAUNA, FASE 9: FAUNA GRANDE (manada e predador), PEIXES E ENXAMES
+# ==============================================================================
+def glote(rng, f0s, jitter=0.01, tremor=0.08, dobra=0.0, sopro=0.1, tilt=800, ordem=1):
+    """Fonte da voz de mamífero: um pulso por ciclo das pregas vocais, com jitter (o período nunca repete igual) e
+    tremor (a força de cada pulso também não), a queda natural dos agudos (`tilt`) e o ar passando junto, no ritmo
+    do ciclo. `dobra` enfraquece um pulso sim, outro não: aparece o sub-harmônico da voz rouca, quebrada.
+    `sopro` pode ser uma curva (o ar que aumenta quando o bicho força a voz)."""
+    f0s = np.asarray(f0s, dtype=float)
+    n = len(f0s)
+    k = max(4, int(n / TAXA * 30))
+    deriva = np.interp(np.arange(n), np.linspace(0, n, k), rng.standard_normal(k))
+    fase = np.cumsum(f0s * (1 + 0.3 * jitter * deriva)) / TAXA
+    idx = np.nonzero(np.diff(np.floor(fase)) > 0)[0] + 1
+    idx = np.clip(idx + np.round(rng.standard_normal(len(idx)) * jitter * TAXA / f0s[idx]).astype(int), 0, n - 1)
+    amp = np.clip(1 + tremor * rng.standard_normal(len(idx)), 0.1, 2.5)
+    amp[1::2] *= 1 - dobra
+    x = np.zeros(n)
+    np.add.at(x, idx, amp)
+    voz = pb(x, tilt, ordem)
+    voz /= np.abs(voz).max() + 1e-12
+    ar = banda(ruido(n, rng), 300, 9000) * (0.35 + 0.65 * (0.5 + 0.5 * np.cos(2 * np.pi * fase)))
+    return voz + np.asarray(sopro) * ar
+
+
+def ressoa_varia(x, freqs, largura):
+    """Ressonância de 2 polos com o centro andando amostra a amostra: o formante que muda quando a boca abre e fecha."""
+    n = len(x)
+    f = np.broadcast_to(np.asarray(freqs, dtype=float), (n,))
+    r = float(np.exp(-np.pi * largura / TAXA))
+    a1 = (2 * r * np.cos(2 * np.pi * f / TAXA)).tolist()
+    g = ((1 - r) * np.sqrt(1 - 2 * r * np.cos(4 * np.pi * f / TAXA) + r * r)).tolist()   # ganho 1 no pico
+    r2 = r * r
+    xs = np.asarray(x, dtype=float).tolist()
+    y = [0.0] * n
+    y1 = y2 = 0.0
+    for i in range(n):
+        v = g[i] * xs[i] + a1[i] * y1 - r2 * y2
+        y[i] = v
+        y2, y1 = y1, v
+    return np.array(y)
+
+
+def trato(x, formantes):
+    """Garganta, boca e focinho moldando a voz: formantes em paralelo [(freq ou curva de freq, largura_hz, ganho)]."""
+    out = np.zeros(len(x))
+    for f, bw, g in formantes:
+        out += g * (ressoa(x, f, f / bw) if np.isscalar(f) else ressoa_varia(x, f, bw))
+    return out
+
+
+def media_movel(c, w):
+    """Média móvel de w amostras, centrada, com as pontas esticadas (soma acumulada: rápida até com janela longa)."""
+    if w < 2:
+        return np.asarray(c, dtype=float)
+    p = np.concatenate([[0.0], np.cumsum(np.pad(np.asarray(c, dtype=float), (w // 2, w - w // 2), mode='edge'))])
+    return (p[w:] - p[:-w])[:len(c)] / w
+
+
+def curva(n, *pontos):
+    """Curva suave por pontos [(fração do tempo 0–1, valor)] (contorno de altura, abertura da boca)."""
+    u, v = zip(*pontos)
+    return media_movel(np.interp(np.linspace(0, 1, n), u, v), int(0.015 * TAXA))
+
+
+def herbivoro_alarme_a(rng):
+    """Herbívoro de manada, alarme (latido): um "bóh" curto, explosivo e rouco, como o latido do cervo — voz de
+    ~420 Hz que cai para ~290 Hz, quebrada (sub-harmônico, jitter forte) e cheia de ar, num trato de bicho de porte
+    médio (formantes largos a cada ~800 Hz); a boca abre no meio do latido. Ecoa no campo."""
+    d = rng.uniform(0.22, 0.26)
+    n = int(d * TAXA)
+    f0 = curva(n, (0, 400), (0.08, 440), (0.5, 360), (1, 285)) * rng.uniform(0.95, 1.05)
+    fonte = glote(rng, f0, 0.035, 0.3, 0.4, curva(n, (0, 0.9), (0.15, 0.45), (1, 0.6)), 1100)
+    abre = curva(n, (0, 0.0), (0.25, 1.0), (1, 0.3))
+    voz = trato(fonte, [(560 + 240 * abre, 170, 1.0), (1300 + 220 * abre, 220, 0.7), (2350, 280, 0.35),
+                        (3300, 350, 0.2), (4300, 420, 0.1)])
+    voz *= env(n, 0.005, 0.075, 0.045) * curva(n, (0, 1), (0.7, 1), (1, 0))
+    m = int(0.02 * TAXA)                                 # o ar estourando antes da voz pegar
+    golpe = trato(banda(ruido(m, rng), 400, 6000) * env(m, 0.001, 0.006), [(700, 300, 1.0), (1500, 350, 0.6), (2500, 400, 0.3)])
+    x = pb(junta((golpe, 0.8, 0), (voz, 1.0, 0.003)), 8500, 2)
+    return reverb(x, 0.65, 0.22, 4500)
+
+
+def herbivoro_alarme_b(rng):
+    """Herbívoro de manada, alarme (bufo): o ar expulso com força pelas narinas — sopro largo com as ressonâncias do
+    focinho, as narinas batendo no começo ("prrf", ~45 por segundo, irregular) e um assobio de ar no meio (ruído
+    numa ressonância estreita que cai de ~2,6 para ~2,1 kHz), como o assobio de alarme da camurça."""
+    d = rng.uniform(0.38, 0.45)
+    n = int(d * TAXA)
+    t = tempo(d)
+    ar = banda(rosa(n, rng), 250, 8000)
+    bate = pb(glote(rng, np.full(n, rng.uniform(40, 50)), 0.12, 0.4, 0.2, 0.0, 300), 300)
+    bate = (bate - bate.min()) / (np.ptp(bate) + 1e-12)
+    bate = 1 - 0.75 * np.clip(1 - t / 0.18, 0, 1) * (1 - bate)          # a narina para de bater e o ar sai liso
+    focinho = trato(ar * bate, [(650, 260, 1.0), (1650, 380, 0.8), (2900, 500, 0.55), (4300, 700, 0.35)]) + 0.15 * banda(ar, 3000, 8000)
+    f_ass = curva(n, (0, 2550), (0.3, 2650), (1, 2100)) * rng.uniform(0.95, 1.05)
+    assobio = ressoa_varia(ressoa_varia(ar, f_ass, 85), f_ass, 85) * 2.2 * curva(n, (0, 0), (0.15, 0.3), (0.35, 1.0), (0.85, 1.0), (1, 0.4))
+    peito = banda(rosa(n, rng), 70, 260) * env(n, 0.006, 0.05)
+    x = (focinho * env(n, 0.008, 0.13, 0.05) + 0.8 * assobio * env(n, 0.03, 0.2, 0.08) + 0.6 * peito) * curva(n, (0, 1), (0.8, 1), (1, 0))
+    return reverb(pb(x, 9000, 2), 0.6, 0.2, 4500)
+
+
+def _casco(rng, perto):
+    """Um casco batendo na terra: o peso do bicho (baque surdo), o "toc" abafado da unha dura, a terra esmagando e
+    torrões soltos; de longe o agudo some."""
+    n = int(0.12 * TAXA)
+    peso = banda(rosa(n, rng), 75, rng.uniform(200, 280)) * env(n, 0.001, rng.uniform(0.02, 0.03))
+    toc = modal(rng, rng.uniform(380, 620), 0.07, rng.uniform(2.5, 4.0), 5, 0.0012, (250, 5000))
+    terra = graos(rng, 0.045, int(rng.integers(18, 34)), 350, 3200, 3.0, forma=lambda u: np.exp(-4 * u))
+    torrao = graos(rng, 0.08, int(rng.integers(2, 6)), 900, 3500, 4.0, forma=lambda u: 1 - u)
+    x = junta((peso, 1.0, 0), (toc, 0.5 * rng.uniform(0.6, 1.0), 0), (terra, 0.9, 0.001), (torrao, 0.35, 0.05))
+    return pb(x, 1500 + 7500 * perto, 2)
+
+
+def _bufo(rng):
+    """O ar saindo pelas narinas a cada passada de quem corre."""
+    h = int(0.09 * TAXA)
+    return trato(banda(rosa(h, rng), 300, 4000), [(650, 300, 1.0), (1700, 450, 0.6)]) * env(h, 0.012, 0.03)
+
+
+def _empurrao(rng, perto):
+    """As patas de trás cavando a terra para o salto: um raspão curto e torrões voando."""
+    n = int(0.06 * TAXA)
+    raspa = banda(rosa(n, rng), 400, 3500) * env(n, 0.008, 0.02)
+    return pb(junta((raspa, 0.6, 0), (graos(rng, 0.1, 12, 600, 3500, 3.0, forma=lambda u: 1 - u), 0.5, 0.01)), 1500 + 7500 * perto, 2)
+
+
+def _manada(rng, pertos, passadas, pes, forca, bufo_pe, empurra=0.0, L=2.0, k=0.3, pre=0.7):
+    """Laço de manada correndo: cada bicho (a distância `perto`, 0 a 1) repete a sua passada — `pes` diz quando cada
+    pata toca o chão (s, numa passada de 0,42 s) — com um número inteiro de passadas no laço, então a emenda não
+    quebra o ritmo de ninguém. Gera folga antes e depois, para a reverberação e os filtros já entrarem estáveis."""
+    n = int((pre + L + k + 0.15) * TAXA)
+    x = np.zeros(n)
+
+    def poe(s, tt):
+        if -pre <= tt < L + k + 0.05:
+            i = int((tt + pre) * TAXA)
+            x[i:i + len(s)] += s[:n - i]
+    for b, perto in enumerate(pertos):
+        m = int(rng.choice(passadas))                    # passadas por laço
+        T = L / m
+        eps = rng.uniform(-0.05, 0.05, m)
+        inicios = rng.uniform(0, T) + np.concatenate([[0.0], np.cumsum(T * (1 + eps - eps.mean()))[:-1]])
+        p = np.asarray(pes) * (T / 0.42) ** 0.5 + rng.uniform(-0.006, 0.006, len(pes))
+        ganho = 0.05 + 0.95 * perto ** 2.2
+        for rep in range(-1, 3):
+            for s in inicios:
+                for j in range(len(p)):
+                    poe(_casco(rng, perto) * forca[j] * rng.uniform(0.7, 1.0) * ganho, rep * L + s + p[j])
+                if empurra:
+                    poe(_empurrao(rng, perto) * empurra * ganho, rep * L + s + 0.3 * T)
+                if b < 2:                                # o bufo de cada passada (só os de perto se ouvem)
+                    poe(_bufo(rng) * 0.35 * ganho * rng.uniform(0.6, 1.0), rep * L + s + p[bufo_pe] + 0.03)
+    x += banda(rosa(n, rng), 70, 400) * 0.006
+    x = reverb(x, 0.55, 0.16, 4000)
+    return x[int(pre * TAXA):int((pre + L + k) * TAXA)]
+
+
+def manada_galope_a(rng):
+    """Manada galopando na terra (laço de 2 s), galope: 7 bichos a distâncias diferentes, cada um no galope de 4
+    tempos (as duas patas de trás, as duas da frente, o voo; 2, 2,5 ou 3 passadas por segundo) — o "pa-ta-ta-tum"
+    rolando; os dois de perto bufam a cada passada."""
+    return _manada(rng, (0.95, 0.75, 0.55, 0.45, 0.32, 0.22, 0.14), [4, 5, 5, 6], (0.0, 0.046, 0.139, 0.185),
+                   (0.7, 0.65, 1.0, 0.85), 2)
+
+
+def manada_galope_b(rng):
+    """Manada fugindo aos saltos na terra (laço de 2 s), como o cervo-mula e a gazela: 6 bichos, cada salto pousa as
+    quatro patas quase juntas (um "tum" pesado, 1,5 a 2 saltos por segundo) e as de trás cavam a terra para o
+    próximo; os dois de perto soltam o ar ao pousar."""
+    return _manada(rng, (0.9, 0.7, 0.5, 0.35, 0.25, 0.15), [3, 4, 4], (0.0, 0.014, 0.034, 0.044), (0.9, 0.8, 1.0, 0.95), 0,
+                   empurra=0.8)
+
+
+def predador_uivo_a(rng):
+    """Predador de matilha, uivo longo e grave (~1,8 s): voz quase limpa que sobe de ~250 para ~350 Hz, fica
+    passeando ali e cai no fim, com a boca abrindo ("uuu-aaa-uuu"); um fio de segunda voz aguda, solta da primeira
+    (bifonação, como no lobo), aparece no meio. Longe: agudo cortado pelo ar e eco largo de vale."""
+    d = rng.uniform(1.7, 1.9)
+    n = int(d * TAXA)
+    t = tempo(d)
+    vaga = np.interp(np.arange(n), np.linspace(0, n, 8), rng.standard_normal(8))
+    f0 = curva(n, (0, 250), (0.18, 345), (0.3, 352), (0.75, 360), (0.88, 330), (1, 245)) * (1 + 0.012 * vaga) \
+        * (1 + 0.004 * np.sin(2 * np.pi * 4.6 * t)) * rng.uniform(0.94, 1.04)
+    fonte = glote(rng, f0, 0.007, 0.06, 0.0, curva(n, (0, 0.25), (0.2, 0.09), (0.85, 0.1), (1, 0.3)), 480, 2)
+    abre = curva(n, (0, 0.0), (0.3, 0.9), (0.7, 1.0), (1, 0.15))
+    voz = trato(fonte, [(360 + 200 * abre, 130, 1.0), (850 + 300 * abre, 160, 0.5), (2300, 200, 0.18), (3200, 260, 0.08)])
+    voz *= curva(n, (0, 0), (0.08, 0.75), (0.2, 1.0), (0.8, 0.95), (1, 0.0)) * (1 + 0.08 * vaga)
+    f2 = curva(n, (0, 1750), (0.5, 1880), (1, 1650)) * (1 + 0.01 * vaga)
+    segunda = banda(glote(rng, f2, 0.006, 0.08, 0.0, 0.03, 1500, 2), 1400, 2400, 3) * curva(n, (0, 0), (0.38, 0), (0.52, 1), (0.64, 1), (0.78, 0), (1, 0))
+    x = pb(voz + 0.035 * segunda, 6000, 2)
+    return reverb(x, 1.4, 0.34, 3500)
+
+
+def predador_uivo_b(rng):
+    """Predador de matilha, rosnado de briga (~0,8 s): ronco grave e áspero (~95 Hz, pulsos irregulares e
+    sub-harmônico), que sobe num rosnado de boca aberta (~240 Hz, cheio de ar), os dentes estalando duas vezes
+    numa mordida e o ronco voltando, cansado."""
+    d = rng.uniform(0.78, 0.85)
+    n = int(d * TAXA)
+    f0 = curva(n, (0, 90), (0.35, 108), (0.45, 225), (0.6, 255), (0.7, 200), (0.78, 120), (1, 95)) * rng.uniform(0.93, 1.07)
+    sopro = curva(n, (0, 0.2), (0.4, 0.25), (0.55, 0.55), (0.75, 0.3), (1, 0.25))
+    fonte = glote(rng, f0, 0.03, 0.35, 0.45, sopro, 1300)
+    abre = curva(n, (0, 0.0), (0.38, 0.1), (0.5, 1.0), (0.68, 0.8), (0.8, 0.15), (1, 0.0))
+    voz = trato(fonte, [(460 + 360 * abre, 160, 1.0), (1150 + 450 * abre, 220, 0.6), (2400, 300, 0.3), (3400, 380, 0.15)])
+    voz *= curva(n, (0, 0.0), (0.05, 0.45), (0.35, 0.7), (0.5, 1.0), (0.7, 0.85), (0.85, 0.45), (1, 0.0))
+    dentes = lambda: junta((modal(rng, rng.uniform(1600, 2200), 0.04, 5, 6, 0.0006, (1000, 9000)), 1.0, 0),
+                           (estalo(0.02, rng, 2000, 9000, 0.0015), 0.5, 0))
+    at = d * rng.uniform(0.6, 0.66)
+    x = junta((voz, 1.0, 0), (dentes(), 0.26, at), (dentes(), 0.19, at + rng.uniform(0.06, 0.08)))
+    return reverb(pb(x, 8000, 2), 0.5, 0.15, 5000)
+
+
+def bolha(rng, f0, d=0.04, sobe=0.6, queda=0.012):
+    """Bolha de ar presa na água: a cavidade fecha e o ar "canta" um tom curto que sobe de altura (o "ploc" de quem
+    entra na água e o "plim" da gota)."""
+    t = tempo(d)
+    return osc(f0 * (1 + sobe * t / d), fase=rng.uniform(0, 2 * np.pi)) * env(len(t), 0.0006, queda)
+
+
+def _gotas(rng, d, quantas, f1=1400, f2=3800, amp=(0.04, 0.12)):
+    """Gotas caindo de volta no lago: cada uma um respingo miúdo; só algumas prendem ar e fazem o "plim" (bolha
+    pequena, curtíssima)."""
+    partes = [(np.zeros(int(d * TAXA)), 1.0, 0)]
+    for t0 in np.sort(rng.uniform(0, d, quantas)):
+        a = rng.uniform(*amp)
+        partes.append((graos(rng, 0.006, 3, 1500, 7000, 2.5, (0.0003, 0.0008)), a * 1.4, t0))
+        if rng.uniform() < 0.35:
+            partes.append((bolha(rng, rng.uniform(f1, f2), rng.uniform(0.008, 0.014), rng.uniform(0.2, 0.5), rng.uniform(0.002, 0.004)), a * 0.5, t0 + 0.001))
+    return junta(*partes)
+
+
+def peixe_pulo_a(rng):
+    """Peixe (~35 cm) pulando no lago, "ploc" limpo: sai da água num "chlup" curto, pinga no ar e entra de cabeça,
+    quase sem respingo — o tapa curto na lâmina d'água, a bolha que o corpo arrasta (tom que sobe de ~330 Hz) e
+    umas gotas caindo depois."""
+    m = int(0.06 * TAXA)
+    saida = junta((banda(rosa(m, rng), 400, 3500) * env(m, 0.004, 0.018), 0.5, 0), (bolha(rng, 900, 0.02, 0.4, 0.006), 0.12, 0.004))
+    voo = rng.uniform(0.26, 0.31)
+    entrada = junta((estalo(0.02, rng, 700, 6000, 0.002), 0.3, 0), (surdo(rng, 0.06, 260, 0.012), 0.45, 0),
+                    (bolha(rng, rng.uniform(300, 360), 0.06, 0.9, 0.016), 0.8, 0.006),
+                    (bolha(rng, rng.uniform(700, 900), 0.03, 0.6, 0.007), 0.25, 0.013),
+                    (graos(rng, 0.05, 40, 900, 6000, 4.0, (0.0003, 0.0012), lambda u: (1 - u) ** 2), 0.6, 0.002))
+    n = int(0.2 * TAXA)
+    mexe = banda(rosa(n, rng), 200, 1200) * env(n, 0.02, 0.05)          # a água se ajeitando
+    return reverb(junta((saida, 1.0, 0), (_gotas(rng, 0.2, 6), 1.0, 0.03), (entrada, 1.0, voo),
+                        (_gotas(rng, 0.18, 5, amp=(0.03, 0.08)), 1.0, voo + 0.05), (mexe, 0.1, voo + 0.02)), 0.4, 0.1, 6000)
+
+
+def peixe_pulo_b(rng):
+    """Peixe (~35 cm) pulando no lago, respingo grande: sai da água jogando água, cai de lado num tapa largo e o rabo
+    bate de novo logo depois ("tchá-pá"), com o borrifo subindo, várias bolhas graves gorgolejando e a chuva de
+    gotas voltando."""
+    m = int(0.1 * TAXA)
+    saida = junta((banda(rosa(m, rng), 300, 5000) * env(m, 0.003, 0.03), 0.7, 0),
+                  (graos(rng, 0.12, 50, 1200, 7000, 4.0, (0.0003, 0.0012), lambda u: (1 - u) ** 1.5), 0.35, 0.01))
+    voo = rng.uniform(0.27, 0.32)
+
+    def tapa(g, brilho):
+        k = int(0.12 * TAXA)
+        return junta((estalo(0.02, rng, 600, 8000 * brilho, 0.004), 1.0 * g, 0), (surdo(rng, 0.08, 300, 0.015), 0.6 * g, 0),
+                     (banda(rosa(k, rng), 600, 7000) * env(k, 0.001, 0.04), 0.9 * g, 0.001),
+                     (graos(rng, 0.12, 130, 700, 7000, 3.5, (0.0003, 0.0014), lambda u: (1 - u) ** 2), 0.7 * g, 0.003))
+    bolhas = junta(*[(bolha(rng, rng.uniform(180, 650), rng.uniform(0.04, 0.08), rng.uniform(0.5, 1.1), rng.uniform(0.012, 0.025)),
+                      rng.uniform(0.25, 0.6), rng.uniform(0.005, 0.15)) for _ in range(5)])
+    rabo = rng.uniform(0.07, 0.09)
+    n = int(0.3 * TAXA)
+    mexe = banda(rosa(n, rng), 180, 1100) * env(n, 0.03, 0.1)
+    return reverb(junta((saida, 1.0, 0), (_gotas(rng, 0.22, 8), 1.0, 0.03), (tapa(1.0, 0.8), 1.0, voo), (bolhas, 0.8, voo + 0.004),
+                        (tapa(0.7, 1.0), 1.0, voo + rabo), (_gotas(rng, 0.3, 14, 1200, 4000, (0.04, 0.14)), 1.0, voo + 0.06),
+                        (mexe, 0.18, voo + 0.03)), 0.55, 0.16, 6000)
+
+
+def _zumbido(rng, t, f0, harm, mexe=0.02):
+    """A asa de um mosquito: tom de centenas de Hz com os harmônicos do zumbido fino; a altura treme (a asa nunca
+    bate igual) e mexe devagar conforme ele vira no ar."""
+    ft = f0 * (1 + mexe * (0.5 * np.sin(2 * np.pi * rng.uniform(0.2, 0.9) * t + rng.uniform(0, 6)) + _passeio(rng, len(t), 4))) \
+        * (1 + 0.004 * _passeio(rng, len(t), 40))
+    fase = 2 * np.pi * np.cumsum(ft) / TAXA
+    return sum(a * np.sin((h + 1) * fase + rng.uniform(0, 2 * np.pi)) for h, a in enumerate(harm))
+
+
+def _passeio(rng, n, por_s):
+    """Curva aleatória suave (−1 a 1, mais ou menos) com `por_s` pontos por segundo: manobra, ida e volta."""
+    k = max(4, int(n / TAXA * por_s))
+    return media_movel(np.interp(np.arange(n), np.linspace(0, n, k), rng.standard_normal(k)), int(TAXA / por_s * 0.5))
+
+
+def _harm_mosquito(rng):
+    return (1.0, rng.uniform(0.5, 0.9), rng.uniform(0.2, 0.45), rng.uniform(0.1, 0.25), rng.uniform(0.04, 0.12), rng.uniform(0.02, 0.06))
+
+
+def amb_enxame_a(rng):
+    """Nuvem de mosquitos sobre água parada no verão úmido (laço de 3 s), zumbido agudo e cheio: ~70 mosquitos
+    (asa de ~500 a ~800 Hz, cada um no seu tom) uns por cima dos outros, a maioria longe e abafada, alguns perto;
+    cada um vai e volta devagar. Por baixo, o ar parado da beira do lago."""
+    L, k, pre = 3.0, 0.5, 0.6
+    d = pre + L + k
+    n = int(d * TAXA)
+    t = tempo(d)
+    perto, meio, longe = np.zeros(n), np.zeros(n), np.zeros(n)
+    for m in range(70):
+        p = rng.uniform() ** 2
+        vai_vem = np.clip(0.6 + 0.45 * _passeio(rng, n, rng.uniform(1.5, 3.5)), 0.15, 1.0)
+        s = _zumbido(rng, t, np.exp(rng.normal(np.log(640), 0.12)), _harm_mosquito(rng), 0.035) * vai_vem * (0.06 + 0.94 * p)
+        if p > 0.45:
+            perto += s
+        elif p > 0.12:
+            meio += s
+        else:
+            longe += s
+    asas = banda(rosa(n, rng), 500, 6000) * (0.8 + 0.2 * _passeio(rng, n, 3))    # o ar mexido por milhares de asas
+    x = pb(perto, 9000, 2) + pb(meio, 4500, 2) + pb(longe, 2200, 2) + asas * 0.25 + banda(rosa(n, rng), 120, 1500) * 0.15
+    return reverb(x, 0.5, 0.12, 6000)[int(pre * TAXA):n]
+
+
+def amb_enxame_b(rng):
+    """Enxame sobre água parada (laço de 3 s), mais grave e irregular: ~30 mosquitos grandes (~310 a ~500 Hz) que
+    entram e saem da nuvem, a nuvem engrossa e afina, e dois passam perto do ouvido — o tom sobe chegando e cai
+    indo embora, o zumbido abre (mais harmônicos) e o volume cresce e some."""
+    L, k, pre = 3.0, 0.5, 0.6
+    d = pre + L + k
+    n = int(d * TAXA)
+    t = tempo(d)
+    nuvem = np.clip(0.72 + 0.35 * _passeio(rng, n, 2.5), 0.45, 1.0)
+    x = np.zeros(n)
+    for m in range(30):
+        p = rng.uniform() ** 1.3
+        some = np.clip(0.55 + 0.9 * _passeio(rng, n, rng.uniform(1.5, 3.5)), 0.08, 1)
+        s = _zumbido(rng, t, np.exp(rng.normal(np.log(395), 0.12)), _harm_mosquito(rng), 0.06) * some * (0.08 + 0.92 * p)
+        x += pb(s, 1800 + 6000 * p, 2)
+    x *= nuvem
+    for c, g in ((pre + rng.uniform(1.0, 1.2), 1.0), (pre + rng.uniform(2.25, 2.4), 0.6)):   # cabem inteiros no laço
+        u = (t - c) / 0.5
+        r = np.sqrt(0.07 ** 2 + (0.55 * u) ** 2)
+        amp = (0.07 / r) * np.clip(1.6 - np.abs(u), 0, 1)
+        f = rng.uniform(380, 450) * (1 - 0.025 * np.tanh(3 * u))
+        voo = _zumbido(rng, t, f, (1.0, 0.8, 0.5, 0.3, 0.18, 0.1, 0.06), 0.01)
+        x += pb_varia(voo, 1200 + 9000 * np.clip(amp, 0, 1)) * amp * g * 3.5
+    x += banda(rosa(n, rng), 120, 1500) * 0.15
+    return reverb(x, 0.5, 0.12, 6000)[int(pre * TAXA):n]
+
+
 SONS = [
     ('clique', clique, -22, 0, 0.0005), ('construir', construir, -15, 0, 0.0005), ('remover', remover, -17, 0, 0.0005),
     ('alerta', alerta, -14, 0, 0.005), ('pesquisa', pesquisa, -15, 0, 0.001), ('derrota', derrota, -14, 0, 0.01),
@@ -1214,8 +1557,17 @@ SONS = [
     ('rato_cavar', rato_cavar, -24, 0, 0.001), ('rato_roendo', rato_roendo, -24, 0, 0.002),
     ('filhotes', filhotes, -24, 0, 0.002), ('geado_canto', geado_canto, -24, 0, 0.002),
     ('bando_migrando', bando_migrando, -26, 0, 0.002),
+    ('herbivoro_alarme', herbivoro_alarme_a, -18, 0, 0.002), ('herbivoro_alarme_b', herbivoro_alarme_b, -18, 0, 0.004),
+    ('manada_galope', manada_galope_a, -19, 0.3, 0), ('manada_galope_b', manada_galope_b, -19, 0.3, 0),
+    ('predador_uivo', predador_uivo_a, -20, 0, 0.01), ('predador_rosnado', predador_uivo_b, -17, 0, 0.004),
+    ('peixe_pulo_a', peixe_pulo_a, -20, 0, 0.001), ('peixe_pulo', peixe_pulo_b, -19, 0, 0.001),
+    ('amb_enxame', amb_enxame_a, -26, 0.5, 0), ('amb_enxame_b', amb_enxame_b, -26, 0.5, 0),
 ]
 
+
+## Fase 9: candidatas que não entraram no jogo (escolha pela recomendação; trocar depois se Sapyst preferir).
+## Ficam no mesmo lugar da lista (a semente vem da posição) e só saem quando pedidas pelo nome.
+GUARDADAS = {'herbivoro_alarme_b', 'manada_galope_b', 'peixe_pulo_a', 'amb_enxame_b'}
 
 VARIACOES = {'aranha_passo': 4, 'pardelo_canto': 3, 'cobrico_canto': 3, 'azulao_canto': 3, 'rubro_canto': 2,
              'planador_grito': 2, 'revoada': 2, 'sapo': 3, 'rato_chiado': 3, 'rato_guincho': 2,
@@ -1225,7 +1577,7 @@ VARIACOES = {'aranha_passo': 4, 'pardelo_canto': 3, 'cobrico_canto': 3, 'azulao_
 if __name__ == '__main__':
     alvos = sys.argv[1:]
     for k, (nome, func, alvo, laco_s, fi) in enumerate(SONS):
-        if alvos and nome not in alvos:
+        if (alvos and nome not in alvos) or (not alvos and nome in GUARDADAS):
             continue
         fo = 0.25 if nome.startswith(('maq_', 'trem_')) else (0.08 if nome == 'reentrada' else 0.02)
         for v in range(VARIACOES.get(nome, 1)):

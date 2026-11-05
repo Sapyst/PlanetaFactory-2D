@@ -32,6 +32,7 @@ var _aranhas: Dictionary = {}      ## id → {p, fase, ult, rumo}: aranha viva (
 var _mortas: Array[Dictionary] = [] ## aranha morrendo: {p, pos, linha, t}
 var _corpos: Dictionary = {}       ## id do nó 3D do corpo (DesenhoCarcacas) → {p, linha, q, larva}: sucata e carcaça
 var _ratos2d: Dictionary = {}      ## id do rato → {p, esp}: fase 5 (sprite rato_<espécie>, o nó 3D manda)
+var _fauna2d: Dictionary = {}      ## fase 9: chave do DesenhoFaunaGrande ("h3", "p7", "f2") → {p}
 var _afundando: Dictionary = {}     ## nó 3D da árvore dissolvendo (mundo._dissolver) → par de sprites
 var _passaros: Dictionary = {}      ## nó 3D do pássaro (DesenhoPassaros) → par de sprites "passaro_<espécie>"
 var _ninhos2d: Dictionary = {}      ## fase 6: nó 3D de cada ninho (DesenhoNinhosPassaros: pivô da taça/bolsa) → par
@@ -129,6 +130,7 @@ func _process(delta: float) -> void:
 	_sincronizar_mudas()
 	_sincronizar_corpos()
 	_sincronizar_ratos()
+	_sincronizar_fauna()
 	_sincronizar_passaros()
 	_sincronizar_vida()
 	_sincronizar_fios()
@@ -621,9 +623,12 @@ func _sincronizar_corpos() -> void:
 		var larva := no is Larva
 		var rato := String(no.get_meta("rato", ""))
 		var passaro := String(no.get_meta("passaro", ""))       # fase 6: pássaro morto (de lado ou de costas)
+		var fauna := String(no.get_meta("fauna", ""))           # fase 9: herbívoro, predador, peixe boiando
+		if fauna != "":
+			rato = fauna                                      # (vira de lado e quadro como o rato)
 		var c: Dictionary = _corpos.get(id, {})
 		if c.is_empty():
-			var nome_c := ("rato_" + rato) if rato != "" else (("passaro_" + passaro) if passaro != "" else (LARVA if larva else ARANHA))
+			var nome_c := fauna if fauna != "" else (("rato_" + rato) if rato != "" else (("passaro_" + passaro) if passaro != "" else (LARVA if larva else ARANHA)))
 			if not Catalogo2D.tem(nome_c):
 				continue
 			var p := _par(nome_c)
@@ -702,6 +707,57 @@ func _sincronizar_ratos() -> void:
 		if not vistos.has(id):
 			_soltar(_ratos2d[id].p)
 			_ratos2d.erase(id)
+
+
+## Fase 9: herbívoros, predadores e o peixe no pulo, pelo nó 3D do DesenhoFaunaGrande (posição, rumo, a ação e o
+## quadro da animação; o filhote no tamanho dele). O peixe respinga na saída e na volta.
+func _sincronizar_fauna() -> void:
+	var df = mundo.get("_desenho_fauna")
+	if df == null:
+		return
+	var vistos := {}
+	for k in df.nos:
+		var n: Dictionary = df.nos[k]
+		var no: Node3D = n.no
+		if not is_instance_valid(no):
+			continue
+		var nome := String(no.get_meta("fauna", ""))
+		if nome == "" or not Catalogo2D.tem(nome):
+			continue
+		vistos[k] = true
+		var r: Dictionary = _fauna2d.get(k, {})
+		if r.is_empty():
+			var p := _par(nome)
+			if p.is_empty():
+				continue
+			r = {"p": p}
+			_fauna2d[k] = r
+		var acao := String(n.acao) if String(n.acao) != "" else "andar"
+		var anim: AnimationPlayer = n.anim
+		var q := 0
+		if anim != null and anim.current_animation != "" and anim.current_animation_length > 0.0:
+			q = int(anim.current_animation_position / anim.current_animation_length * 8.0) % 8
+		_por(r.p, no.global_position, Catalogo2D.linha_do_angulo(r.p.m, no.rotation.y - PI / 2.0), q, acao)
+		var esc := (n.mod as Node3D).scale.x
+		(r.p.spr as Sprite2D).scale = Vector2.ONE * esc
+		(r.p.som as Sprite2D).scale = Vector2.ONE * esc
+	for k in _fauna2d.keys():
+		if not vistos.has(k):
+			var p: Dictionary = _fauna2d[k].p
+			(p.spr as Sprite2D).scale = Vector2.ONE
+			(p.som as Sprite2D).scale = Vector2.ONE
+			_soltar(p)
+			_fauna2d.erase(k)
+	var pe: Peixes = mundo.get("peixes")
+	if pe == null:
+		return
+	for ev in pe.eventos:
+		if ev.tipo == "pulo":
+			ef.respingo_agua(df._na_agua(ev.pos), 1.0)
+	for pu in pe.pulos:
+		if float(pu.t) / float(pu.dur) > 0.85 and not pu.has("caiu2d"):
+			pu.caiu2d = true
+			ef.respingo_agua(df._na_agua(pu.para), 0.8)
 
 
 ## Mudas e árvores plantadas (viveiro, pássaros, sementes no vento: AmbienteVivo.plantas): o sprite da espécie no

@@ -495,6 +495,10 @@ func _perigo(p: Vector2) -> Variant:
 		if bool(a.get("espreita", false)) and p.distance_to(a.pos) > vista:
 			continue                                         # fase 8: a aranha espreitando só é vista de perto
 		return a.pos
+	for a in eco.perto(p, r * 1.5, "predador"):             # fase 9: o predador nativo (espreitando, só de perto)
+		if bool(a.get("espreita", false)) and p.distance_to(a.pos) > vista:
+			continue
+		return a.pos
 	if ambiente != null and not ambiente.fogo.is_empty():
 		var n := 0
 		for t: Vector2i in ambiente.fogo:

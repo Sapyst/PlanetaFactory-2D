@@ -302,6 +302,11 @@ func _ameaca_em(p: Vector2, folga := 0.0) -> Variant:
 		for ar in colonia.aranhas.values():
 			if p.distance_to(ar.pos) < (vista if bool(ar.get("espreita", false)) else r):   # fase 8: espreitando, só de perto
 				return ar.pos
+	if eco != null:                                       # fase 9: o predador nativo (espreitando, só de perto)
+		var rp := float(m.get("predador", 8.0)) + folga
+		for a in eco.perto(p, rp, "predador"):
+			if not bool(a.get("espreita", false)) or p.distance_to(a.pos) < 3.0 + folga:
+				return a.pos
 	return null
 
 

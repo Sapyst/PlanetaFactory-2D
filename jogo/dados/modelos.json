@@ -2253,6 +2253,38 @@
   "estudo": "estudo_turbina_eolica.py",
   "modelo": "res://assets/modelos/energia/turbina_eolica.glb"
  },
+ "herbivoro_galhudo": {
+  "nome": "herbivoro_galhudo",
+  "categoria": "fauna/herbivoros",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Galhudo: herbívoro nativo de manada (patch fauna, fase 9), ungulado esguio com duas placas ósseas na testa e nódulos na nuca; ações: andar (12), correr (12), pastar (24), alerta (24), morto (2); metros por ciclo: andar 0.85, correr 2.",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 1536,
+  "dims": [
+   1.791,
+   0.32,
+   1.57
+  ],
+  "anima": true,
+  "estudo": "estudo_fauna_grande.py",
+  "modelo": "res://assets/modelos/fauna/herbivoros/herbivoro_galhudo.glb"
+ },
  "ninho_bolsa": {
   "nome": "ninho_bolsa",
   "categoria": "fauna/ninhos",
@@ -2508,6 +2540,70 @@
   "anima": true,
   "estudo": "estudo_passaro.py",
   "modelo": "res://assets/modelos/fauna/passaros/passaro_rubro.glb"
+ },
+ "peixe_couraca": {
+  "nome": "peixe_couraca",
+  "categoria": "fauna/peixes",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Couraça: peixe nativo dos lagos (patch fauna, fase 9), com placas ósseas na cabeça; ações: nadar (12), pulo (12), morto (2).",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 371,
+  "dims": [
+   0.353,
+   0.086,
+   0.12
+  ],
+  "anima": true,
+  "estudo": "estudo_peixe.py",
+  "modelo": "res://assets/modelos/fauna/peixes/peixe_couraca.glb"
+ },
+ "predador_uivador": {
+  "nome": "predador_uivador",
+  "categoria": "fauna/predadores",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Uivador: predador nativo de matilha (patch fauna, fase 9), canídeo com crista curta de placas ósseas; ações: andar (12), correr (12), espreitar (12), morder (12), comer (24), deitado (24), morto (2); metros por ciclo: andar 0.72, correr 1.7, espreitar 0.42.",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 1340,
+  "dims": [
+   1.377,
+   0.2,
+   0.823
+  ],
+  "anima": true,
+  "estudo": "estudo_fauna_grande.py",
+  "modelo": "res://assets/modelos/fauna/predadores/predador_uivador.glb"
  },
  "rato_pardo": {
   "nome": "rato_pardo",

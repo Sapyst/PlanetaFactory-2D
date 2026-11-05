@@ -8,7 +8,7 @@
  "junta_dist": 6.0,
  "saude_min": 0.25,
  "nasce_s": 6.0,
- "medo": {"fogo": 13, "monstro": 9, "rajada": 1.15, "construcao": 5, "susto_min": 6},
+ "medo": {"fogo": 13, "monstro": 9, "predador": 8, "rajada": 1.15, "construcao": 5, "susto_min": 6},
  "semente": {"chance_s": 0.55, "por_bando": 2, "raio": 2.5, "fruta_raio": 3.0},
  "ecossistema": {"_nota": "fase 0: índice espacial refeito a cada indice_s a partir das fontes; células de cel m; detalhe 2 até raio_perto, 1 até raio_medio, 0 além", "indice_s": 0.5, "cel": 8, "raio_perto": 40, "raio_medio": 80, "fertil_some_s": 2880},
  "vida_pequena": {
@@ -16,6 +16,7 @@
   "liga": true,
   "vagalumes": {"liga": true, "raio": 34, "passo": 3, "densidade": 0.07, "agua_bonus": 2.5, "por_enxame": [3, 7], "max": 120, "estacoes": [0.7, 1.0, 0.45, 0.0], "saude_min": 0.3, "longe_toca": 14, "px": 2.6, "halo_px": 15.0},
   "insetos": {"liga": true, "raio": 26, "passo": 3, "densidade": 0.07, "agua_bonus": 3.0, "por_enxame": [3, 6], "max": 90, "estacoes": [0.8, 1.0, 0.55, 0.05], "saude_min": 0.3, "longe_toca": 14, "px": 2.4, "zoom_max": 55},
+  "enxame": {"_nota": "fase 9: nuvens de mosquito no verão úmido (estacoes), depois da chuva (molhado/viço acima de umido_min, mais onde o lugar é úmido), de dia e mais no entardecer, só na beira d'água (so_agua; densidade × (1 + agua_bonus)); por_enxame mosquitos numa coluna; som a até som_dist m", "liga": true, "raio": 30, "passo": 5, "so_agua": true, "densidade": 0.06, "agua_bonus": 4.0, "por_enxame": [45, 90], "max": 320, "estacoes": [0.15, 1.0, 0.25, 0.0], "saude_min": 0.2, "longe_toca": 14, "px": 2.2, "umido_min": 0.2, "som_dist": 14},
   "olhos": {"liga": true, "raio": 22, "max_pares": 3, "slot_s": 7.0, "vida_s": [2.5, 5.5], "chance": 0.55, "px": 1.6},
   "sons": {"liga": true, "grilos": [0.55, 1.0, 0.7, 0.05], "insetos_dia": [0.35, 1.0, 0.45, 0.0], "silencio_toca": [12, 34], "silencio_alien": 15, "sapo_s": [1.6, 4.5], "sapo_molhado": 0.25}
  },
@@ -38,14 +39,17 @@
    "chance": 0.04, "alt_max": 0.9, "disturbio_max": 0.5, "sessoes": 3, "roer_s": [6, 10], "dano": 15, "som_s": 2.4}
  },
  "carcacas": {
-  "_nota": "fase 4: quem morre fica. Carne (larva; rato e pássaro depois) vira comida 'carcaca' no Ecossistema e apodrece pela idade: inteiro até etapas[0] da vida, inchado até etapas[1], restos até o fim; quando some, aduba adubo_raio m em volta (adubo = quanto). Aranha é máquina: sucata que vaza oleo, enferruja e afunda. max por espécie (a mais velha some). moscas = desenho em volta da carne; carniceiro = o planador desce a alt m e circula com giro m por cima da carcaça com carne a até raio m",
+  "_nota": "fase 4: quem morre fica. Carne (larva, rato, pássaro; fase 9: herbívoro, predador e peixe, que boia) vira comida 'carcaca' no Ecossistema e apodrece pela idade: inteiro até etapas[0] da vida, inchado até etapas[1], restos até o fim; quando some, aduba adubo_raio m em volta (adubo = quanto). Aranha é máquina: sucata que vaza oleo, enferruja e afunda. max por espécie (a mais velha some). moscas = desenho em volta da carne; carniceiro = o planador desce a alt m e circula com giro m por cima da carcaça com carne a até raio m",
   "liga": true,
   "adubo_raio": 1.6,
   "tipos": {
    "larva": {"vida_s": 1500, "valor": 2.0, "moscas": true, "adubo": 0.8, "etapas": [0.3, 0.7], "max": 40},
    "aranha": {"sucata": true, "vida_s": 2400, "oleo": 0.35, "fumaca_s": 45, "max": 40},
    "passaro": {"vida_s": 700, "valor": 0.5, "moscas": true, "adubo": 0.3, "etapas": [0.3, 0.65], "max": 12, "incha": 0.35},
-   "rato": {"vida_s": 600, "valor": 0.6, "moscas": true, "adubo": 0.3, "etapas": [0.3, 0.65], "max": 20}
+   "rato": {"vida_s": 600, "valor": 0.6, "moscas": true, "adubo": 0.3, "etapas": [0.3, 0.65], "max": 20},
+   "herbivoro": {"vida_s": 2400, "valor": 6.0, "moscas": true, "adubo": 1.2, "etapas": [0.3, 0.65], "max": 8, "incha": 0.3},
+   "predador": {"vida_s": 1800, "valor": 4.0, "moscas": true, "adubo": 1.0, "etapas": [0.3, 0.65], "max": 6, "incha": 0.3},
+   "peixe": {"vida_s": 500, "valor": 0.4, "moscas": true, "adubo": 0.0, "mancha": 0.0, "etapas": [0.35, 0.7], "max": 15, "incha": 0.4}
   },
   "moscas": {"liga": true, "por_carcaca": 9, "raio": 0.7, "alt": [0.12, 1.0], "px": 2.0, "max": 120, "estacoes": [0.8, 1.0, 0.7, 0.0], "som_dist": 14},
   "carniceiro": {"raio": 45, "giro": 6.0, "alt": 9.0, "pousa_apos_s": 12}
@@ -98,6 +102,29 @@
   "sementes": {"liga": true, "raio": 30, "chance": 0.35, "dist": [4, 22], "max_por_vez": 8,
    "especies": {"arv_betula": [0.0, 0.0, 1.0, 0.3], "arv_salgueiro": [1.0, 0.3, 0.0, 0.0], "arv_pinheiro": [0.0, 0.0, 0.8, 0.2]},
    "voando": {"raio": 28, "por_arvore": 8, "ciclo_s": 40, "max": 180, "janela": 0.35, "px": 2.2}}
+ },
+ "manadas": {
+  "_nota": "fase 9: herbívoros grandes em manada (o galhudo). Cabem max manadas a até raio_vida m da câmera (× estacoes [primavera, verão, outono, inverno]); nascem a nasce_dist m em pasto bom (saude ≥ saude_min, chão que já voltou até as árvores, longe_construcao tiles da fábrica, disturbio ≤ disturbio_max, poucas árvores) e vão embora além de raio_sim. Pastam pasto_s s espalhados até espalha m do centro e viajam pasto_dist m para o próximo pasto; vel_* em m/s. medo: a até tantos m (o predador espreitando só a predador_espreita m; disturbio = barulho que espanta): a manada foge foge_dist m por foge_s s. Na troca para o outono migra_chance das manadas parte migra_dist m no rumo da migração. Filhotes na primavera e no verão (1 a cada filhote_s s por manada, até max_n), escala filhote_escala, crescem em cresce_s s",
+  "liga": true, "max": 2, "estacoes": [1.0, 1.0, 0.7, 0.35], "raio_vida": 90, "raio_sim": 150, "nasce_s": 10, "nasce_dist": [45, 85],
+  "entre_manadas": 40, "por_manada": [4, 8], "filhotes": [0, 2], "max_n": 9, "filhote_s": 600, "filhote_escala": 0.6, "cresce_s": 1209600,
+  "saude_min": 0.38, "longe_construcao": 10, "disturbio_max": 0.2, "pasto_s": [50, 110], "pasto_dist": [14, 34], "espalha": 4.5,
+  "vel_pastando": 0.55, "vel_andar": 1.1, "vel_correr": 7.0, "entre_bichos": 1.3, "alerta_chance": 0.25,
+  "medo": {"predador": 24, "predador_espreita": 10, "alien": 20, "fogo": 22, "disturbio": 0.5}, "foge_s": 8, "foge_dist": 40,
+  "migra_chance": 0.6, "migra_dist": 220
+ },
+ "predadores": {
+  "_nota": "fase 9: o uivador, predador nativo de matilha. Cabe max matilha a até raio_vida m; covil na beira da mata (mata_min árvores a até mata_raio m) em chão vivo e quieto (saude_min, disturbio_max, longe_construcao tiles), a nasce_dist m da câmera. Ativos no crepúsculo e à noite; rondam até territorio m do covil. A fome enche em fome_s s; com fome ≥ fome_caca caçam: herbívoro (com caca_grande_min ou mais, a até procura_grande m) ou rato (procura_rato m); espreitam a vel_espreita até bote_* m (ou até serem vistos) e correm a vel_correr; pegam a pega m; cansam em perseguicao_s s de corrida. Comem comer_*_s s (do herbívoro, come_parte da carne). Briga: aranha/larva hostil a até ve m; se elas são mais que a matilha + coragem, fogem; mordida dano ♥/s a morde_dist m",
+  "liga": true, "max": 1, "raio_vida": 110, "raio_sim": 160, "nasce_s": 12, "nasce_dist": [50, 95], "por_matilha": [2, 4], "vida": 110,
+  "saude_min": 0.38, "longe_construcao": 16, "disturbio_max": 0.15, "disturbio_foge": 0.5, "mata_raio": 8, "mata_min": 2, "territorio": 60,
+  "fome_s": 900, "fome_caca": 0.5, "caca_grande_min": 2, "procura_grande": 45, "procura_rato": 20, "bote_grande": 16, "bote_rato": 5,
+  "pega": 1.3, "perseguicao_s": 12, "desiste_s": 40, "cansado_s": 20, "comer_grande_s": 45, "comer_rato_s": 8, "come_parte": 0.6,
+  "vel_andar": 1.4, "vel_espreita": 1.4, "vel_correr": 9.2, "entre_bichos": 0.9, "ve": 14, "coragem": 1, "morde_dist": 1.7, "dano": 16,
+  "fogo_raio": 18, "foge_s": 7, "foge_dist": 35, "uivo_chance": 0.5
+ },
+ "peixes": {
+  "_nota": "fase 9: os peixes dos lagos (o couraça). Lagos a até raio_vida m da câmera (revistos a cada lagos_s s): pulos_por_min com a população cheia (× hora: amanhecer e entardecer mais), arco de pulo_dist m e pulo_alt m, até max_no_ar no ar. Água suja (AmbienteVivo.AGUA média) ≥ sujo_morre: a população cai em morre_s s e a cada boia_s s um morto boia (−por_morto); ≤ sujo_limpo ela volta em volta_s s",
+  "liga": true, "raio_vida": 45, "raio_sim": 160, "lagos_s": 5, "pulos_por_min": 4, "pulo_dist": [0.7, 1.5], "pulo_alt": [0.3, 0.75],
+  "max_no_ar": 3, "sujo_morre": 0.35, "sujo_limpo": 0.12, "morre_s": 600, "volta_s": 2400, "boia_s": 25, "por_morto": 0.03
  },
  "especies": {
   "pardelo":  {"peso": 4.0, "bando": [12, 28], "vel": 6.5, "alt": [4.0, 8.0], "pousa_s": [10, 26], "canto": "pardelo_canto", "canto_s": 5.0, "estacoes": [1.0, 1.0, 1.0, 0.8], "sementes": true, "ninho": "taca"},

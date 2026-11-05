@@ -68,6 +68,10 @@ func _desenhar_pontos() -> void:
 	if vida == null:
 		return
 	for ins in vida.insetos:
+		if ins.has("enxame"):                              # fase 9: mosquito da nuvem do verão (a asa pega a luz)
+			_pixel(_pontos, _px(ins.rastro[0]), Color(DesenhoVidaPequena.ENXAME, 0.3))
+			_pixel(_pontos, _px(ins.pos), Color(DesenhoVidaPequena.ENXAME, 0.7))
+			continue
 		_pixel(_pontos, _px(ins.rastro[1]), Color(INSETO, 0.2))
 		_pixel(_pontos, _px(ins.rastro[0]), Color(INSETO, 0.45))
 		_pixel(_pontos, _px(ins.pos), Color(INSETO, 0.85))

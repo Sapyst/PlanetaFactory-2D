@@ -67,12 +67,23 @@ for esp in ESPECIES:
 
     # ---------------------------------------------------------------- ações
     def acao(nome, quadros, posar):
+        """Calcula todas as poses primeiro (sem ação ativa e com as trilhas já gravadas mudas) e só depois grava as
+        chaves: trocar a ação ativa faz o Blender reavaliar a animação na próxima atualização da cena, e as poses que
+        medem a malha (comer, morto: assentar) trocavam o 1º quadro pela pose da trilha anterior."""
         arm.animation_data_create()
-        act = bpy.data.actions.new(nome)
-        arm.animation_data.action = act
+        for tr in arm.animation_data.nla_tracks:
+            tr.mute = True
+        arm.animation_data.action = None
+        poses = []
         for q in range(quadros + 1):
             posar(q / quadros)
+            poses.append({pb.name: (pb.location.copy(), pb.rotation_quaternion.copy(), pb.scale.copy())
+                          for pb in arm.pose.bones})
+        act = bpy.data.actions.new(nome)
+        arm.animation_data.action = act
+        for q, pose in enumerate(poses):
             for pb in arm.pose.bones:
+                pb.location, pb.rotation_quaternion, pb.scale = pose[pb.name]
                 pb.keyframe_insert('location', frame=q + 1)
                 pb.keyframe_insert('rotation_quaternion', frame=q + 1)
                 pb.keyframe_insert('scale', frame=q + 1)
@@ -80,6 +91,7 @@ for esp in ESPECIES:
         tr = arm.animation_data.nla_tracks.new()
         tr.name = nome
         tr.strips.new(nome, 1, act)
+        tr.mute = True
         arm.animation_data.action = None
     acao('andar', 12, lambda u: NS['pose_andar'](arm, u))
     acao('correr', 12, lambda u: NS['pose_correr'](arm, u))
@@ -87,6 +99,8 @@ for esp in ESPECIES:
     acao('comer', 24, lambda u: NS['pose_comer'](arm, u))
     acao('cavar', 12, lambda u: NS['pose_cavar'](arm, u))
     acao('morto', 2, lambda u: NS['pose_morto'](arm))
+    for tr in arm.animation_data.nla_tracks:      # todas de volta para o exportador
+        tr.mute = False
     NS['pose_zero'](arm)
     sc.render.fps = 24
     saida = os.path.join(AQUI, '..', 'modelos', 'fauna', 'ratos', f'rato_{esp}')

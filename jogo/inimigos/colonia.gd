@@ -83,6 +83,8 @@ var eco: Ecossistema              ## (opcional, fase 8) a comida do chão (carca
 var carcacas: Carcacas            ## (opcional) carcaça comida até os ossos
 var ratos: Ratos                  ## (opcional) presa
 var passaros: Passaros            ## (opcional) presa
+var manadas: Manadas              ## (opcional, fase 9) presa grande da aranha
+var fauna: Predadores             ## (opcional, fase 9) o predador nativo: briga com aranhas e larvas
 var _t_guerra := 0.0
 var _t_terr := 0.0
 var _t_caca := 0.0
@@ -131,6 +133,12 @@ func comp(especie: String) -> Dictionary:
 ## Fase 8: a espécie `a` ataca a `b`? (inimigos.json "relacoes")
 func hostil(a: String, b: String) -> bool:
 	return bool(_g.get("liga", true)) and String(_rel.get(a, {}).get(b, "")) == "hostil"
+
+
+## O mesmo, sem uma colônia na mão (fase 9: o predador nativo pergunta).
+static func hostil_em(a: String, b: String) -> bool:
+	var g: Dictionary = Registro.inimigos.get("guerra", {})
+	return bool(g.get("liga", true)) and String(Registro.inimigos.get("relacoes", {}).get(a, {}).get(b, "")) == "hostil"
 
 
 # ------------------------------------------------------------------ ninhos do mapa
@@ -727,10 +735,11 @@ func _efeito_bala(efeito: Dictionary, alvo: int, de: Vector2, dano: float) -> vo
 		_ferir_aranha(a, dano * (float(efeito.get("salto_dano", 1.0)) if salta > 0 else 1.0))
 
 
-## Tiro de fora da colônia (drone de combate): fere a aranha se ela ainda existe.
-func ferir_aranha(a: int, dano: float) -> void:
+## Tiro de fora da colônia (drone de combate; fase 9: mordida do predador nativo, `por` = a espécie): fere a aranha se
+## ela ainda existe.
+func ferir_aranha(a: int, dano: float, por := "") -> void:
 	if aranhas.has(a):
-		_ferir_aranha(a, dano)
+		_ferir_aranha(a, dano, por)
 
 
 func _ferir_aranha(a: int, dano: float, por := "") -> void:
@@ -1118,10 +1127,18 @@ func _guerra(dt: float) -> void:
 					if d < md:
 						md = d
 						melhor = o
-		if not melhor.is_empty():
+		var bicho := -1                                    # fase 9: o predador nativo também é inimigo
+		if melhor.is_empty() and fauna != null:
+			for f in fauna.hostis_perto(ar.pos, md, esp):
+				var d: float = ar.pos.distance_to(f.pos)
+				if d < md:
+					md = d
+					bicho = int(f.id)
+		if not melhor.is_empty() or bicho >= 0:
 			ar.antes = [int(ar.estado), int(ar.get("alvo", -1))]
 			ar.estado = E.BRIGANDO
-			ar.inimigo = melhor.id
+			ar.inimigo = melhor.id if not melhor.is_empty() else -1
+			ar.inimigo_fauna = bicho
 			ar.t_briga = 0.0
 			ar.espreita = false
 
@@ -1129,7 +1146,12 @@ func _guerra(dt: float) -> void:
 func _brigar(ar: Dictionary, dt: float) -> void:
 	ar.t_briga = float(ar.get("t_briga", 0.0)) + dt
 	var o: Dictionary = aranhas.get(int(ar.get("inimigo", -1)), {})
+	var bicho := int(ar.get("inimigo_fauna", -1))
+	if bicho >= 0 and fauna != null:                    # fase 9: brigando com o predador nativo
+		var fp: Variant = fauna.pos_de(bicho)
+		o = {"id": -1, "pos": fp} if fp != null else {}
 	if o.is_empty() or ar.t_briga > 30.0:
+		ar.inimigo_fauna = -1
 		var antes: Array = ar.get("antes", [E.VOLTANDO, -1])
 		if int(antes[0]) == E.ATACANDO and mapa.estruturas.has(int(antes[1])):
 			ar.estado = E.ATACANDO                         # volta para o ataque que estava fazendo
@@ -1148,7 +1170,11 @@ func _brigar(ar: Dictionary, dt: float) -> void:
 		ar.mordendo = true
 		ar.preso = 0.0
 		ar.mordida = o.pos
-		_ferir_aranha(int(o.id), float(_g.get("dano_aranha", 20)) * (1.0 + float(_f.get("dano", 0.8)) * furia(ar)) * dt, "aranha")
+		var dano := float(_g.get("dano_aranha", 20)) * (1.0 + float(_f.get("dano", 0.8)) * furia(ar)) * dt
+		if bicho >= 0:
+			fauna.ferir(bicho, dano, "aranha")
+		else:
+			_ferir_aranha(int(o.id), dano, "aranha")
 	else:
 		_mover(ar, o.pos, dt, 1.0)
 
@@ -1160,6 +1186,8 @@ func _respingo_em_bichos(g: Dictionary, p: Vector2) -> void:
 	for a in aranhas.keys():
 		if aranhas.has(a) and hostil(esp, String(aranhas[a].get("especie", "aranha"))) and aranhas[a].pos.distance_to(p) <= r:
 			_ferir_aranha(a, float(g.dano), esp)
+	if fauna != null:
+		fauna.ferir_area(p, r, float(g.dano), esp)
 	if not bool(g.get("presa", false)):
 		return
 	if ratos != null:
@@ -1272,6 +1300,10 @@ func _presa_perto(n: Dictionary, c: Dictionary) -> Dictionary:
 			if d < md:
 				md = d
 				melhor = {"tipo": "passaro", "id": int(b.id), "pos": b.pos}
+	if "herbivoro" in presas and manadas != null:          # fase 9: o filhote ou o que se afastou da manada
+		var h := manadas.presa_perto(n.centro, md)
+		if h >= 0:
+			melhor = {"tipo": "herbivoro", "id": h, "pos": manadas.bichos[h].pos}
 	return melhor
 
 
@@ -1288,6 +1320,9 @@ func _presa_pos(p: Dictionary) -> Variant:
 			if b.is_empty() or int(b.estado) != Passaros.E.POUSADO:
 				return null
 			return b.pos
+		"herbivoro":
+			var h: Dictionary = manadas.bichos.get(int(p.id), {}) if manadas != null else {}
+			return h.pos if not h.is_empty() and not h.get("morto", false) else null
 		"carcaca":
 			if eco == null or carcacas == null or not eco.comida.has(int(p.id)):
 				return null
@@ -1342,6 +1377,9 @@ func _pegar(ar: Dictionary, p: Vector2) -> void:
 		"passaro":
 			if passaros != null and passaros.bandos.has(int(pr.id)):
 				passaros._matar(passaros.bandos[int(pr.id)], String(ar.get("especie", "aranha")), ar.pos)
+		"herbivoro":
+			if manadas != null:
+				manadas.matar(int(pr.id), String(ar.get("especie", "aranha")))
 	ar.mordendo = true
 	ar.mordida = p
 	eventos.append({"tipo": "pegou", "id": ar.id, "presa": pr.tipo, "pos": p})

@@ -5382,5 +5382,77 @@
   "animacao": "parado",
   "avisos": 0,
   "luz": null
+ },
+ "herbivoro_galhudo": {
+  "pasta": "sprites/fauna_herbivoros/herbivoro_galhudo",
+  "quadro": [
+   142,
+   92
+  ],
+  "ancora": [
+   47.4,
+   65.6
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "andar",
+   "correr",
+   "pastar",
+   "alerta",
+   "morto"
+  ],
+  "animacao": "herbivoro",
+  "avisos": 0,
+  "luz": null
+ },
+ "predador_uivador": {
+  "pasta": "sprites/fauna_predadores/predador_uivador",
+  "quadro": [
+   90,
+   58
+  ],
+  "ancora": [
+   34.7,
+   38.2
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "andar",
+   "correr",
+   "espreitar",
+   "morder",
+   "comer",
+   "deitado",
+   "morto"
+  ],
+  "animacao": "predador",
+  "avisos": 0,
+  "luz": null
+ },
+ "peixe_couraca": {
+  "pasta": "sprites/fauna_peixes/peixe_couraca",
+  "quadro": [
+   26,
+   18
+  ],
+  "ancora": [
+   10.7,
+   10.9
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "nadar",
+   "pulo",
+   "morto"
+  ],
+  "animacao": "peixe",
+  "avisos": 0,
+  "luz": null
  }
 }

@@ -382,12 +382,60 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
       antes (a captura está nos testes);
     - não teve som nem arte nova: a briga usa a mordida e o cuspe que já existiam.
 
-## Fase 9 — Fauna grande e eventos raros ⬜ · custo alto
-- (C) Herbívoros grandes em manada, que migram e fogem de predadores e do fogo.
-- (C) Predadores nativos que caçam ratos e herbívoros e brigam com aranhas e larvas (entram na tabela
+## Fase 9 — Fauna grande e eventos raros ✅ · custo alto
+- ✅ (C) Herbívoros grandes em manada, que migram e fogem de predadores e do fogo.
+- ✅ (C) Predadores nativos que caçam ratos e herbívoros e brigam com aranhas e larvas (entram na tabela
   `relacoes` da fase 8).
-- (C) Peixes que pulam nos lagos; na água poluída aparecem mortos boiando (viram carcaça da fase 4).
-- (C) Enxames de insetos no verão úmido.
+- ✅ (C) Peixes que pulam nos lagos; na água poluída aparecem mortos boiando (viram carcaça da fase 4).
+- ✅ (C) Enxames de insetos no verão úmido.
+- **Feito (2026-11-05):**
+  - **Arte** (escolha pela recomendação; as B ficam prontas no estudo para trocar):
+    - estudos `arte/estudos/estudo_fauna_grande.py` e `estudo_peixe.py`, exportador `exportar_fauna.py`, prancha de
+      quadros `quadros_fauna.py`. Pernas por IK: o casco e a pata ficam parados no chão no apoio;
+    - **galhudo** (A, herbívoro tipo cervo, 1,0 m na cernelha; o estranho: duas placas ósseas curvas na testa e
+      nódulos ósseos na nuca): andar, correr, pastar, alerta, morto. A B é o **corcova** (tipo bisão);
+    - **uivador** (A, predador de matilha tipo canídeo, 0,7 m; crista curta de placas ósseas): andar, correr,
+      espreitar, morder, comer, deitado, morto. A B é o **espreitador** (felino solitário com esporões);
+    - **couraça** (A, peixe de 35 cm com placas ósseas na cabeça): nadar, pulo, morto. A B é a couraça-rubra.
+  - **Manadas** (`ambiente/manadas.gd`, fauna.json "manadas"):
+    - nascem no campo aberto saudável e quieto (chão que já voltou até as árvores, longe da fábrica), a 45–85 m da
+      câmera, de 4 a 8 adultos e filhotes; até 2 perto (menos no outono e no inverno);
+    - pastam espalhadas (cabeça baixa, às vezes alerta) e viajam juntas para o próximo pasto;
+    - **medo:** predador (o espreitando só é visto a 10 m), aranha e larva, fogo, tiro, explosão, raio e máquina
+      barulhenta. Quem vê dá o alarme e a manada inteira dispara para o lado oposto; depois fica alerta;
+    - **filhotes** na primavera e no verão (menores, colados na mãe); crescem devagar;
+    - **migração:** na troca para o outono parte das manadas vai embora junta no rumo da migração dos pássaros;
+    - não entram em construção, água, árvore nem rocha (desviam) e não se atravessam;
+    - morte vira carcaça grande (fase 4).
+  - **Predador** (`ambiente/predadores.gd`, fauna.json "predadores"):
+    - a matilha (2 a 4) mora num covil na beira da mata, longe da fábrica; de dia descansa deitada, no
+      crepúsculo e à noite ronda junta atrás do líder;
+    - **caça** com fome: herbívoro (o filhote ou o que ficou para trás) se são 2 ou mais, senão rato. Espreita
+      devagar, dá o bote correndo e, se não pega em 12 s, cansa. Comem juntos na carcaça e voltam ao covil;
+    - **guerra:** aranha e larva são hostis ("relacoes" do inimigos.json). Se não são muitas, a matilha ataca;
+      se são, foge. Aranha e larva também brigam com ela (a aranha morde, a gosma fere) e a aranha pode caçar
+      herbívoro;
+    - ratos e pássaros no chão fogem dele.
+  - **Peixes** (`ambiente/peixes.gd`, fauna.json "peixes"):
+    - cada lago perto da câmera tem uma população; pulam fora d'água (mais no amanhecer e no entardecer), com
+      respingo na saída e na volta (coroa e anel em malha 3D, como a chuva; no 2D, gotas e anel);
+    - água suja (o despejo da fábrica): a população cai e aparecem peixes mortos boiando de barriga para cima, que
+      viram carcaça com mosca. Na água limpa eles voltam devagar.
+  - **Enxames** (DesenhoVidaPequena, fauna.json "vida_pequena.enxame"): nuvens de mosquito na beira d'água no verão
+    depois da chuva (mais no entardecer e nos lugares úmidos), longe de ninho de alien e da fábrica.
+  - **Sons** (escolha pela recomendação; as outras ficam em `GUARDADAS` no gerar_sons.py):
+    - alarme da manada A (latido rouco);
+    - galope em laço A;
+    - uivo e rosnado de briga (as duas candidatas do predador, cada uma no seu uso);
+    - pulo do peixe B (tapa e borrifo);
+    - enxame A.
+  - **Testes** em `test_fauna_grande.gd`. Roteiro `-- roteiro fauna9`.
+  - **Fica para depois:**
+    - arte: a cabeça do uivador lembra cavalo; o alto das coxas é largo e chato; a nadadeira do peixe não tem
+      espessura e a couraça clara parece máscara; o rabo curto do galhudo morto fica 1,7 cm acima do chão;
+    - o enxame é sutil de cima (pontinhos claros); vale conferir no celular;
+    - no 2D a sombra do peixe pulando sobe junto com ele;
+    - desempenho no celular com manada, matilha e enxame juntos não medido.
 
 ---
 

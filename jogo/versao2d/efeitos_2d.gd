@@ -323,6 +323,17 @@ func _respingo(p: Vector2, h: float) -> void:
 		som.call("acido_respingo", p)
 
 
+## Patch fauna, fase 9: o peixe saindo ou caindo na água — gotas claras e um anel que se espalha (sem clarão nem
+## marca no chão).
+func respingo_agua(onde: Vector3, forca := 1.0) -> void:
+	var a := no_chao(onde)
+	var p: Vector2 = a[0]
+	var h: float = a[1]
+	var agua := Color(0.78, 0.86, 0.9, 0.85)
+	_gotas(p, h, Vector2.ZERO, int(round(12 * forca)), agua, 28.0 * forca, 2.0, 45.0 * forca)
+	_linhas.append({"anel": true, "c": p, "t": 0.0, "vida": 1.0, "raio": 9.0 * forca, "cor": Color(0.8, 0.88, 0.92, 0.6)})
+
+
 func _clarao(p: Vector2, h: float, raio: float, cor: Color, vida: float) -> void:
 	_parts.append(_part(p, h, Vector2.ZERO, 0.0, 0.0, 0.0, 0.0, vida, Color(1, 1, 0.95), Color(cor.r, cor.g, cor.b, 0.0),
 			raio, raio * 0.4, "d", 1))
