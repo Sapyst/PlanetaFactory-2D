@@ -6,7 +6,8 @@ extends Node3D
 ##         toca e perto da câmera: sai do buraco subindo, anda no ritmo da distância andada, fareja, come sentado,
 ##         cava, foge correndo (o saltador aos pulos), entra afundando no buraco. Quando morre, o mesmo nó deita de
 ##         lado ("morto") e vira a carcaça (DesenhoCarcacas.corpos).
-## Sons perto da câmera: o chiado (evento "chiou" e quando foge) e o raspar de quem cava.
+## Sons perto da câmera: a voz (evento "chiou" e quando foge), ao acaso o trinado ou o guincho, e o raspar de quem
+## cava.
 
 const ESCALA := 1.5               ## o rato perto do capim do jogo (em escala real o capim de 40 cm o esconde inteiro)
 const MAX_RATOS := 30
@@ -272,7 +273,7 @@ func _sons(delta: float) -> void:
 	var foco: Vector2 = foco_de.call() if foco_de.is_valid() else Vector2.ZERO
 	for ev in ratos.eventos:
 		if ev.tipo in ["chiou", "fugiu"] and (ev.pos as Vector2).distance_to(foco) < 15.0:
-			Som.tocar("rato_chiado", Grade.ponto_mundo(ev.pos, 0.1), -12.0)
+			Som.tocar("rato_chiado" if randf() < 0.5 else "rato_guincho", Grade.ponto_mundo(ev.pos, 0.1), -12.0)
 	for r in ratos.ratos.values():
 		if r.estado != Ratos.E.CAVANDO or (r.pos as Vector2).distance_to(foco) > 12.0:
 			continue

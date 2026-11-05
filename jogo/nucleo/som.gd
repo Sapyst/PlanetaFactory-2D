@@ -6,6 +6,7 @@ extends Node
 
 const INTERVALO := {
 	"rato_chiado": 0.4,
+	"rato_guincho": 0.4,
 	"rato_cavar": 0.8,
 	"clique": 0.03,
 	"construir": 0.05,
@@ -76,6 +77,7 @@ const SONS_AMBIENTE := {
 	"amb_insetos_dia": true,
 	"amb_moscas": true,
 	"rato_chiado": true,
+	"rato_guincho": true,
 	"rato_cavar": true,
 	"sapo": true,
 	"chuva": true,

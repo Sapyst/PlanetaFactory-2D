@@ -211,7 +211,8 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
   - **O capim abre:** em volta de cada rato fora da toca o capim deita (canal G do mapa da trilha). Em escala real,
     o capim de 40 cm escondia o bicho inteiro.
   - **Olhos à noite:** passam a ser dos ratos fora da toca, virados para a câmera, piscando.
-  - **Sons:** chiado (trinado agudo, a opção A, com 3 variações) e o raspar de quem cava.
+  - **Sons:** as duas vozes que Sapyst pediu, sorteadas a cada chiado: o trinado agudo (`rato_chiado`, com 3
+    variações) e o guincho anasalado (`rato_guincho`, com 2). Tem também o raspar de quem cava.
   - **Arte:** `arte/estudos/estudo_rato.py` gera uma malha com esqueleto, e `exportar_rato.py` exporta o glb com as
     ações andar, correr, farejar, comer, cavar e morto. O 2D usa `PlanetaFactory_2D/ferramentas/sprite_modelo.py`
     (RATO): 16 direções, 8 quadros e 6 ações.

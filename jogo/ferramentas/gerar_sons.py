@@ -1054,6 +1054,24 @@ def rato_chiado(rng):
     return reverb(junta(*partes), 0.35, 0.12, 9000)
 
 
+def rato_guincho(rng):
+    """Rato (fase 5), a outra voz: um ou dois guinchos mais longos (~0,12 s) e anasalados — tom de ~3,8 kHz com
+    harmônicos passando por uma ressonância, que treme (vibrato rápido) e cai no fim."""
+    partes = []
+    at = 0.0
+    for k in range(int(rng.integers(1, 3))):
+        d = rng.uniform(0.09, 0.15)
+        t = tempo(d)
+        f = rng.uniform(3500, 4100) * (1 + 0.04 * np.sin(2 * np.pi * 38 * t)) * (1 - 0.12 * (t / d) ** 2)
+        fase = np.cumsum(f) / TAXA
+        s = np.sin(2 * np.pi * fase) + 0.35 * np.sin(4 * np.pi * fase) + 0.15 * np.sin(6 * np.pi * fase)
+        s = ressoa(s, rng.uniform(4200, 5200), 3) * 0.6 + s * 0.4
+        s *= env(len(t), 0.008, 0.04, d * 0.6)
+        partes.append((s, rng.uniform(0.7, 1.0), at))
+        at += d + rng.uniform(0.05, 0.12)
+    return reverb(junta(*partes), 0.35, 0.12, 9000)
+
+
 def rato_cavar(rng):
     """Rato cavando (enterra a semente): as unhas raspam a terra em rajadas rápidas (~6 por segundo) e torrões caem."""
     d = 1.2
@@ -1119,12 +1137,13 @@ SONS = [
     ('solda_arco', solda_arco, -20, 0, 0.002), ('solda_mig', solda_mig, -20, 0, 0.002),
     ('amb_grilos', amb_grilos, -24, 0.6, 0), ('amb_insetos_dia', amb_insetos_dia, -27, 0.6, 0),
     ('sapo', sapo, -17, 0, 0.003), ('amb_moscas', amb_moscas, -26, 0.6, 0),
-    ('rato_chiado', rato_chiado, -20, 0, 0.001), ('rato_cavar', rato_cavar, -24, 0, 0.001),
+    ('rato_chiado', rato_chiado, -20, 0, 0.001), ('rato_guincho', rato_guincho, -20, 0, 0.001),
+    ('rato_cavar', rato_cavar, -24, 0, 0.001),
 ]
 
 
 VARIACOES = {'aranha_passo': 4, 'pardelo_canto': 3, 'cobrico_canto': 3, 'azulao_canto': 3, 'rubro_canto': 2,
-             'planador_grito': 2, 'revoada': 2, 'sapo': 3, 'rato_chiado': 3}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
+             'planador_grito': 2, 'revoada': 2, 'sapo': 3, 'rato_chiado': 3, 'rato_guincho': 2}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
 
 
 if __name__ == '__main__':
