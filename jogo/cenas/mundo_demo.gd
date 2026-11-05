@@ -45,6 +45,8 @@ var _desenho_plantas_reagem: DesenhoPlantasReagem   ## + folhas caindo no outono
 var frutos: Frutos                       ## patch fauna, fase 3: frutos que viram comida, sementes que viram mata
 var carcacas: Carcacas                   ## patch fauna, fase 4: quem morre fica (carcaça apodrece, aranha vira sucata)
 var _desenho_carcacas: DesenhoCarcacas
+var ratos: Ratos                         ## patch fauna, fase 5: tocas e ratos do mato (comem fruto, enterram semente)
+var _desenho_ratos: DesenhoRatos
 var _desenho_passaros: DesenhoPassaros
 var _raios_passaros := 0
 var _teia_versao := -1
@@ -159,6 +161,8 @@ func _ready() -> void:
 	frutos = Frutos.new(ecossistema, ambiente, semente + 59)
 	carcacas = Carcacas.new(ecossistema, ambiente, semente + 61)
 	passaros.carcacas = carcacas
+	ratos = Ratos.new(ecossistema, ambiente, semente + 67)
+	ecossistema.registrar_fonte("rato", ratos.para_ecossistema)
 	ecossistema.registrar_fonte("toca", func() -> Array:
 		var out: Array = []
 		for id in colonia.ninhos:
@@ -370,7 +374,7 @@ func _dados_salvar() -> Dictionary:
 	return {"modo": modo, "semente": semente, "tempo": _tempo,
 			"camera": [camera.alvo, camera.distancia, camera.angulo],
 			"mapa": {"estruturas": mapa.estruturas, "limpos": mapa.limpos.keys(), "prox": mapa._prox_id, "arvores": mapa.arvores},
-			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(), "ecossistema": ecossistema.estado(), "plantas_reagem": plantas_reagem.estado(), "frutos": frutos.estado(), "carcacas": carcacas.estado(),
+			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(), "ecossistema": ecossistema.estado(), "plantas_reagem": plantas_reagem.estado(), "frutos": frutos.estado(), "carcacas": carcacas.estado(), "ratos": ratos.estado(),
 			"estoques": estoques, "inventario": inventario, "pesquisa": pesquisa.estado(),
 			"trens": trens.map(func(t: Trem): return t.para_salvar()), "prox_trem": _prox_trem}
 
@@ -426,6 +430,7 @@ func _carregar(d: Dictionary) -> void:
 	plantas_reagem.restaurar(d.get("plantas_reagem", {}))
 	frutos.restaurar(d.get("frutos", {}))
 	carcacas.restaurar(d.get("carcacas", {}))
+	ratos.restaurar(d.get("ratos", {}))
 	obras.dar_iniciais()                          # save de antes do patch RTS: ganha os construtores uma vez
 	for id in mapa.estruturas:
 		var nome: String = mapa.estruturas[id].nome
@@ -477,9 +482,14 @@ func _criar_desenhos() -> void:
 	_vida_pequena = DesenhoVidaPequena.new()
 	_vida_pequena.eco = ecossistema
 	_vida_pequena.carcacas = carcacas
+	_vida_pequena.ratos = ratos
 	_vida_pequena.clima = clima
 	_vida_pequena.camera = camera
 	add_child(_vida_pequena)
+	_desenho_ratos = DesenhoRatos.new()
+	_desenho_ratos.ratos = ratos
+	_desenho_ratos.foco_de = func() -> Vector2: return Vector2(camera.alvo.x, -camera.alvo.z)
+	add_child(_desenho_ratos)
 	_desenho_carcacas = DesenhoCarcacas.new()
 	_desenho_carcacas.carcacas = carcacas
 	_desenho_carcacas.eco = ecossistema
@@ -1668,12 +1678,16 @@ func _tick_mundo(dt: float) -> void:
 	for ev in colonia.eventos:
 		if ev.tipo == "tiro":
 			passaros.assustar(ev.de, 14.0)
+			ratos.assustar(ev.de, 10.0)
 		elif ev.tipo == "explosao":
 			passaros.assustar(ev.pos, 16.0 + 6.0 * float(ev.get("raio", 1.0)))
+			ratos.assustar(ev.pos, 12.0 + 4.0 * float(ev.get("raio", 1.0)))
 	while _raios_passaros < raios.total:
 		_raios_passaros += 1
 		if not raios.quedas.is_empty():
 			passaros.assustar(raios.quedas[-1].get("pos", Vector2.ZERO), 30.0)
+			ratos.assustar(raios.quedas[-1].get("pos", Vector2.ZERO), 18.0)
+	ratos.tick(dt, clima, Vector2(camera.alvo.x, -camera.alvo.z))
 	passaros.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z), clima)
 	for ev in colonia.eventos:                          # quem morre avisa o ecossistema (fase 4: vira carcaça)
 		if ev.tipo == "aranha_morta":

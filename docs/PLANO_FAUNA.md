@@ -182,7 +182,7 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
     para o 2D pelos metas do nó. O material ganhou `ferrugem`, `podre` e `desligada` (no 2D,
     `versao2d/corpo_2d.gdshader`). O roteiro é `-- roteiro carcacas`.
 
-## Fase 5 — Ratos e pequenos animais ⬜ · custo médio/alto
+## Fase 5 — Ratos e pequenos animais ✅ · custo médio/alto
 - (S) Ratos: vivem no mato e nos arbustos, comem frutas e **enterram sementes** (reflorestam).
   - Fogem das larvas, do ácido e do fogo.
   - São presa das aranhas e das larvas.
@@ -190,6 +190,36 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
 - (C) **Pegadas e trilhas:** grama pisada onde os bichos passam muito (mapa de passagem do `Ecossistema`).
 - (C) Olhos brilhando à noite passam a ser dos ratos de verdade.
 - **Por que aqui:** precisa de comida (3), carcaça (4) e do índice (0).
+- **Feito (2026-11-05):**
+  - **Duas espécies**, as duas candidatas que Sapyst escolheu:
+    - **Rato-pardo:** uns 15 cm, pardo-agouti, com uma fileira de espinhos ósseos claros na espinha (o mesmo osso da
+      crista do pardelo). Faz a toca ao pé de arbusto ou árvore.
+    - **Saltador:** uns 12 cm, cor de areia, com pernas de trás longas, anel claro no olho e tufo no rabo. Faz a
+      toca em campo aberto, anda aos pulos, é mais rápido e vaga mais longe.
+  - **Tocas:** nascem no mato saudável perto da câmera, longe de construção, de água e umas das outras, com 2 a 4
+    ratos. O chão que morre ou a construção encostada fazem a toca ser abandonada. No chão aparece um montinho de
+    terra cavada de um lado e o buraco escuro, com o capim baixo em volta.
+  - **Rotina:** saem mais no amanhecer, no anoitecer e à noite, e pouco ao meio-dia e no inverno. Andam, param e
+    farejam, comem fruto sentados com as mãos no focinho ou comem semente do capim.
+  - **Sementes:** às vezes levam a bolota ou a pinha e enterram perto da toca. A que eles esquecem (35%) vira muda
+    da árvore dela.
+  - **Medo:** fogem de aranha, larva, fogo, tiro, explosão e raio, para a toca ou para longe se o perigo está nela.
+  - **Presa:** aranha ou larva encostando mata o rato, e o fogo também. O corpo deita de lado e vira carcaça com
+    mosca, pela fase 4 (é o mesmo nó).
+  - **Trilha:** cada passagem marca uma célula de 25 cm. Onde passam muito, o capim deita e afina e o chão mostra
+    a terra batida, no 3D e no 2D.
+  - **O capim abre:** em volta de cada rato fora da toca o capim deita (canal G do mapa da trilha). Em escala real,
+    o capim de 40 cm escondia o bicho inteiro.
+  - **Olhos à noite:** passam a ser dos ratos fora da toca, virados para a câmera, piscando.
+  - **Sons:** chiado (trinado agudo, a opção A, com 3 variações) e o raspar de quem cava.
+  - **Arte:** `arte/estudos/estudo_rato.py` gera uma malha com esqueleto, e `exportar_rato.py` exporta o glb com as
+    ações andar, correr, farejar, comer, cavar e morto. O 2D usa `PlanetaFactory_2D/ferramentas/sprite_modelo.py`
+    (RATO): 16 direções, 8 quadros e 6 ações.
+  - **Código:** `Ratos` (`ambiente/ratos.gd`) é a lógica (fonte "rato" no `Ecossistema`); `DesenhoRatos` faz o 3D,
+    as tocas, o mapa da trilha (`trilha_mapa` global, 4 px por tile) e os sons. No 2D: `_sincronizar_ratos`, as
+    tocas no `PlantasReagem2D` e a trilha no `chao_2d`. O roteiro é `-- roteiro ratos`.
+  - **Fica para depois:** a aranha caçar o rato de propósito (fase 8) e o planador pegar rato (fase 6). No sprite
+    do saltador, o rabo fino some e o tufo parece um pontinho solto.
 
 ## Fase 6 — Pássaros completos ⏳ · custo médio
 - ✅ (S) 5 espécies, bandos em massa, fuga, sementes, noite e migração na lógica.

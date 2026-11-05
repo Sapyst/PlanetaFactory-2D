@@ -25,6 +25,8 @@ varying vec4 dados;      // r = água (campo contínuo), g = fundo, b = luz da e
 global uniform float estacao_atual;      // patch fauna, fase 2: capim e flores pela estação, limo
 global uniform float vico_grama;         // −1 seco … +1 viçoso depois da chuva
 global uniform vec3 sol_dir;             // y > 0 = dia (flor aberta)
+global uniform sampler2D trilha_mapa : filter_linear, hint_default_black;   // patch fauna, fase 5: R = trilha dos ratos
+global uniform vec3 trilha_origem;
 
 vec3 cor_estacao(float e) {
 	vec3 c[4] = vec3[4](vec3(0.94, 1.08, 0.9), vec3(1.0), vec3(1.12, 0.98, 0.66), vec3(0.86, 0.84, 0.74));
@@ -157,5 +159,9 @@ void fragment() {
 			if (br + (b - 0.5) * 0.4 > 0.35) { cor = mix(vec3(0.55, 0.10, 0.02), vec3(1.0, 0.55, 0.12), step(0.7, br)); }
 		}
 	}
+	// trilha dos bichos: terra batida no meio do capim (o mesmo mapa do 3D)
+	float trl = texture(trilha_mapa, (grade - trilha_origem.xy) / max(trilha_origem.z, 1.0)).r;
+	trl = smoothstep(0.2, 0.8, trl + (_hp(floor(grade * 8.0)) - 0.5) * 0.3);
+	cor = mix(cor, vec3(0.21, 0.17, 0.12) * (0.85 + 0.3 * _hp(floor(grade * 8.0) + 3.0)), trl * 0.7);
 	COLOR = vec4(cor * dados.b, 1.0);
 }

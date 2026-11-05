@@ -1039,6 +1039,38 @@ def amb_moscas(rng):
     return reverb(x, 0.5, 0.12, 6000)
 
 
+def rato_chiado(rng):
+    """Rato (patch fauna, fase 5): trinado agudo — 2 a 4 piados curtos (30 a 60 ms) que sobem e descem entre 6 e 9 kHz."""
+    partes = []
+    at = 0.0
+    for k in range(int(rng.integers(2, 5))):
+        d = rng.uniform(0.03, 0.06)
+        t = tempo(d)
+        f0, f1 = rng.uniform(6000, 7200), rng.uniform(7500, 9000)
+        f = f0 + (f1 - f0) * np.sin(np.pi * t / d)
+        s = np.sin(2 * np.pi * np.cumsum(f) / TAXA) * np.sin(np.pi * t / d) ** 1.5
+        partes.append((s, rng.uniform(0.6, 1.0), at))
+        at += d + rng.uniform(0.02, 0.07)
+    return reverb(junta(*partes), 0.35, 0.12, 9000)
+
+
+def rato_cavar(rng):
+    """Rato cavando (enterra a semente): as unhas raspam a terra em rajadas rápidas (~6 por segundo) e torrões caem."""
+    d = 1.2
+    n = int(d * TAXA)
+    x = np.zeros(n)
+    for k in range(7):
+        t0 = k / 6.0 + rng.uniform(-0.02, 0.02)
+        dur = rng.uniform(0.06, 0.1)
+        a, b = int(t0 * TAXA), int(min(d, t0 + dur) * TAXA)
+        if a >= n:
+            break
+        x[a:b] += banda(ruido(b - a, rng), 1800, 6000) * np.hanning(b - a) ** 0.7 * rng.uniform(0.6, 1.0)
+    g = graos(rng, d, 26, 300, 1500, q=3.0)
+    x[:min(n, len(g))] += g[:min(n, len(g))] * 0.5
+    return reverb(x, 0.3, 0.1, 6000)
+
+
 def sapo(rng):
     """Sapo na beira d'água depois da chuva: 2 a 4 coaxos graves — pulsos estreitos (~85–120/s) passando pelas
     ressonâncias da bolsa vocal (~450 Hz, ~1,2 kHz), cada coaxo subindo e descendo um pouco o tom."""
@@ -1087,11 +1119,12 @@ SONS = [
     ('solda_arco', solda_arco, -20, 0, 0.002), ('solda_mig', solda_mig, -20, 0, 0.002),
     ('amb_grilos', amb_grilos, -24, 0.6, 0), ('amb_insetos_dia', amb_insetos_dia, -27, 0.6, 0),
     ('sapo', sapo, -17, 0, 0.003), ('amb_moscas', amb_moscas, -26, 0.6, 0),
+    ('rato_chiado', rato_chiado, -20, 0, 0.001), ('rato_cavar', rato_cavar, -24, 0, 0.001),
 ]
 
 
 VARIACOES = {'aranha_passo': 4, 'pardelo_canto': 3, 'cobrico_canto': 3, 'azulao_canto': 3, 'rubro_canto': 2,
-             'planador_grito': 2, 'revoada': 2, 'sapo': 3}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
+             'planador_grito': 2, 'revoada': 2, 'sapo': 3, 'rato_chiado': 3}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
 
 
 if __name__ == '__main__':

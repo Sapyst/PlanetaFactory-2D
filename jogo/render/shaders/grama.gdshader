@@ -17,6 +17,10 @@ uniform float raio_detalhe = 1.0e6;   // camada de detalhe: some em degradê a p
 uniform bool compensa = false;
 const float raio_detalhe_ref = 16.0;  // = DesenhoChunk.RAIO_DETALHE         // camada esparsa: tufos de longe um pouco maiores (o campo não fica ralo)
 global uniform vec3 alvo_camera;
+// patch fauna, fase 5: trilha dos bichos (Ratos.passagem) e o capim aberto em volta de cada rato, 64×64 tiles em
+// volta da câmera (4 pixels por tile): R = trilha (o chão também gasta), G = aberto agora em volta de um rato
+global uniform sampler2D trilha_mapa : filter_linear, hint_default_black;
+global uniform vec3 trilha_origem;     // x, y = canto (grade), z = lado (tiles)
 #include "res://render/shaders/clima.gdshaderinc"
 
 varying float altura;
@@ -82,6 +86,15 @@ void vertex() {
 	tom *= mix(vec3(1.0), vec3(0.84, 1.2, 0.78), max(vv, 0.0));
 	tom *= mix(vec3(1.0), vec3(1.6, 1.2, 0.45), max(-vv, 0.0));        // seca: palha
 	VERTEX.y *= 1.0 + 0.18 * max(vv, 0.0) - 0.22 * max(-vv, 0.0);
+	// trilha: onde os bichos passam muito o capim fica baixo e amassado, mais pálido, e deita para um lado; em volta
+	// do rato que passa, o capim se abre (o bicho empurra) e ele aparece
+	vec2 trg = textureLod(trilha_mapa, (g + torto * 0.25 - trilha_origem.xy) / max(trilha_origem.z, 1.0), 0.0).rg;
+	float trilha = smoothstep(0.1, 0.75, trg.r + sorte * 0.25);
+	float tr = max(trilha, smoothstep(0.05, 0.6, trg.g));
+	VERTEX.y *= 1.0 - 0.85 * tr;
+	some = max(some, smoothstep(0.6, 1.0, trilha + sorte * 0.6) * 0.7);    // na trilha batida alguns tufos somem
+	VERTEX.xz += normalize(vec2(_h(g * 5.1) - 0.5, _h(g * 6.3) - 0.5) + vec2(1e-4)) * UV.y * 0.06 * tr;
+	tom *= mix(vec3(1.0), vec3(1.15, 1.05, 0.75), tr);
 	// flores: alguns tufos de capim saudável florescem pela estação; cada um com a sua cor; abrem de dia
 	float viva = (1.0 - smoothstep(0.1, 0.3, q)) * (1.0 - smoothstep(0.1, 0.4, amb.r)) * (1.0 - smoothstep(0.05, 0.3, inf + cor_l));
 	flor = step(_h(g * 1.91 + vec2(3.7, 1.3)), 0.075 * flores_estacao(estacao_atual) * viva * (0.8 + 0.4 * max(vv, 0.0)));

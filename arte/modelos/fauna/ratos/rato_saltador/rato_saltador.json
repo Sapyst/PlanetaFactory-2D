@@ -1,0 +1,31 @@
+{
+ "nome": "rato_saltador",
+ "categoria": "fauna/ratos",
+ "tipo": "veiculo",
+ "area": [
+  1,
+  1
+ ],
+ "descricao": "Saltador: roedor nativo (patch fauna, fase 5); andar, correr, farejar, comer, cavar e morto.",
+ "ocupa_canto": false,
+ "partes": [
+  {
+   "nome": "corpo",
+   "pai": null,
+   "pivo": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "portas": [],
+ "tris": 852,
+ "dims": [
+  0.33,
+  0.076,
+  0.115
+ ],
+ "anima": true,
+ "estudo": "estudo_rato.py"
+}

@@ -131,3 +131,11 @@ fogo_origem={
 "type": "vec2",
 "value": Vector2(0, 0)
 }
+trilha_mapa={
+"type": "sampler2D",
+"value": ""
+}
+trilha_origem={
+"type": "vec3",
+"value": Vector3(0, 0, 64)
+}

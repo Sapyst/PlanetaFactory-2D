@@ -87,9 +87,19 @@ func _garantir(k: String, f: Dictionary) -> Dictionary:
 		if float(f.idade) < 2.0:
 			return {}                                          # morreu agora: espera o nó da morte chegar
 		var pos := Grade.ponto_mundo(f.pos)
-		no = Larva.new(pos, float(f.ang)) if String(f.especie) == "larva" else Aranha.new(pos, float(f.ang))
-		add_child(no)
-		no.pose_morta()
+		match String(f.especie):
+			"larva":
+				no = Larva.new(pos, float(f.ang))
+			"aranha":
+				no = Aranha.new(pos, float(f.ang))
+			"rato":
+				no = DesenhoRatos.corpo_morto(pos, float(f.ang), String(f.get("variante", "pardo")))
+		if no == null:
+			return {}
+		if no.get_parent() == null:
+			add_child(no)
+		if no.has_method("pose_morta"):
+			no.pose_morta()
 	var n := {"no": no, "mats": _materiais_unicos(no), "fumaca": null, "t_faisca": randf_range(0.5, 2.0),
 			"base_y": no.position.y, "base_esc": no.scale}
 	nos[k] = n

@@ -31,6 +31,7 @@ var _moveis: Dictionary = {}       ## chave → par (trens, ninhos, drones)
 var _aranhas: Dictionary = {}      ## id → {p, fase, ult, rumo}: aranha viva (sprite "aranha_animada")
 var _mortas: Array[Dictionary] = [] ## aranha morrendo: {p, pos, linha, t}
 var _corpos: Dictionary = {}       ## id do nó 3D do corpo (DesenhoCarcacas) → {p, linha, q, larva}: sucata e carcaça
+var _ratos2d: Dictionary = {}      ## id do rato → {p, esp}: fase 5 (sprite rato_<espécie>, o nó 3D manda)
 var _afundando: Dictionary = {}     ## nó 3D da árvore dissolvendo (mundo._dissolver) → par de sprites
 var _passaros: Dictionary = {}      ## nó 3D do pássaro (DesenhoPassaros) → par de sprites "passaro_<espécie>"
 const ARVORE_MORTA := "arvore_morta"
@@ -126,6 +127,7 @@ func _process(delta: float) -> void:
 	_sincronizar_afundando()
 	_sincronizar_mudas()
 	_sincronizar_corpos()
+	_sincronizar_ratos()
 	_sincronizar_passaros()
 	_sincronizar_vida()
 	_sincronizar_fios()
@@ -616,14 +618,20 @@ func _sincronizar_corpos() -> void:
 		var id := no.get_instance_id()
 		vivos[id] = true
 		var larva := no is Larva
+		var rato := String(no.get_meta("rato", ""))
 		var c: Dictionary = _corpos.get(id, {})
 		if c.is_empty():
-			var p := _par(LARVA if larva else ARANHA)
+			var nome_c := ("rato_" + rato) if rato != "" else (LARVA if larva else ARANHA)
+			if not Catalogo2D.tem(nome_c):
+				continue
+			var p := _par(nome_c)
 			if p.is_empty():
 				continue
-			c = {"p": p, "linha": Catalogo2D.linha_do_angulo(p.m, no.rotation.y), "q": 0 if larva else 11, "larva": larva, "no": no, "t0": _t}
+			var ang := no.rotation.y - PI / 2.0 if rato != "" else no.rotation.y
+			c = {"p": p, "linha": Catalogo2D.linha_do_angulo(p.m, ang), "q": 0 if larva or rato != "" else 11, "larva": larva,
+					"no": no, "t0": _t}
 			_corpos[id] = c
-		_por(c.p, no.global_position, int(c.linha), int(c.q), "andar" if larva else "morte")
+		_por(c.p, no.global_position, int(c.linha), int(c.q), "morto" if rato != "" else ("andar" if larva else "morte"))
 		var spr := c.p.spr as Sprite2D
 		if not (spr.material is ShaderMaterial):
 			var mt := ShaderMaterial.new()
@@ -649,6 +657,46 @@ func _sincronizar_corpos() -> void:
 			(c.p.spr as Sprite2D).material = null
 			_soltar(c.p)
 			_corpos.erase(id)
+
+
+## Fase 5: os ratos fora da toca, pelo nó 3D do DesenhoRatos (posição, rumo, a ação e o quadro da animação). Saindo e
+## entrando na toca o sprite aparece e some (o 3D sobe e afunda no buraco).
+func _sincronizar_ratos() -> void:
+	var dr = mundo.get("_desenho_ratos")
+	if dr == null:
+		return
+	var vistos := {}
+	for id in dr.nos:
+		var n: Dictionary = dr.nos[id]
+		var no: Node3D = n.no
+		if not is_instance_valid(no):
+			continue
+		var nome := "rato_" + String(n.esp)
+		if not Catalogo2D.tem(nome):
+			continue
+		vistos[id] = true
+		var r: Dictionary = _ratos2d.get(id, {})
+		if r.is_empty():
+			var p := _par(nome)
+			if p.is_empty():
+				continue
+			r = {"p": p}
+			_ratos2d[id] = r
+		var acao := String(n.acao) if String(n.acao) != "" else "andar"
+		var anim: AnimationPlayer = n.anim
+		var q := 0
+		if anim != null and anim.is_playing() and anim.current_animation_length > 0.0:
+			q = int(anim.current_animation_position / anim.current_animation_length * 8.0) % 8
+		var pos := no.global_position
+		_por(r.p, pos, Catalogo2D.linha_do_angulo(r.p.m, no.rotation.y - PI / 2.0), q, acao)
+		var chao := Grade.altura_em(Vector2(pos.x, -pos.z))
+		var a := 1.0 - clampf((chao - pos.y) / 0.12, 0.0, 1.0)          # dentro do buraco: some
+		(r.p.spr as Sprite2D).modulate.a = a
+		(r.p.som as Sprite2D).modulate.a = a
+	for id in _ratos2d.keys():
+		if not vistos.has(id):
+			_soltar(_ratos2d[id].p)
+			_ratos2d.erase(id)
 
 
 ## Mudas e árvores plantadas (viveiro, pássaros, sementes no vento: AmbienteVivo.plantas): o sprite da espécie no
@@ -784,6 +832,7 @@ func _sincronizar_vida() -> void:
 	if _plantas2d.desenho == null:
 		_plantas2d.desenho = mundo.get("_desenho_plantas_reagem")
 		_plantas2d.plantas = mundo.get("plantas_reagem")
+		_plantas2d.ratos = mundo.get("ratos")
 	_camada_vida.transform = Transform2D(0.0, scale, 0.0, position)
 
 

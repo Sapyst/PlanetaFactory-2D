@@ -8,6 +8,7 @@ extends Node2D
 
 var desenho: DesenhoPlantasReagem
 var plantas: PlantasReagem
+var ratos: Ratos                     ## fase 5: as tocas (buraco escuro, terra cavada de um lado)
 var _chao := Node2D.new()            ## folhas no chão, galhos, cogumelos (abaixo das construções e árvores)
 var _ar := Node2D.new()              ## folhas caindo (acima)
 
@@ -62,6 +63,14 @@ func _desenhar_chao() -> void:
 			else:
 				_chao.draw_rect(Rect2(base, Vector2(2 if podre < 0.7 else 1, 1)), cor)
 				_chao.draw_rect(Rect2(base + Vector2(0, -1), Vector2(1, 1)), cor.lightened(0.15))    # luz em cima
+	if ratos != null:
+		var terra := Color(0.2, 0.15, 0.1)
+		for tc in ratos.tocas.values():
+			var base := _px(Grade.ponto_mundo(tc.pos))
+			var lado := Vector2.from_angle(float(int(tc.id) * 2.39996)) * 2.0
+			_chao.draw_rect(Rect2((base + Vector2(lado.x, lado.y * 0.5)).round() - Vector2(2, 1), Vector2(4, 2)), terra)   # a terra cavada
+			_chao.draw_rect(Rect2(base - Vector2(2, 1), Vector2(4, 2)), terra.darkened(0.3))
+			_chao.draw_rect(Rect2(base - Vector2(1, 1), Vector2(3, 2)), Color(0.02, 0.016, 0.012))                    # o buraco
 	if plantas == null:
 		return
 	for g in plantas.galhos:

@@ -44,7 +44,10 @@ func tick(dt: float) -> void:
 		return
 	for ev in eco.eventos:
 		if ev.tipo == "morreu":
-			morreu(String(ev.especie), ev.pos, ev.get("id", -1))
+			var id_c := morreu(String(ev.especie), ev.pos, ev.get("id", -1))
+			if id_c > 0 and eco.comida.has(id_c) and ev.has("variante"):
+				eco.comida[id_c].variante = String(ev.variante)     # qual rato (o desenho escolhe o modelo)
+				eco.comida[id_c].ang = float(ev.get("rumo", eco.comida[id_c].ang))
 		elif ev.tipo == "apodreceu" and ev.comida == "carcaca":
 			var c := _tipo(String(ev.especie))
 			eco.adubar(ev.pos, float(_d.get("adubo_raio", 1.6)), float(c.get("adubo", 0.6)))

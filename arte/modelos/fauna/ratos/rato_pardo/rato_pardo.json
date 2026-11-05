@@ -1,0 +1,31 @@
+{
+ "nome": "rato_pardo",
+ "categoria": "fauna/ratos",
+ "tipo": "veiculo",
+ "area": [
+  1,
+  1
+ ],
+ "descricao": "Rato-pardo: roedor nativo (patch fauna, fase 5); andar, correr, farejar, comer, cavar e morto.",
+ "ocupa_canto": false,
+ "partes": [
+  {
+   "nome": "corpo",
+   "pai": null,
+   "pivo": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "portas": [],
+ "tris": 715,
+ "dims": [
+  0.311,
+  0.07,
+  0.083
+ ],
+ "anima": true,
+ "estudo": "estudo_rato.py"
+}

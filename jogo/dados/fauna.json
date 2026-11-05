@@ -23,6 +23,15 @@
   "galhos": {"liga": true, "vento_min": 0.9, "vento_fim": 0.5, "raio": 30, "min": 6, "max_por_vez": 26, "max": 70, "vida_s": 1080, "some_s": 60},
   "cogumelos": {"liga": true, "molhado_min": 0.45, "intervalo_s": 4.0, "raio": 25, "max": 50, "vida_s": 720, "cresce_s": 40, "murcha_s": 60}
  },
+ "ratos": {
+  "_nota": "fase 5: tocas no mato saudável (saude_min) perto da câmera (raio_vida), até tocas_max, a entre_tocas m uma da outra e longe_construcao tiles de construção; por_toca ratos. Saem mais no crepúsculo e à noite (meio_dia = fator ao meio-dia, estacoes = fator por estação). Procuram fruto a raio_busca m da toca, comem em comer_s s; bolota/pinha levam (leva_chance) e enterram (cavar_s), e a esquecida vira muda (esquece_chance). Fogem de alien/fogo/susto a medo_raio m; alien a pego_raio m mata. Trilha: cada passo soma trilha_passo no tile, some em trilha_some_s",
+  "liga": true, "raio_vida": 45, "tocas_s": 8, "tocas_max": 6, "por_toca": [2, 4], "saude_min": 0.45, "longe_construcao": 6,
+  "entre_tocas": 10, "estacoes": [1.0, 1.0, 0.9, 0.3], "meio_dia": 0.3,
+  "vel": 0.55, "vel_fuga": 2.4, "raio_busca": 12, "raio_vagar": 8, "sair_s": 0.8, "entrar_s": 0.6, "comer_s": [4, 8], "cavar_s": 2.5,
+  "leva_chance": 0.45, "esquece_chance": 0.35, "medo_raio": 6, "pego_raio": 0.7, "trilha_passo": 0.03, "trilha_some_s": 1800,
+  "aberto_chance": 0.5, "pasto_chance": 0.35,
+  "especies": {"pardo": {}, "saltador": {"vel": 0.85, "vel_fuga": 3.2, "raio_vagar": 13}}
+ },
  "carcacas": {
   "_nota": "fase 4: quem morre fica. Carne (larva; rato e pássaro depois) vira comida 'carcaca' no Ecossistema e apodrece pela idade: inteiro até etapas[0] da vida, inchado até etapas[1], restos até o fim; quando some, aduba adubo_raio m em volta (adubo = quanto). Aranha é máquina: sucata que vaza oleo, enferruja e afunda. max por espécie (a mais velha some). moscas = desenho em volta da carne; carniceiro = o planador desce a alt m e circula com giro m por cima da carcaça com carne a até raio m",
   "liga": true,

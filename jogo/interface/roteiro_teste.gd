@@ -58,6 +58,7 @@ func _ready() -> void:
 		"plantas": _roteiro_plantas()
 		"frutos": _roteiro_frutos()
 		"carcacas": _roteiro_carcacas()
+		"ratos": _roteiro_ratos()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -2283,6 +2284,143 @@ func _roteiro_plantas() -> void:
 			cam.distancia = 18.0
 			cam.posicionar())
 	em(640, func(): foto.call("7_limo_no_lago"))
+
+
+## Patch fauna, fase 5 (-- roteiro ratos): uma toca de rato-pardo ao pé de arbusto e uma de saltador no campo
+## aberto, com bolotas perto; de manhã (atividade forçada no máximo): saem, andam, farejam, comem, cavam; um susto
+## faz fugir; a trilha marcada; um rato morto vira carcaça com mosca; à noite, os olhos no mato. PNG em
+## user://fotos_ratos; imprime RATOS a cada 2 s.
+func _roteiro_ratos() -> void:
+	var w := [Vector2.ZERO, Vector2.ZERO]
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_ratos")
+		get_viewport().get_texture().get_image().save_png("user://fotos_ratos/%s.png" % nome)
+		print("RATOS foto ", nome)
+	var olhar := func(p: Vector2, dist: float) -> void:
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(p)
+		cam.distancia = dist
+		cam.posicionar()
+	em(2, func():
+		Sessao.config.fps = false
+		var r: Ratos = cena.ratos
+		r._d = r._d.duplicate()
+		r._d.meio_dia = 1.0                                # de dia também (para a foto)
+		r._d.tocas_max = 0                                 # só as do roteiro
+		for id in r.tocas.keys():
+			r.abandonar(id)
+		r._d.aberto_chance = 1.0
+		var pardos: Array = []
+		var abertos: Array = []
+		for y in range(-60, 61, 3):
+			for x in range(-60, 61, 3):
+				var t := Vector2i(x, y)
+				if Vector2(t).length() < 18.0:
+					continue
+				var esp := r.especie_de_toca(t)
+				if esp == "pardo":
+					pardos.append(Vector2(t) + Vector2(0.5, 0.5))
+				elif esp == "saltador":
+					abertos.append(Vector2(t) + Vector2(0.5, 0.5))
+		var melhor := INF
+		for a in pardos:                                   # o par mais perto do núcleo com 11 a 20 m entre as tocas
+			for b in abertos:
+				var d: float = (a as Vector2).distance_to(b)
+				if d > 11.0 and d < 20.0 and (a as Vector2).length() + (b as Vector2).length() < melhor:
+					melhor = (a as Vector2).length() + (b as Vector2).length()
+					w[0] = a
+					w[1] = b
+		print("RATOS tocas ", w)
+		_sem_ninhos(Vector2i(w[0]))
+		var col: Colonia = cena.colonia
+		for id in col.aranhas.keys():
+			if (col.aranhas[id].pos as Vector2).distance_to(w[0]) < 90.0:
+				col.aranhas.erase(id)
+		var t1 := r.nova_toca(w[0], "pardo")
+		var t2 := r.nova_toca(w[1], "saltador")
+		for x in r.ratos.values():
+			x.t = randf_range(0.5, 4.0)
+		var eco: Ecossistema = cena.ecossistema
+		for k in 6:
+			var id := eco.por_comida("fruta", w[0] + Vector2.from_angle(k * 1.1) * (2.0 + k * 0.4), 1.0)
+			eco.comida[id].especie = "bolota"
+			eco.comida[id].fonte = "arv_carvalho"
+			eco.comida[id].vida = 4000.0
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = 1
+		cl.hora = 0.36
+		cl.forcar("limpo", true)
+		cl.restante = 1.0e9
+		olhar.call((w[0] + w[1]) * 0.5, 14.0))
+	for q in range(60, 1500, 60):
+		em(q, func():
+			var r: Ratos = cena.ratos
+			var est := {}
+			for x in r.ratos.values():
+				est[Ratos.E.keys()[int(x.estado)]] = int(est.get(Ratos.E.keys()[int(x.estado)], 0)) + 1
+			print("RATOS q=%d ratos=%d %s enterradas=%d desenhados=%d" % [Engine.get_process_frames(), r.ratos.size(), str(est), r.enterradas, (cena._desenho_ratos as DesenhoRatos).nos.size()]))
+	var na_tela := func() -> void:
+		var vp_t := get_viewport().get_visible_rect().size
+		var cam3: Camera3D = cena.camera
+		var lista: Array = []
+		for n in (cena._desenho_ratos as DesenhoRatos).nos.values():
+			var q: Vector3 = (n.no as Node3D).global_position + Vector3(0, 0.05, 0)
+			var sp := cam3.unproject_position(q)
+			if not cam3.is_position_behind(q) and Rect2(Vector2.ZERO, vp_t).has_point(sp):
+				lista.append([String(n.esp), Vector2i(sp), String(n.acao)])
+		print("RATOS na tela ", lista)
+	em(419, na_tela)
+	em(519, na_tela)
+	em(619, na_tela)
+	em(420, func(): foto.call("1_tocas_de_manha"))
+	em(422, func(): olhar.call(w[0], 4.0))
+	em(520, func(): foto.call("2_pardo_perto"))
+	em(522, func(): olhar.call(w[1], 4.0))
+	em(620, func(): foto.call("3_saltador_perto"))
+	em(622, func():
+		(cena.ratos as Ratos).assustar(w[1] + Vector2(1.5, 0), 8.0)
+		(cena.ratos as Ratos).assustar(w[0] + Vector2(1.5, 0), 8.0))
+	em(640, func(): foto.call("4_fugindo"))
+	em(700, func():
+		var r: Ratos = cena.ratos
+		for k in 160:                                     # trilha marcada entre as tocas (um caminho que serpenteia)
+			var p: Vector2 = w[0].lerp(w[1], k / 159.0)
+			p += Vector2(-(w[1] - w[0]).y, (w[1] - w[0]).x).normalized() * sin(k * 0.08) * 0.8
+			r.passagem[Vector2i((p * Ratos.TRILHA_RES).floor())] = 1.0
+		r.versao_passagem += 1
+		olhar.call((w[0] + w[1]) * 0.5, 9.0))
+	em(759, func():
+		var dr: DesenhoRatos = cena._desenho_ratos
+		var meio: Vector2 = (w[0] + w[1]) * 0.5
+		var p := (Vector2i(meio.floor()) - dr._trilha_c) * DesenhoRatos.RES_TRILHA
+		print("RATOS trilha no meio: passagem %.2f img %.2f c %s origem %s" % [float((cena.ratos as Ratos).passagem.get(Vector2i(meio.floor()), -1.0)),
+				dr._img_trilha.get_pixelv(p).r if p.x >= 0 and p.y >= 0 and p.x < 256 and p.y < 256 else -1.0, str(dr._trilha_c),
+				str(RenderingServer.global_shader_parameter_get("trilha_origem"))])
+		var cam3: Camera3D = cena.camera
+		for k in 5:
+			var q: Vector2 = w[0].lerp(w[1], k / 4.0)
+			print("RATOS trilha tela ", Vector2i(cam3.unproject_position(Grade.ponto_mundo(q)))))
+	em(760, func(): foto.call("5_trilha"))
+	em(762, func():
+		var r: Ratos = cena.ratos
+		for x in r.ratos.values():
+			if x.estado != Ratos.E.TOCA and x.especie == "pardo":
+				x.morto = true                                # morreu (o corpo deita e vira carcaça)
+				break
+		olhar.call(w[0], 4.0))
+	em(860, func():
+		for f in cena.ecossistema.comida.values():
+			if f.tipo == "carcaca" and f.especie == "rato":
+				f.idade = float(f.vida) * 0.45
+				print("RATOS carcaca de rato ", f.pos, " variante ", f.get("variante"))
+				olhar.call(f.pos, 3.0))
+	em(920, func(): foto.call("6_carcaca_de_rato"))
+	em(922, func():
+		cena.clima.hora = 0.02
+		olhar.call(w[0], 7.0))
+	em(1000, func(): foto.call("7_olhos_a_noite"))
 
 
 ## Patch fauna, fase 4 (-- roteiro carcacas): campo aberto no verão ao meio-dia com 3 larvas mortas (inteira, inchada,

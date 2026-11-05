@@ -5256,5 +5256,55 @@
   "animacao": "passaro",
   "avisos": 0,
   "luz": null
+ },
+ "rato_pardo": {
+  "pasta": "sprites/fauna_ratos/rato_pardo",
+  "quadro": [
+   32,
+   22
+  ],
+  "ancora": [
+   15.3,
+   12.3
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "andar",
+   "correr",
+   "farejar",
+   "comer",
+   "cavar",
+   "morto"
+  ],
+  "animacao": "rato",
+  "avisos": 0,
+  "luz": null
+ },
+ "rato_saltador": {
+  "pasta": "sprites/fauna_ratos/rato_saltador",
+  "quadro": [
+   38,
+   26
+  ],
+  "ancora": [
+   16.9,
+   14.7
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "andar",
+   "correr",
+   "farejar",
+   "comer",
+   "cavar",
+   "morto"
+  ],
+  "animacao": "rato",
+  "avisos": 0,
+  "luz": null
  }
 }

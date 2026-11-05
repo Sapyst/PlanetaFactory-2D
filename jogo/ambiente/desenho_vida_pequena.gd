@@ -11,7 +11,8 @@ extends Node3D
 ##  moscas     (fase 4) de dia, em volta das carcaças com carne (Carcacas.moscas): voo em zigue-zague perto do corpo,
 ##             algumas pousadas nele por uns segundos; mais no inchado, quase nenhuma nos restos. Pontinhos escuros.
 ##             Somem à noite, no inverno, na chuva e na ventania. Zumbido perto (laço "amb_moscas").
-##  olhos      à noite, raro: um par de olhos brilhando no mato por alguns segundos, piscando, e some.
+##  olhos      à noite: um par de olhos brilhando no mato, piscando. Com os ratos (fase 5), são os olhos dos ratos
+##             fora da toca virados para a câmera; sem eles, um par sorteado no mato por alguns segundos.
 ##  sons       grilos à noite e insetos de dia (laços de ambiente, pela estação e pela saúde do lugar); sapos na
 ##             beira d'água depois da chuva; perto de ninho, cratera ou aranha tudo se cala — o silêncio avisa.
 ## Tudo vem de enxames em tiles fixos (sorteio por hash do tile), refeitos só quando a câmera anda: a mesma noite
@@ -27,6 +28,7 @@ var eco: Ecossistema
 var clima: Clima
 var camera: CameraJogo
 var carcacas: Carcacas                         ## fase 4: as moscas ficam em volta da carne (o mundo põe)
+var ratos: Ratos                               ## fase 5: os olhos no mato à noite são dos ratos de verdade
 
 ## Saída para o 2D (e testes): pontos do quadro em coordenadas do mundo.
 var vagalumes: Array = []      ## {pos: Vector3, brilho: 0..1, rastro: [Vector3, Vector3], chao: Vector3}
@@ -304,7 +306,9 @@ func _calcular() -> void:
 				if _h(e.t, 120 + j) > fatores.insetos:
 					continue
 				insetos.append({"pos": _voo_inseto(e, j, _t), "rastro": [_voo_inseto(e, j, _t - 0.035), _voo_inseto(e, j, _t - 0.07)]})
-	if _liga("olhos") and fatores.noite > 0.7 and not _mato.is_empty() and fatores.silencio < 0.5:
+	if _liga("olhos") and fatores.noite > 0.7 and ratos != null:
+		_olhos_de_ratos()
+	elif _liga("olhos") and fatores.noite > 0.7 and not _mato.is_empty() and fatores.silencio < 0.5:
 		var c: Dictionary = _sub("olhos")
 		var slot_s := float(c.get("slot_s", 7.0))
 		var vida: Array = c.get("vida_s", [2.5, 5.5])
@@ -329,6 +333,31 @@ func _calcular() -> void:
 			if pisc < 0.13:
 				b = 0.0                                    # piscou
 			olhos.append({"a": base - lado, "b": base + lado, "brilho": b * fatores.noite})
+
+
+## Olhos dos ratos fora da toca, perto da câmera: dois pontos na altura da cabeça, de lado para quem olha; piscam.
+func _olhos_de_ratos() -> void:
+	var c: Dictionary = _sub("olhos")
+	var cam := camera.global_position if camera != null else Vector3(0, 30, 0)
+	var n := 0
+	for r in ratos.ratos.values():
+		if n >= int(c.get("max_pares", 3)) * 2:
+			break
+		if r.estado in [Ratos.E.TOCA, Ratos.E.SAINDO, Ratos.E.ENTRANDO] or (r.pos as Vector2).distance_to(eco.foco) > 30.0:
+			continue
+		var p: Vector2 = r.pos
+		var frente := Vector2.from_angle(float(r.rumo))
+		var cab := p + frente * 0.07
+		var base := Grade.ponto_mundo(cab, 0.16 + (0.04 if r.estado == Ratos.E.COMENDO else 0.0))
+		var olha := Vector3(frente.x, 0, -frente.y)
+		var para_cam := (cam - base).normalized()
+		var brilho := clampf(olha.dot(para_cam) * 1.6 + 0.2, 0.0, 1.0)     # olho brilha quando vira para a luz/câmera
+		var pisc := fposmod(_t * 0.7 + float(r.id) * 0.37, 2.6)
+		if pisc < 0.14 or brilho <= 0.05:
+			continue
+		var lado := Vector3(-olha.z, 0, olha.x) * 0.015
+		olhos.append({"a": base - lado, "b": base + lado, "brilho": brilho * fatores.noite})
+		n += 1
 
 
 func _tam(p: Vector3, px: float) -> float:

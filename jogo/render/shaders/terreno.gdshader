@@ -24,6 +24,8 @@ uniform float escala = 0.25;
 uniform float camada_rocha = 3.0;
 global uniform vec3 piso_crescer;   // (x, y da grade, raio): piso de fábrica só até esse raio (abertura); 1e6 = livre
 // vento_dir (grade: direção × força do vento — o fogo corre nessa direção) vem de clima.gdshaderinc
+global uniform sampler2D trilha_mapa : filter_linear, hint_default_black;   // patch fauna, fase 5: R = trilha
+global uniform vec3 trilha_origem;
 global uniform vec4 grade_construcao;   // (centro na grade, raio, força 0..1): grade no chão no modo construção
 uniform float alt_nivel = 1.0;      // metros por nível de relevo   // barranco (encosta íngreme) mostra pedra
 #include "res://render/shaders/clima.gdshaderinc"
@@ -239,6 +241,11 @@ void fragment() {
 	float queim = smoothstep(0.05, 0.6, amb.a);
 	vec3 carvao = mix(vec3(0.05, 0.045, 0.045), vec3(0.32, 0.30, 0.29), smoothstep(0.55, 0.85, grao));
 	c_terra = mix(c_terra, carvao, queim * 0.92);
+	// trilha dos bichos: o chão gasto aparece entre o capim deitado (terra batida, um pouco mais clara e lisa)
+	vec2 g_tr = vec2(mundo.x, -mundo.z);
+	float trl = texture(trilha_mapa, (g_tr - trilha_origem.xy) / max(trilha_origem.z, 1.0)).r;
+	trl = smoothstep(0.2, 0.8, trl + (grao - 0.5) * 0.3);
+	c_terra = mix(c_terra, vec3(0.11, 0.088, 0.064) * (0.8 + 0.4 * grao), trl * 0.6);
 	float oleo = smoothstep(0.35, 0.55, amb.g + (grao - 0.5) * 0.35);
 	vec3 arco = 0.5 + 0.5 * cos(6.2832 * (vec3(0.0, 0.33, 0.67) + dot(mundo.xz, vec2(0.7, 0.4)) * 0.8 + TIME * 0.05));
 	c_terra = mix(c_terra, vec3(0.03, 0.03, 0.035) + arco * 0.06, oleo);

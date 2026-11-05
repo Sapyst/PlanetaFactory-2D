@@ -1,0 +1,47 @@
+{
+ "nome": "rato_saltador",
+ "categoria": "fauna/ratos",
+ "quadro": [
+  38,
+  26
+ ],
+ "ancora": [
+  16.9,
+  14.7
+ ],
+ "fps": 12,
+ "quadros": 8,
+ "linhas": 16,
+ "tipo_linha": "direcao",
+ "angulos_graus": [
+  0.0,
+  22.5,
+  45.0,
+  67.5,
+  90.0,
+  112.5,
+  135.0,
+  157.5,
+  180.0,
+  202.5,
+  225.0,
+  247.5,
+  270.0,
+  292.5,
+  315.0,
+  337.5
+ ],
+ "variantes": [
+  "andar",
+  "correr",
+  "farejar",
+  "comer",
+  "cavar",
+  "morto"
+ ],
+ "metros_por_pixel": 0.028749999999999998,
+ "camera_elevacao_graus": 35,
+ "cabos": 0,
+ "animacao": "rato",
+ "avisos": []
+}
