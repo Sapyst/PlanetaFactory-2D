@@ -15,6 +15,9 @@ uniform bool por_trabalho = false;
 uniform int perfil_folha = -1;      // -1 não é folha; 0 perene, 1 caduca laranja, 2 salgueiro, 3 acácia, 4 caduca amarela
 uniform bool carbonizada = false;
 uniform bool corroida = false;          // árvore morta pelo ácido das larvas: madeira desbotada, pé encharcado, sem folha
+uniform float ferrugem = 0.0;       // patch fauna, fase 4: sucata da aranha (0 nova .. 1 toda enferrujada)
+uniform float podre = 0.0;          // patch fauna, fase 4: carcaça (0 fresca, 0,5 inchada, 1 restos secos)
+uniform float desligada = 0.0;      // patch fauna, fase 4: corpo morto — as partes de cor forte (led, olho, ácido) apagam
 uniform bool seiva = false;         // poça de seiva: ondulação e reflexo no espaço do mundo, contínuos de uma poça para a outra
 #ifdef TRABALHO_POR_OBJETO
 instance uniform float trabalho = 1.0;   // 0 = parada (cristal quase apagado) .. 1 = trabalhando
@@ -146,6 +149,33 @@ void fragment() {
 		EMISSION += vec3(1.0, 0.32, 0.04) * queima * smoothstep(0.25, 0.0, abs(h - (1.0 - fg.b))) * fl * 1.6;
 		folha_fogo = clamp(fg.a * 1.4 + smoothstep(0.15, 0.6, fg.b), 0.0, 1.0);   // a copa queima primeiro
 	}
+	if (desligada > 0.0) {
+		float sat = max(base.r, max(base.g, base.b)) - min(base.r, min(base.g, base.b));
+		base = mix(base, vec3(dot(base, vec3(0.3, 0.59, 0.11))) * 0.45 + base * 0.12, desligada * smoothstep(0.25, 0.55, sat));
+	}
+	float oxido_m = 0.0;
+	if (ferrugem > 0.0) {
+		// sucata: a pintura escurece e perde o brilho; a ferrugem come em manchas (mais por baixo, onde a água fica),
+		// nunca o corpo todo, num marrom escuro com veios mais alaranjados
+		float rn = ruido3(v_mundo * 4.0) * 0.45 + ruido3(v_mundo * 13.0) * 0.3 + ruido3(v_mundo * 41.0) * 0.25;
+		float cobre = ferrugem * 0.6;
+		float onde = smoothstep(1.0 - cobre, 1.0 - cobre + 0.28, rn + (1.0 - smoothstep(0.0, 0.5, v_alt)) * 0.08 * ferrugem);
+		vec3 oxido = mix(vec3(0.14, 0.075, 0.045), vec3(0.24, 0.12, 0.055), ruido3(vec3(v_mundo.x * 30.0, v_mundo.y * 6.0, v_mundo.z * 30.0)));
+		base = mix(base * (1.0 - 0.45 * ferrugem), oxido, onde);
+		oxido_m = max(onde, ferrugem * 0.6);
+	}
+	float podre_lisa = 0.0;
+	if (podre > 0.0) {
+		// carcaça: a carne escurece, mancha verde-arroxeada e incha (brilho úmido), depois seca para um couro
+		// marrom-acinzentado e fosco
+		float rn = ruido3(v_mundo * 8.0);
+		float hem = smoothstep(0.35, 0.75, ruido3(v_mundo * 2.6));          // manchas de hematoma, roxas
+		vec3 carne = mix(vec3(0.11, 0.12, 0.045), vec3(0.16, 0.06, 0.13), hem);  // verde-oliva doente e roxo
+		vec3 inchado = mix(base * 0.3, carne, 0.7) * (0.8 + 0.4 * rn);
+		vec3 seco = vec3(0.23, 0.2, 0.16) * (0.75 + 0.5 * rn);
+		base = podre < 0.5 ? mix(base, inchado, podre * 2.0) : mix(inchado, seco, (podre - 0.5) * 2.0);
+		podre_lisa = smoothstep(0.15, 0.45, podre) * (1.0 - smoothstep(0.55, 0.8, podre));
+	}
 	if (corroida) {
 		float hc = clamp(v_alt / 2.2, 0.0, 1.0);
 		float rc = fract(sin(dot(floor(v_mundo.xz * 6.0) + floor(v_mundo.y * 5.0), vec2(7.1, 3.7))) * 143.7);
@@ -179,8 +209,9 @@ void fragment() {
 	}
 	float vd = visao_dentro(v_mundo);
 	ALBEDO = aplicar_visao(base, v_mundo);         // fora do oval de visão: névoa escura (ambiente/visao.gd)
-	ROUGHNESS = mix(1.0, mix(mix(aspereza, 0.95, sujo * 0.7), 0.45, m * 0.8), vd);   // encardido é fosco   // sem espelho: faceta molhada não pode estourar de branco
-	METALLIC = metal * vd;
+	float asp = mix(mix(aspereza, 0.95, max(sujo * 0.7, oxido_m)), 0.3, podre_lisa * 0.8);
+	ROUGHNESS = mix(1.0, mix(asp, 0.45, m * 0.8), vd);   // encardido é fosco   // sem espelho: faceta molhada não pode estourar de branco
+	METALLIC = metal * (1.0 - oxido_m) * vd;
 	SPECULAR = 0.5 * mix(0.05, 1.0, vd);
 	if (seiva) {
 		// tudo no espaço do mundo: poças sobrepostas leem como uma mancha só, sem emenda de brilho entre elas. Ondulação

@@ -30,6 +30,7 @@ var _itens: Array[Sprite2D] = []
 var _moveis: Dictionary = {}       ## chave → par (trens, ninhos, drones)
 var _aranhas: Dictionary = {}      ## id → {p, fase, ult, rumo}: aranha viva (sprite "aranha_animada")
 var _mortas: Array[Dictionary] = [] ## aranha morrendo: {p, pos, linha, t}
+var _corpos: Dictionary = {}       ## id do nó 3D do corpo (DesenhoCarcacas) → {p, linha, q, larva}: sucata e carcaça
 var _afundando: Dictionary = {}     ## nó 3D da árvore dissolvendo (mundo._dissolver) → par de sprites
 var _passaros: Dictionary = {}      ## nó 3D do pássaro (DesenhoPassaros) → par de sprites "passaro_<espécie>"
 const ARVORE_MORTA := "arvore_morta"
@@ -124,6 +125,7 @@ func _process(delta: float) -> void:
 	_sincronizar_aranhas(delta)
 	_sincronizar_afundando()
 	_sincronizar_mudas()
+	_sincronizar_corpos()
 	_sincronizar_passaros()
 	_sincronizar_vida()
 	_sincronizar_fios()
@@ -543,7 +545,7 @@ func _sincronizar_aranhas(delta: float) -> void:
 			var p := _par(LARVA if larva else ARANHA)
 			if p.is_empty():
 				return
-			a = {"p": p, "fase": randf(), "ult": no.global_position, "rumo": no.rotation.y, "larva": larva}
+			a = {"p": p, "fase": randf(), "ult": no.global_position, "rumo": no.rotation.y, "larva": larva, "no": no}
 			_aranhas[id] = a
 		var pos := no.global_position
 		# a marcha avança com o chão percorrido (e com o giro no lugar): o pé plantado não escorrega
@@ -571,7 +573,7 @@ func _sincronizar_aranhas(delta: float) -> void:
 		var a: Dictionary = _aranhas[id]               # saiu da lista do 3D = morreu (o nó 3D segue a própria morte)
 		_aranhas.erase(id)
 		_mortas.append({"p": a.p, "pos": a.ult, "linha": Catalogo2D.linha_do_angulo(a.p.m, float(a.rumo)), "t": 0.0,
-				"larva": bool(a.get("larva", false)), "q": int(float(a.fase) * 12.0)})
+				"larva": bool(a.get("larva", false)), "q": int(float(a.fase) * 12.0), "no": a.get("no")})
 	for i in range(_mortas.size() - 1, -1, -1):
 		var m: Dictionary = _mortas[i]
 		m.t += delta
@@ -582,6 +584,13 @@ func _sincronizar_aranhas(delta: float) -> void:
 			(m.p.som as Sprite2D).scale = Vector2(1.0 + 0.15 * k, 1.0)
 		else:
 			_por(m.p, m.pos, m.linha, mini(int(m.t * FPS), 11), "morte")
+		var no_m: Variant = m.get("no")
+		if m.t >= MORTE_ARANHA and no_m != null and is_instance_valid(no_m) and bool((no_m as Node3D).get("fica")):
+			# fase 4: o corpo fica — o mesmo sprite passa a ser a carcaça (sem troca), o DesenhoCarcacas cuida dela
+			_corpos[(no_m as Node).get_instance_id()] = {"p": m.p, "linha": m.linha, "q": mini(int(m.t * FPS), 11) if not m.larva else int(m.q),
+					"larva": m.larva, "no": no_m, "t0": _t}
+			_mortas.remove_at(i)
+			continue
 		var alfa := clampf(1.0 - (m.t - MORTE_ARANHA) / 0.8, 0.0, 1.0)
 		(m.p.spr as Sprite2D).modulate.a = alfa
 		(m.p.som as Sprite2D).modulate.a = alfa
@@ -590,6 +599,56 @@ func _sincronizar_aranhas(delta: float) -> void:
 			(m.p.som as Sprite2D).scale = Vector2.ONE
 			_soltar(m.p)
 			_mortas.remove_at(i)
+
+
+## Fase 4: sucata e carcaça (os nós 3D do DesenhoCarcacas). O sprite que morreu na tela continua o mesmo; ao carregar
+## o jogo, nasce direto na pose final. A ferrugem e a podridão tingem o sprite; o inchado estica para cima, os restos
+## achatam; no fim apaga (o afundar do 3D).
+func _sincronizar_corpos() -> void:
+	var dcc = mundo.get("_desenho_carcacas")
+	if dcc == null:
+		return
+	var vivos := {}
+	for k in dcc.nos:
+		var no: Node3D = dcc.nos[k].no
+		if not is_instance_valid(no):
+			continue
+		var id := no.get_instance_id()
+		vivos[id] = true
+		var larva := no is Larva
+		var c: Dictionary = _corpos.get(id, {})
+		if c.is_empty():
+			var p := _par(LARVA if larva else ARANHA)
+			if p.is_empty():
+				continue
+			c = {"p": p, "linha": Catalogo2D.linha_do_angulo(p.m, no.rotation.y), "q": 0 if larva else 11, "larva": larva, "no": no, "t0": _t}
+			_corpos[id] = c
+		_por(c.p, no.global_position, int(c.linha), int(c.q), "andar" if larva else "morte")
+		var spr := c.p.spr as Sprite2D
+		if not (spr.material is ShaderMaterial):
+			var mt := ShaderMaterial.new()
+			mt.shader = preload("res://versao2d/corpo_2d.gdshader")
+			spr.material = mt
+		var mat := spr.material as ShaderMaterial
+		var afunda := float(no.get_meta("afunda", 0.0))
+		if larva:
+			var esc: Vector3 = no.get_meta("escala", Vector3.ONE)
+			spr.scale = Vector2(1.15 * esc.x, 0.4 * esc.y)
+			(c.p.som as Sprite2D).scale = Vector2(1.15 * esc.x, 1.0)
+		for nome in ["ferrugem", "podre", "desligada"]:
+			mat.set_shader_parameter(nome, float(no.get_meta(nome, 0.0)))
+		mat.set_shader_parameter("alfa", 1.0 - afunda)
+		spr.modulate = Color.WHITE
+		(c.p.som as Sprite2D).modulate = Color(1, 1, 1, 1.0 - afunda)
+	for id in _corpos.keys():
+		var c: Dictionary = _corpos[id]
+		# recém-morto ainda não adotado pelo DesenhoCarcacas: espera uns segundos parado na pose final
+		if not vivos.has(id) and (not is_instance_valid(c.get("no")) or _t - float(c.get("t0", 0.0)) > 3.0):
+			(c.p.spr as Sprite2D).scale = Vector2.ONE
+			(c.p.som as Sprite2D).scale = Vector2.ONE
+			(c.p.spr as Sprite2D).material = null
+			_soltar(c.p)
+			_corpos.erase(id)
 
 
 ## Mudas e árvores plantadas (viveiro, pássaros, sementes no vento: AmbienteVivo.plantas): o sprite da espécie no

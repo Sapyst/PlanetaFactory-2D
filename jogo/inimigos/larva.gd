@@ -12,6 +12,7 @@ var rumo_desejado := 0.0
 var atacando := false
 var cuspindo := 0.0               ## s restantes da animação de cuspe
 var _morta := false
+var fica := false                 ## patch fauna, fase 4: murcha e fica no chão (vira carcaça do DesenhoCarcacas)
 var _anim: AnimationPlayer
 var _modelo: Node3D
 var _ultima := Vector3.ZERO
@@ -71,7 +72,27 @@ func morrer() -> void:
 	tw.tween_property(self, "scale", Vector3(1.15, 0.35, 1.1), 0.5).set_ease(Tween.EASE_IN)
 	tw.tween_property(self, "position:y", position.y - 0.15, 0.9)
 	tw.chain().tween_interval(0.6)
-	tw.chain().tween_callback(queue_free)
+	tw.chain().tween_callback(_fim_morte)
+
+
+func _fim_morte() -> void:
+	if fica:
+		set_meta("pronta", true)
+	else:
+		queue_free()
+
+
+## Pose final da morte, direto (carcaça recriada ao carregar o jogo). Chamar depois de entrar na árvore.
+func pose_morta() -> void:
+	fica = true
+	_morta = true
+	set_process(false)
+	if _anim != null:
+		_anim.seek(0.0, true)
+		_anim.pause()
+	scale = Vector3(1.15, 0.35, 1.1)
+	position.y -= 0.15
+	set_meta("pronta", true)
 
 
 func _process(delta: float) -> void:

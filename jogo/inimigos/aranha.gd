@@ -13,6 +13,7 @@ var rumo_desejado := 0.0
 var atacando := false             ## golpeia com o par da frente (no ar: não conta como pé plantado)
 var alvo_golpe := Vector3.ZERO
 var _morta := false
+var fica := false                 ## patch fauna, fase 4: depois da queda o corpo fica (vira sucata do DesenhoCarcacas)
 var _t_morte := 0.0
 var _pe_morte: Array[Vector3] = []   ## onde cada pé estava quando morreu (desliza para fora dali)
 var _corpo: Node3D
@@ -106,9 +107,22 @@ func morrer() -> void:
 		_pe_morte.append(marcha.pes[i])
 
 
+## Pose final da morte, direto (sucata recriada ao carregar o jogo). Chamar depois de entrar na árvore.
+func pose_morta() -> void:
+	fica = true
+	morrer()
+	_t_morte = MORTE_QUEDA
+	_morrendo(0.0)
+	set_process(false)
+
+
 func _morrendo(delta: float) -> void:
 	_t_morte += delta
 	if _t_morte >= MORTE_QUEDA + MORTE_FICA:
+		if fica:                                               # a pose final já está posta: para aqui e fica
+			set_process(false)
+			set_meta("pronta", true)
+			return
 		queue_free()
 		return
 	var k := minf(_t_morte / MORTE_QUEDA, 1.0)

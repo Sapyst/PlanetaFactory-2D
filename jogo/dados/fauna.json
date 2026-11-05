@@ -8,7 +8,7 @@
  "nasce_s": 6.0,
  "medo": {"fogo": 13, "monstro": 9, "rajada": 1.15, "construcao": 5, "susto_min": 6},
  "semente": {"chance_s": 0.55, "por_bando": 2, "raio": 2.5, "fruta_raio": 3.0},
- "ecossistema": {"_nota": "fase 0: índice espacial refeito a cada indice_s a partir das fontes; células de cel m; detalhe 2 até raio_perto, 1 até raio_medio, 0 além", "indice_s": 0.5, "cel": 8, "raio_perto": 40, "raio_medio": 80},
+ "ecossistema": {"_nota": "fase 0: índice espacial refeito a cada indice_s a partir das fontes; células de cel m; detalhe 2 até raio_perto, 1 até raio_medio, 0 além", "indice_s": 0.5, "cel": 8, "raio_perto": 40, "raio_medio": 80, "fertil_some_s": 2880},
  "vida_pequena": {
   "_nota": "fase 1: vagalumes (noite), insetos (dia), olhos no mato (noite) perto da câmera, em enxames presos em tiles de chão saudável (saude_min), mais perto da água (agua_bonus), longe de ninho/cratera (longe_toca m); estacoes = [primavera, verão, outono, inverno]; tamanho em pixels de tela (px) para o pontinho não sumir de longe; liga = desliga sem mexer no código",
   "liga": true,
@@ -22,6 +22,19 @@
   "folhas": {"liga": true, "raio": 28, "por_arvore": 18, "ciclo_s": 60, "estacoes": [0.0, 0.08, 1.0, 0.15], "estacoes_salgueiro": [0.05, 0.0, 0.25, 0.4], "estacoes_acacia": [0.0, 0.7, 0.2, 0.0], "max": 520, "px": 2.0},
   "galhos": {"liga": true, "vento_min": 0.9, "vento_fim": 0.5, "raio": 30, "min": 6, "max_por_vez": 26, "max": 70, "vida_s": 1080, "some_s": 60},
   "cogumelos": {"liga": true, "molhado_min": 0.45, "intervalo_s": 4.0, "raio": 25, "max": 50, "vida_s": 720, "cresce_s": 40, "murcha_s": 60}
+ },
+ "carcacas": {
+  "_nota": "fase 4: quem morre fica. Carne (larva; rato e pássaro depois) vira comida 'carcaca' no Ecossistema e apodrece pela idade: inteiro até etapas[0] da vida, inchado até etapas[1], restos até o fim; quando some, aduba adubo_raio m em volta (adubo = quanto). Aranha é máquina: sucata que vaza oleo, enferruja e afunda. max por espécie (a mais velha some). moscas = desenho em volta da carne; carniceiro = o planador desce a alt m e circula com giro m por cima da carcaça com carne a até raio m",
+  "liga": true,
+  "adubo_raio": 1.6,
+  "tipos": {
+   "larva": {"vida_s": 1500, "valor": 2.0, "moscas": true, "adubo": 0.8, "etapas": [0.3, 0.7], "max": 40},
+   "aranha": {"sucata": true, "vida_s": 2400, "oleo": 0.35, "fumaca_s": 45, "max": 40},
+   "passaro": {"vida_s": 700, "valor": 0.5, "moscas": true, "adubo": 0.3, "etapas": [0.3, 0.65], "max": 12},
+   "rato": {"vida_s": 600, "valor": 0.6, "moscas": true, "adubo": 0.3, "etapas": [0.3, 0.65], "max": 20}
+  },
+  "moscas": {"liga": true, "por_carcaca": 9, "raio": 0.7, "alt": [0.12, 1.0], "px": 2.0, "max": 120, "estacoes": [0.8, 1.0, 0.7, 0.0], "som_dist": 14},
+  "carniceiro": {"raio": 45, "giro": 6.0, "alt": 9.0}
  },
  "frutos": {
   "_nota": "fase 3: frutos caem embaixo das plantas perto da câmera (a cada intervalo_s, chance × estacoes [primavera, verão, outono, inverno] por planta, até por_fonte embaixo de cada uma e max perto da câmera) e viram comida no Ecossistema; apodrecem em vida_s. Sementes no vento: na troca de estação, cada árvore da espécie solta com chance × peso da estação; pegam a dist m a favor do vento, até max_por_vez mudas. voando = o desenho (janela = fração do começo da estação em que voam)",

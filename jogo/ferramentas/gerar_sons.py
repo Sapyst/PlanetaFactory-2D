@@ -998,6 +998,47 @@ def amb_insetos_dia(rng):
     return reverb(x, 0.6, 0.15, 7000)
 
 
+def _mosca(rng, t, f0, voos):
+    """Uma mosca: asa batendo (serra com os formantes do corpo) que muda de tom e de volume conforme chega perto e
+    se afasta (Doppler de quem passa), só nos trechos em que está voando (`voos`)."""
+    ft = f0 * (1 + 0.035 * np.sin(2 * np.pi * rng.uniform(0.6, 1.4) * t + rng.uniform(0, 6))
+                 + 0.02 * np.sin(2 * np.pi * rng.uniform(3, 6) * t + rng.uniform(0, 6)))
+    fase = np.cumsum(ft) / TAXA
+    serra = 2 * (fase % 1.0) - 1.0
+    asa = ressoa(serra, rng.uniform(700, 900), 3) + ressoa(serra, rng.uniform(1500, 1900), 4) * 0.5 + pb(serra, 1200) * 0.6
+    perto = 0.55 + 0.45 * np.sin(2 * np.pi * rng.uniform(0.25, 0.5) * t + rng.uniform(0, 6))
+    return asa * voos * perto ** 2
+
+
+def _voos(rng, n, d, cheio):
+    """Envelope de voo: 1 voando, 0 pousada (rampa de 40 ms: decola e pousa sem estalo)."""
+    t = 0.0
+    v = np.zeros(n)
+    voando = rng.random() < 0.5
+    while t < d:
+        dur = rng.uniform(1.2, 3.5) if voando else rng.uniform(0.3, 1.8) * (0.3 if cheio else 1.0)
+        a, b = int(t * TAXA), int(min(d, t + dur) * TAXA)
+        if voando:
+            v[a:b] = 1.0
+        t += dur
+        voando = not voando
+    k = int(0.04 * TAXA)
+    return np.convolve(v, np.ones(k) / k, mode='same')
+
+
+def amb_moscas(rng):
+    """Moscas em cima da carcaça (laço, patch fauna fase 4): 5 varejeiras graves (~140–185 Hz) quase sempre no ar,
+    uma por cima da outra, e o ar do campo por baixo."""
+    d = 8.0
+    n = int(d * TAXA)
+    t = tempo(d)
+    x = np.zeros(n)
+    for k in range(5):
+        x += _mosca(rng, t, rng.uniform(140, 185), _voos(rng, n, d, True)) * rng.uniform(0.5, 1.0)
+    x += banda(rosa(n, rng), 200, 2500) * 0.02
+    return reverb(x, 0.5, 0.12, 6000)
+
+
 def sapo(rng):
     """Sapo na beira d'água depois da chuva: 2 a 4 coaxos graves — pulsos estreitos (~85–120/s) passando pelas
     ressonâncias da bolsa vocal (~450 Hz, ~1,2 kHz), cada coaxo subindo e descendo um pouco o tom."""
@@ -1045,7 +1086,7 @@ SONS = [
     ('planador_grito', planador_grito, -21, 0, 0.01), ('revoada', revoada, -18, 0, 0.003),
     ('solda_arco', solda_arco, -20, 0, 0.002), ('solda_mig', solda_mig, -20, 0, 0.002),
     ('amb_grilos', amb_grilos, -24, 0.6, 0), ('amb_insetos_dia', amb_insetos_dia, -27, 0.6, 0),
-    ('sapo', sapo, -17, 0, 0.003),
+    ('sapo', sapo, -17, 0, 0.003), ('amb_moscas', amb_moscas, -26, 0.6, 0),
 ]
 
 

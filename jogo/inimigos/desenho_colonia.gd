@@ -136,7 +136,12 @@ func atualizar(eventos: Array[Dictionary], delta: float) -> void:
 					_bolhas[e.id].impacto = 1.0
 			"aranha_morta":
 				if _aranhas.has(e.id):
-					_aranhas[e.id].morrer()
+					var morta: Node3D = _aranhas[e.id]
+					if Carcacas.fica_corpo(String(e.get("especie", "aranha"))):
+						morta.fica = true                     # fase 4: o corpo fica (o DesenhoCarcacas adota)
+						morta.set_meta("bicho", e.id)
+						DesenhoCarcacas.corpos[e.id] = morta
+					morta.morrer()
 					_aranhas.erase(e.id)
 				if e.get("especie", "aranha") == "larva":
 					_respingo(Grade.ponto_mundo(e.pos, 0.3), 30)

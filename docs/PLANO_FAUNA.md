@@ -147,7 +147,7 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
     `DesenhoPlantas.modelo_de`, `pos_de` e `escala_de` são os mesmos para o 3D e o 2D. O roteiro é `-- roteiro
     frutos`.
 
-## Fase 4 — Ciclo da morte ⬜ · custo médio
+## Fase 4 — Ciclo da morte ✅ · custo médio
 - (S) O animal morto fica no lugar: rato, pássaro, aranha e larva (pelo evento `morreu` da fase 0).
 - (S) Ele apodrece em etapas (inteiro → inchado → ossos) e some.
 - (S) **Moscas** pairando enquanto há carcaça. As moscas só existem onde há vida biológica morta (o mesmo efeito
@@ -156,6 +156,31 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
 - (C) Carcaça grande atrai carniceiros (os pássaros grandes; depois os predadores da fase 9).
 - **Por que aqui:** usa a fundação e o reflorestamento, e as fases seguintes precisam dela (todo bicho novo morre
   e vira carcaça).
+- **Achado ao começar:** pela ficha de arte, a aranha é um "predador mecânico" (solta faísca ao morrer). Então ela
+  não apodrece nem dá mosca: vira **sucata**. Hoje só a larva é de carne, e os pássaros ainda não morrem. Rato e
+  pássaro já estão na tabela, para quando morrerem (fases 5 e 6).
+- **Feito:**
+  - **O corpo fica:** é o mesmo nó da morte. A aranha ou a larva param na pose final, e o `DesenhoCarcacas` adota o
+    corpo sem trocar de modelo. No 2D o sprite da morte vira a carcaça. Ao carregar o jogo, o corpo nasce direto na
+    pose final.
+  - **Larva (carne):** vira comida "carcaca" no `Ecossistema` e apodrece em etapas pela idade (uns 2 dias de jogo).
+    Inteira, ela escurece. Inchada, cresce para cima, fica com hematomas roxos e verde-oliva com brilho úmido, e o
+    chão embaixo escurece. Nos restos, achata e seca num couro cinza-marrom, depois afunda no capim. O ácido aceso
+    apaga no primeiro minuto. Quando some, aduba o chão em volta (`Ecossistema.fertil`): ali a semente pega e o
+    cogumelo brota primeiro, e o lugar conta como mais vivo. O adubo some em uns 4 dias.
+  - **Aranha (máquina):** vira sucata, que dura uns 3 dias de jogo. Vaza óleo da hidráulica no chão. Fumega e solta
+    faísca no começo, e os leds piscam e apagam (a cor forte vira cinza escuro). A ferrugem cresce em manchas,
+    nunca no corpo todo; no fim a sucata desmonta no capim e afunda.
+  - **Moscas:** de dia, em volta da carne. Voam em zigue-zague perto do corpo e algumas pousam nele. São mais no
+    inchado e quase nenhuma nos restos; não aparecem à noite, no inverno, na chuva nem na ventania. Têm o zumbido
+    `amb_moscas` (a opção A: enxame de varejeiras graves).
+  - **Carniceiro:** com carne a até 45 m, o planador leva o centro do giro para cima da carcaça, desce a uns 9 m e
+    fecha a volta em 6 m. De longe, quem joga vê que ali morreu alguma coisa. Ele não pousa para comer: isso fica
+    para a fase 6. Se um bicho vivo chega perto, ele foge como antes.
+  - **Limite:** 40 corpos por espécie. O mais velho afunda primeiro, para combate grande não encher o mapa.
+  - **Código:** `Carcacas` (`ambiente/carcacas.gd`) é a lógica, e `DesenhoCarcacas` faz o 3D e passa os valores
+    para o 2D pelos metas do nó. O material ganhou `ferrugem`, `podre` e `desligada` (no 2D,
+    `versao2d/corpo_2d.gdshader`). O roteiro é `-- roteiro carcacas`.
 
 ## Fase 5 — Ratos e pequenos animais ⬜ · custo médio/alto
 - (S) Ratos: vivem no mato e nos arbustos, comem frutas e **enterram sementes** (reflorestam).

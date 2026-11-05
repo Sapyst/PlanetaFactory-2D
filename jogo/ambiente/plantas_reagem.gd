@@ -3,7 +3,8 @@ extends RefCounted
 ## Patch fauna, fase 2 (docs/PLANO_FAUNA.md), lógica pura: o que sobra no chão depois do tempo ruim.
 ##  galhos     quando uma tempestade (raios ou ventania) passa, galhos quebrados caem embaixo das árvores perto da
 ##             câmera — mais quanto mais forte foi; ficam uns dias de jogo e somem (afundam no capim).
-##  cogumelos  com o chão molhado (fora do inverno) brotam touceiras pequenas no pé das árvores, em chão saudável;
+##  cogumelos  com o chão molhado (fora do inverno) brotam touceiras pequenas no pé das árvores, em chão saudável, e
+##             onde uma carcaça apodreceu e adubou o chão (fase 4);
 ##             crescem, ficam um dia e murcham.
 ## As folhas que caem no outono não estão aqui: são só desenho (DesenhoPlantasReagem), sem estado.
 ## O desenho 3D e o 2D leem `galhos` e `cogumelos` (posição na grade, giro, tamanho e idade).
@@ -81,12 +82,21 @@ func soltar_galhos(foco: Vector2, forca: float) -> int:
 func brotar(foco: Vector2) -> int:
 	if cogumelos.size() >= int(_n("cogumelos", "max", 50.0)):
 		return 0
-	var arvs := eco.arvores_perto(foco, _n("cogumelos", "raio", 25.0))
-	if arvs.is_empty():
+	var raio := _n("cogumelos", "raio", 25.0)
+	var arvs := eco.arvores_perto(foco, raio)
+	var adubo: Array = []                                    # fase 4: onde a carcaça apodreceu o cogumelo brota primeiro
+	for tl: Vector2i in eco.fertil:
+		if float(eco.fertil[tl]) > 0.3 and Vector2(tl).distance_to(foco) <= raio:
+			adubo.append(tl)
+	if arvs.is_empty() and adubo.is_empty():
 		return 0
 	for tentativa in 6:
-		var a: Dictionary = arvs[_rng.randi() % arvs.size()]
-		var c: Vector2 = a.pos + Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(0.5, 1.4)
+		var c: Vector2
+		if not adubo.is_empty() and (arvs.is_empty() or _rng.randf() < 0.6):
+			c = Vector2(adubo[_rng.randi() % adubo.size()]) + Vector2(_rng.randf(), _rng.randf())
+		else:
+			var a: Dictionary = arvs[_rng.randi() % arvs.size()]
+			c = a.pos + Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(0.5, 1.4)
 		if not _chao_livre(c) or eco.saude(Vector2i(c.floor())) < 0.4:
 			continue
 		var cor := _rng.randi() % 4

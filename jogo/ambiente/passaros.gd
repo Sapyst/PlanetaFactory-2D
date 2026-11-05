@@ -24,6 +24,7 @@ var infestacao: Infestacao
 var eco: Ecossistema                   ## fundação do patch fauna (saúde do chão, índice, eventos)
 var bandos: Dictionary = {}           ## id → bando (ver _novo)
 var eventos: Array[Dictionary] = []
+var carcacas: Carcacas                 ## patch fauna, fase 4: o planador desce e circula por cima da carne (o mundo põe)
 var plantadas := 0                     ## mudas que os pássaros plantaram (contagem)
 var _d: Dictionary
 var _rng := RandomNumberGenerator.new()
@@ -307,6 +308,8 @@ func _bando(b: Dictionary, dt: float, foco: Vector2, clima: Clima, noite: bool) 
 				_fugir(b, de, foco)
 	match int(b.estado):
 		E.CIRCULANDO:
+			if carcacas != null:
+				_carniceiro(b, dt, noite or some)
 			b.centro = (b.centro as Vector2) + Vector2.from_angle(float(b.ang) * 0.13) * 0.25 * dt
 			if some or noite:
 				b.centro = (b.centro as Vector2) + ((b.centro as Vector2) - foco).normalized() * 3.0 * dt
@@ -384,6 +387,36 @@ func _voar(b: Dictionary, alvo: Vector2, vel: float, dt: float) -> bool:
 	b.vel = (b.vel as Vector2).lerp(quer, clampf(dt * 2.5, 0.0, 1.0))
 	b.pos = (b.pos as Vector2) + (b.vel as Vector2) * dt
 	return d.length() < 0.8
+
+
+## Planador carniceiro (fase 4): carcaça com carne por perto, de dia, e o centro do giro vai para cima dela; ele
+## desce e fecha a volta. De longe, quem joga vê que ali morreu alguma coisa. Sem carne, volta ao giro alto de antes.
+func _carniceiro(b: Dictionary, dt: float, sai: bool) -> void:
+	var c: Dictionary = _d.get("carcacas", {}).get("carniceiro", {})
+	b.t_carne = float(b.get("t_carne", 0.0)) - dt
+	if b.t_carne <= 0.0:
+		b.t_carne = 2.0
+		b.carne = null
+		if not sai:
+			var perto := INF
+			for f in carcacas.com_carne(b.centro, float(c.get("raio", 45.0))):
+				var d := (f.pos as Vector2).distance_to(b.centro)
+				if d < perto:
+					perto = d
+					b.carne = f.pos
+	if b.get("carne") != null:
+		if not b.has("raio0"):
+			b.raio0 = b.raio
+			b.alt0 = b.alt_alvo
+		b.centro = (b.centro as Vector2).move_toward(b.carne, 3.0 * dt)
+		b.raio = move_toward(float(b.raio), float(c.get("giro", 6.0)), 1.5 * dt)
+		b.alt_alvo = move_toward(float(b.alt_alvo), float(c.get("alt", 9.0)), 1.2 * dt)
+	elif b.has("raio0"):
+		b.raio = move_toward(float(b.raio), float(b.raio0), 1.5 * dt)
+		b.alt_alvo = move_toward(float(b.alt_alvo), float(b.alt0), 1.2 * dt)
+		if is_equal_approx(float(b.raio), float(b.raio0)) and is_equal_approx(float(b.alt_alvo), float(b.alt0)):
+			b.erase("raio0")
+			b.erase("alt0")
 
 
 ## Antes de decolar: come os frutos do chão em volta (patch fauna, fase 3) e leva a semente da árvore deles; sem fruto,

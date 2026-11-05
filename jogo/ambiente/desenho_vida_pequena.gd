@@ -8,6 +8,9 @@ extends Node3D
 ##             capim embaixo (a "luz micro"). Somem no inverno, na chuva e na ventania.
 ##  insetos    de dia, nuvenzinhas de mosquito: pontinhos escuros, voo nervoso com rastro curto. Somem com chuva,
 ##             vento forte, inverno e zoom longe.
+##  moscas     (fase 4) de dia, em volta das carcaças com carne (Carcacas.moscas): voo em zigue-zague perto do corpo,
+##             algumas pousadas nele por uns segundos; mais no inchado, quase nenhuma nos restos. Pontinhos escuros.
+##             Somem à noite, no inverno, na chuva e na ventania. Zumbido perto (laço "amb_moscas").
 ##  olhos      à noite, raro: um par de olhos brilhando no mato por alguns segundos, piscando, e some.
 ##  sons       grilos à noite e insetos de dia (laços de ambiente, pela estação e pela saúde do lugar); sapos na
 ##             beira d'água depois da chuva; perto de ninho, cratera ou aranha tudo se cala — o silêncio avisa.
@@ -18,16 +21,20 @@ extends Node3D
 const AMARELO := Color(0.78, 1.0, 0.32)
 const OLHO := Color(0.85, 1.0, 0.55)
 const INSETO := Color(0.92, 0.9, 0.8)          ## asa pegando sol: de dia o mosquito aparece claro contra o chão
+const MOSCA := Color(0.06, 0.065, 0.05)        ## varejeira: escura, com brilho só no reflexo
 
 var eco: Ecossistema
 var clima: Clima
 var camera: CameraJogo
+var carcacas: Carcacas                         ## fase 4: as moscas ficam em volta da carne (o mundo põe)
 
 ## Saída para o 2D (e testes): pontos do quadro em coordenadas do mundo.
 var vagalumes: Array = []      ## {pos: Vector3, brilho: 0..1, rastro: [Vector3, Vector3], chao: Vector3}
 var insetos: Array = []        ## {pos: Vector3, rastro: [Vector3, Vector3]}
 var olhos: Array = []          ## {a: Vector3, b: Vector3, brilho}
-var fatores := {"vagalumes": 0.0, "insetos": 0.0, "noite": 0.0, "silencio": 0.0}
+var moscas: Array = []         ## {pos: Vector3, rastro: [Vector3], pousada: bool}
+var fatores := {"vagalumes": 0.0, "insetos": 0.0, "moscas": 0.0, "noite": 0.0, "silencio": 0.0}
+var _zumbido := 0.0            ## 0..1: o laço das moscas agora (a carcaça mais perto da câmera)
 
 var _d: Dictionary
 var _enx_v: Array = []         ## {c: Vector2, y: float, n: int, s: float}
@@ -103,6 +110,10 @@ func _fatores() -> void:
 		zoom = clampf((float(_sub("insetos").get("zoom_max", 55)) - camera.distancia) / 15.0, 0.0, 1.0)
 	fatores.insetos = dia * float(ei[est]) * (1.0 - chuva) * (1.0 - clampf((vento - 0.45) / 0.35, 0.0, 1.0)) * zoom \
 			if _liga("insetos") else 0.0
+	var cm: Dictionary = Registro.fauna.get("carcacas", {}).get("moscas", {})
+	var em: Array = cm.get("estacoes", [1, 1, 1, 0])
+	fatores.moscas = clampf((luz - 0.3) / 0.2, 0.0, 1.0) * float(em[est]) * (1.0 - chuva) * (1.0 - clampf((vento - 0.6) / 0.35, 0.0, 1.0)) \
+			if bool(cm.get("liga", true)) and carcacas != null else 0.0
 	var st: Array = _sub("sons").get("silencio_toca", [12, 34])
 	var dt_toca := eco.distancia(eco.foco, "toca", float(st[1])) if eco != null else INF
 	var silencio := 1.0 - clampf((dt_toca - float(st[0])) / (float(st[1]) - float(st[0])), 0.0, 1.0)
@@ -229,10 +240,55 @@ func _voo_inseto(e: Dictionary, j: int, t: float) -> Vector3:
 	return Vector3(p.x, float(e.y) + h, -p.y)
 
 
+## Mosca j em volta da carcaça (no tempo t): zigue-zague perto do corpo; de tempos em tempos pousa nele uns segundos.
+func _voo_mosca(c: Vector2, y: float, k: Vector2i, j: int, t: float, raio: float, alt: Array) -> Array:
+	var s1 := _h(k, 300 + j)
+	var s2 := _h(k, 320 + j)
+	var s3 := _h(k, 340 + j)
+	var ciclo := 2.5 + 3.0 * s1
+	var fase := fposmod(t / ciclo + s2, 1.0)
+	if fase < 0.35 * s3 + 0.1:                              # pousada no corpo
+		var sp := Vector2.from_angle(s2 * TAU) * 0.12 * s3
+		return [Vector3(c.x + sp.x, y + 0.1, -(c.y + sp.y)), true]
+	var r := raio * (0.35 + 0.65 * s3)
+	var p := c + Vector2(sin(t * (3.1 + 2.4 * s1) + s2 * TAU) * r + sin(t * 11.0 + s3 * 17.0) * 0.08,
+			cos(t * (2.7 + 2.9 * s2) + s3 * TAU) * r + cos(t * 13.0 + s1 * 17.0) * 0.08)
+	var h := lerpf(float(alt[0]), float(alt[1]), 0.5 + 0.5 * sin(t * (1.7 + 2.0 * s3) + s1 * 9.0))
+	return [Vector3(p.x, y + h, -p.y), false]
+
+
+func _calcular_moscas() -> void:
+	moscas.clear()
+	_zumbido = 0.0
+	if fatores.moscas <= 0.0 or carcacas == null:
+		return
+	var cm: Dictionary = Registro.fauna.get("carcacas", {}).get("moscas", {})
+	var raio := float(cm.get("raio", 0.7))
+	var alt: Array = cm.get("alt", [0.12, 1.0])
+	var mx := int(cm.get("max", 120))
+	var som := float(cm.get("som_dist", 14.0))
+	for f in eco.comida_perto(eco.foco, 40.0, "carcaca"):
+		var m := carcacas.moscas(f) * float(fatores.moscas)
+		if m <= 0.0:
+			continue
+		var c: Vector2 = f.pos
+		var y := Grade.altura_em(c)
+		var k := Vector2i(int(f.id), 7)
+		var d := c.distance_to(eco.foco)
+		_zumbido = maxf(_zumbido, m * clampf(1.0 - d / som, 0.0, 1.0))
+		for j in int(round(float(cm.get("por_carcaca", 9)) * m)):
+			if moscas.size() >= mx:
+				return
+			var a := _voo_mosca(c, y, k, j, _t, raio, alt)
+			var b := _voo_mosca(c, y, k, j, _t - 0.03, raio, alt)
+			moscas.append({"pos": a[0], "rastro": [b[0]], "pousada": a[1]})
+
+
 func _calcular() -> void:
 	vagalumes.clear()
 	insetos.clear()
 	olhos.clear()
+	_calcular_moscas()
 	if fatores.vagalumes > 0.0:
 		for e in _enx_v:
 			for j in int(e.n):
@@ -310,6 +366,11 @@ func _desenhar() -> void:
 		pts.append([ins.pos, _tam(ins.pos, pxi), Color(INSETO, 0.8)])
 		pts.append([ins.rastro[0], _tam(ins.rastro[0], pxi * 0.8), Color(INSETO, 0.4)])
 		pts.append([ins.rastro[1], _tam(ins.rastro[1], pxi * 0.6), Color(INSETO, 0.18)])
+	var pxm := float(Registro.fauna.get("carcacas", {}).get("moscas", {}).get("px", 1.5))
+	for mo in moscas:
+		pts.append([mo.pos, _tam(mo.pos, pxm), Color(MOSCA, 0.95)])
+		if not mo.pousada:
+			pts.append([mo.rastro[0], _tam(mo.rastro[0], pxm * 0.7), Color(MOSCA, 0.35)])
 	_encher(_mm_brilho, bri, false)
 	_encher(_mm_chao, chao, true)
 	_encher(_mm_ponto, pts, false)
@@ -351,7 +412,10 @@ func _sons(passo: float) -> void:
 	if not _liga("sons") or clima == null:
 		Som.tocar_loop_ambiente("amb_grilos", 0.0)
 		Som.tocar_loop_ambiente("amb_insetos_dia", 0.0)
+		Som.tocar_loop_ambiente("amb_moscas", 0.0)
 		return
+	var perto_m := clampf(1.25 - (camera.distancia if camera != null else 30.0) / 60.0, 0.15, 1.0)
+	Som.tocar_loop_ambiente("amb_moscas", 0.6 * _zumbido * perto_m)
 	var est := clampi(clima.estacao, 0, 3)
 	var chuva := float(clima.valores.get("chuva", 0.0))
 	var vivo := clampf(eco.saude(Vector2i(eco.foco.round())) * 1.6, 0.0, 1.0)      # chão morto, fábrica: quieto

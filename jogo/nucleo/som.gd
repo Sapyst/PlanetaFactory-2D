@@ -72,6 +72,7 @@ const MAX_VOZES := {
 const SONS_AMBIENTE := {
 	"amb_grilos": true,
 	"amb_insetos_dia": true,
+	"amb_moscas": true,
 	"sapo": true,
 	"chuva": true,
 	"trovao": true,

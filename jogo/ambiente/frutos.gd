@@ -7,7 +7,7 @@ extends RefCounted
 ##            come, apodrecem e somem (o Ecossistema envelhece a comida pela `vida`).
 ##  sementes  na troca de estação, as árvores de semente com asa (bétula, salgueiro, pinheiro) soltam sementes no
 ##            vento. Algumas pegam no chão aberto a favor do vento, de preferência no chão morto (queimado, cicatriz de
-##            árvore que caiu ou foi corroída), e nascem mudas da mesma espécie (AmbienteVivo.plantar_em): a mata volta
+##            árvore que caiu ou foi corroída; e o adubado pela carcaça, fase 4), e nascem mudas da mesma espécie (AmbienteVivo.plantar_em): a mata volta
 ##            sozinha onde a causa sumiu. O desenho das sementes voando é do DesenhoPlantasReagem.
 
 const FONTES := {"arv_carvalho": "bolota", "arv_pinheiro": "pinha", "arbusto": "baga"}
@@ -134,7 +134,7 @@ func semear(foco: Vector2, estacao: int, vento: Vector2) -> int:
 			if not ambiente.pode_plantar(tl) or _na_sombra(tl):
 				continue
 			var nt := 2.0 * ambiente.valor(tl, AmbienteVivo.QUEIM) + (0.6 if eco.mapa.limpos.has(tl) else 0.0) \
-					+ (0.4 if eco.morto(tl) else 0.0) + _rng.randf() * 0.1
+					+ (0.4 if eco.morto(tl) else 0.0) + 1.5 * eco.fertil_em(tl) + _rng.randf() * 0.1
 			if nt > nota:
 				nota = nt
 				melhor = tl

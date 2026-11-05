@@ -9,6 +9,8 @@ extends RefCounted
 ##            As fases seguintes (carcaças, moscas, ratos) leem daqui.
 ##  comida    fontes de comida no chão (fruta, semente, carcaça — fases 3 e 4); vai no save. Envelhece no tick: a que
 ##            tem `vida` e passou dela apodrece e some (evento "apodreceu").
+##  fértil    (fase 4) chão adubado onde uma carcaça apodreceu: a semente pega e o cogumelo brota ali primeiro, e o
+##            lugar conta como mais vivo. Some devagar (`fertil_some_s`); vai no save.
 ##  saúde     quanto o chão está vivo (mato, árvore, sem cinza, ácido, teia, fábrica): decide onde a vida pequena,
 ##            os pássaros e, depois, os ratos ficam. Era dos Passaros; agora é de todos.
 ##  orçamento `detalhe(p)`: 2 = perto da câmera (lógica e desenho completos), 1 = meio, 0 = longe (só contagem).
@@ -21,6 +23,7 @@ var foco := Vector2.ZERO
 var fontes: Dictionary = {}              ## tipo → Callable() -> Array[{id, pos: Vector2, especie?, n?}]
 var contagem: Dictionary = {}            ## tipo → quantos no último índice
 var comida: Dictionary = {}              ## id → {id, tipo, pos, valor, idade}
+var fertil: Dictionary = {}              ## tile (Vector2i) → 0..1: adubado pela podridão (fase 4)
 var eventos: Array[Dictionary] = []      ## os avisos do último tick
 var _novos: Array[Dictionary] = []
 var _indice: Dictionary = {}             ## célula (Vector2i) → Array[{tipo, id, pos, especie, n}]
@@ -130,8 +133,16 @@ func por_comida(tipo: String, pos: Vector2, valor := 1.0) -> int:
 	return id
 
 
-## A comida envelhece; a que tem `vida` e passou dela apodrece e some.
+## A comida envelhece; a que tem `vida` e passou dela apodrece e some. O adubo do chão vai sumindo.
 func envelhecer(dt: float) -> void:
+	if not fertil.is_empty():
+		var some := dt / _n("fertil_some_s", 2880.0)
+		for t in fertil.keys():
+			var v := float(fertil[t]) - some
+			if v <= 0.0:
+				fertil.erase(t)
+			else:
+				fertil[t] = v
 	var podres: Array = []
 	for f in comida.values():
 		f.idade = float(f.idade) + dt
@@ -140,6 +151,22 @@ func envelhecer(dt: float) -> void:
 	for f in podres:
 		comida.erase(int(f.id))
 		avisar({"tipo": "apodreceu", "comida": f.tipo, "especie": String(f.get("especie", "")), "pos": f.pos})
+
+
+## Aduba o chão em volta de `c` (mais no meio): onde a carcaça apodreceu.
+func adubar(c: Vector2, raio: float, v: float) -> void:
+	var r := int(ceil(raio))
+	var ct := Vector2i(c.floor())
+	for y in range(-r, r + 1):
+		for x in range(-r, r + 1):
+			var t := ct + Vector2i(x, y)
+			var d := (Vector2(t) + Vector2(0.5, 0.5)).distance_to(c)
+			if d <= raio:
+				fertil[t] = minf(1.0, float(fertil.get(t, 0.0)) + v * (1.0 - 0.5 * d / maxf(raio, 0.01)))
+
+
+func fertil_em(t: Vector2i) -> float:
+	return float(fertil.get(t, 0.0))
 
 
 ## 0..1: quanto já apodreceu (0 até `inicio` da vida, 1 no fim). Comida sem `vida` não apodrece.
@@ -194,6 +221,8 @@ func saude_tile(t: Vector2i) -> float:
 		v *= (1.0 - ambiente.valor(t, AmbienteVivo.QUEIM)) * (1.0 - 0.7 * ambiente.valor(t, AmbienteVivo.SUJ))
 		if ambiente.fogo.has(t):
 			return 0.0
+	if not fertil.is_empty():
+		v += 0.3 * float(fertil.get(t, 0.0))
 	if infestacao != null:
 		v *= 1.0 - infestacao.valor(t)
 	return clampf(v, 0.0, 1.0)
@@ -293,7 +322,7 @@ func _vegetacao_perto(c: Vector2, raio: float, arbusto: bool) -> Array:
 
 # ------------------------------------------------------------------ salvamento
 func estado() -> Dictionary:
-	return {"comida": comida, "prox": _prox_comida}
+	return {"comida": comida, "prox": _prox_comida, "fertil": fertil}
 
 
 func restaurar(d: Dictionary) -> void:
@@ -302,3 +331,7 @@ func restaurar(d: Dictionary) -> void:
 	for k in c:
 		comida[int(k)] = c[k]
 	_prox_comida = int(d.get("prox", 1))
+	fertil.clear()
+	var fe: Dictionary = d.get("fertil", {})
+	for k in fe:
+		fertil[k if k is Vector2i else str_to_var("Vector2i" + str(k))] = float(fe[k])

@@ -43,6 +43,8 @@ var _vida_pequena: DesenhoVidaPequena    ## patch fauna, fase 1: vagalumes, inse
 var plantas_reagem: PlantasReagem        ## patch fauna, fase 2: galhos depois da tempestade, cogumelos depois da chuva
 var _desenho_plantas_reagem: DesenhoPlantasReagem   ## + folhas caindo no outono, frutos no chão, sementes no vento
 var frutos: Frutos                       ## patch fauna, fase 3: frutos que viram comida, sementes que viram mata
+var carcacas: Carcacas                   ## patch fauna, fase 4: quem morre fica (carcaça apodrece, aranha vira sucata)
+var _desenho_carcacas: DesenhoCarcacas
 var _desenho_passaros: DesenhoPassaros
 var _raios_passaros := 0
 var _teia_versao := -1
@@ -155,6 +157,8 @@ func _ready() -> void:
 		return out)
 	plantas_reagem = PlantasReagem.new(ecossistema, semente + 53)
 	frutos = Frutos.new(ecossistema, ambiente, semente + 59)
+	carcacas = Carcacas.new(ecossistema, ambiente, semente + 61)
+	passaros.carcacas = carcacas
 	ecossistema.registrar_fonte("toca", func() -> Array:
 		var out: Array = []
 		for id in colonia.ninhos:
@@ -366,7 +370,7 @@ func _dados_salvar() -> Dictionary:
 	return {"modo": modo, "semente": semente, "tempo": _tempo,
 			"camera": [camera.alvo, camera.distancia, camera.angulo],
 			"mapa": {"estruturas": mapa.estruturas, "limpos": mapa.limpos.keys(), "prox": mapa._prox_id, "arvores": mapa.arvores},
-			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(), "ecossistema": ecossistema.estado(), "plantas_reagem": plantas_reagem.estado(), "frutos": frutos.estado(),
+			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(), "ecossistema": ecossistema.estado(), "plantas_reagem": plantas_reagem.estado(), "frutos": frutos.estado(), "carcacas": carcacas.estado(),
 			"estoques": estoques, "inventario": inventario, "pesquisa": pesquisa.estado(),
 			"trens": trens.map(func(t: Trem): return t.para_salvar()), "prox_trem": _prox_trem}
 
@@ -421,6 +425,7 @@ func _carregar(d: Dictionary) -> void:
 	ecossistema.restaurar(d.get("ecossistema", {}))
 	plantas_reagem.restaurar(d.get("plantas_reagem", {}))
 	frutos.restaurar(d.get("frutos", {}))
+	carcacas.restaurar(d.get("carcacas", {}))
 	obras.dar_iniciais()                          # save de antes do patch RTS: ganha os construtores uma vez
 	for id in mapa.estruturas:
 		var nome: String = mapa.estruturas[id].nome
@@ -471,9 +476,14 @@ func _criar_desenhos() -> void:
 	add_child(_desenho_passaros)
 	_vida_pequena = DesenhoVidaPequena.new()
 	_vida_pequena.eco = ecossistema
+	_vida_pequena.carcacas = carcacas
 	_vida_pequena.clima = clima
 	_vida_pequena.camera = camera
 	add_child(_vida_pequena)
+	_desenho_carcacas = DesenhoCarcacas.new()
+	_desenho_carcacas.carcacas = carcacas
+	_desenho_carcacas.eco = ecossistema
+	add_child(_desenho_carcacas)
 	_desenho_plantas_reagem = DesenhoPlantasReagem.new()
 	_desenho_plantas_reagem.eco = ecossistema
 	_desenho_plantas_reagem.clima = clima
@@ -1667,10 +1677,11 @@ func _tick_mundo(dt: float) -> void:
 	passaros.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z), clima)
 	for ev in colonia.eventos:                          # quem morre avisa o ecossistema (fase 4: vira carcaça)
 		if ev.tipo == "aranha_morta":
-			ecossistema.morreu("alien", String(ev.get("especie", "aranha")), ev.pos)
+			ecossistema.morreu("alien", String(ev.get("especie", "aranha")), ev.pos, {"id": ev.id})
 	ecossistema.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z))
 	plantas_reagem.tick(dt, clima, ecossistema.foco)
 	frutos.tick(dt, clima, ecossistema.foco)
+	carcacas.tick(dt)
 	_desenho_passaros.efeitos_de(passaros.eventos)
 	passaros.eventos.clear()
 	_eventos.append_array(colonia.eventos)

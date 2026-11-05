@@ -8,6 +8,7 @@ extends Node2D
 const AMARELO := DesenhoVidaPequena.AMARELO
 const OLHO := DesenhoVidaPequena.OLHO
 const INSETO := DesenhoVidaPequena.INSETO
+const MOSCA := DesenhoVidaPequena.MOSCA
 
 var vida: DesenhoVidaPequena
 var _brilho := Node2D.new()          ## soma de luz (vagalumes, olhos)
@@ -70,3 +71,7 @@ func _desenhar_pontos() -> void:
 		_pixel(_pontos, _px(ins.rastro[1]), Color(INSETO, 0.2))
 		_pixel(_pontos, _px(ins.rastro[0]), Color(INSETO, 0.45))
 		_pixel(_pontos, _px(ins.pos), Color(INSETO, 0.85))
+	for mo in vida.moscas:                                 # fase 4: moscas em volta da carcaça (escuras)
+		if not mo.pousada:
+			_pixel(_pontos, _px(mo.rastro[0]), Color(MOSCA, 0.35))
+		_pixel(_pontos, _px(mo.pos), Color(MOSCA, 0.95))

@@ -57,6 +57,7 @@ func _ready() -> void:
 		"vida": _roteiro_vida()
 		"plantas": _roteiro_plantas()
 		"frutos": _roteiro_frutos()
+		"carcacas": _roteiro_carcacas()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -2282,6 +2283,86 @@ func _roteiro_plantas() -> void:
 			cam.distancia = 18.0
 			cam.posicionar())
 	em(640, func(): foto.call("7_limo_no_lago"))
+
+
+## Patch fauna, fase 4 (-- roteiro carcacas): campo aberto no verão ao meio-dia com 3 larvas mortas (inteira, inchada,
+## restos) e 3 aranhas mortas (sucata nova fumegando, enferrujada, desmontando); moscas em volta da carne; o planador
+## descendo por cima. PNG em user://fotos_carcacas.
+func _roteiro_carcacas() -> void:
+	var w := [Vector2.ZERO]
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_carcacas")
+		get_viewport().get_texture().get_image().save_png("user://fotos_carcacas/%s.png" % nome)
+		print("CARCACAS foto ", nome)
+	var olhar := func(p: Vector2, dist: float) -> void:
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(p)
+		cam.distancia = dist
+		cam.posicionar()
+	em(2, func():
+		Sessao.config.fps = false
+		var eco: Ecossistema = cena.ecossistema
+		var nota := -1.0
+		for y in range(-60, 61, 6):
+			for x in range(-60, 61, 6):
+				var c := Vector2(x, y)
+				if c.length() < 16.0:
+					continue
+				var s := 0.0
+				for j in range(-4, 5, 2):
+					for i in range(-4, 5, 2):
+						var t := Vector2i(x + i, y + j)
+						s += eco.saude(t) if (cena.ambiente as AmbienteVivo).pode_plantar(t) else -1.0
+				if s > nota:
+					nota = s
+					w[0] = c
+		print("CARCACAS campo ", w[0])
+		_sem_ninhos(Vector2i(w[0]))
+		var col: Colonia = cena.colonia
+		for id in col.aranhas.keys():                      # sem aranha viva perto (o planador tem medo)
+			if (col.aranhas[id].pos as Vector2).distance_to(w[0]) < 90.0:
+				col.aranhas.erase(id)
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = 1
+		cl.t_estacao = float(Registro.clima.get("estacao_s", 604800)) * 0.5
+		cl.hora = 0.45
+		cl.forcar("limpo", true)
+		cl.restante = 1.0e9
+		var cc: Carcacas = cena.carcacas
+		var fr := [0.12, 0.5, 0.86]
+		for i in 3:
+			var idl := cc.morreu("larva", w[0] + Vector2(-2.2 + 2.2 * i, -1.2), 9000 + i)
+			var f: Dictionary = eco.comida[idl]
+			f.idade = float(f.vida) * float(fr[i])
+			cc.morreu("aranha", w[0] + Vector2(-2.6 + 2.6 * i, 1.6), 9100 + i)
+			var s: Dictionary = cc.sucatas[-1]
+			s.idade = [3.0, float(s.vida) * 0.5, float(s.vida) * 0.86][i]
+		olhar.call(w[0], 9.0))
+	em(60, func():
+		print("CARCACAS nos=%d moscas=%d" % [(cena._desenho_carcacas as DesenhoCarcacas).nos.size(), (cena._vida_pequena as DesenhoVidaPequena).moscas.size()])
+		foto.call("1_todas"))
+	em(62, func(): olhar.call(w[0] + Vector2(0, -1.2), 4.0))
+	em(90, func(): foto.call("2_larva_inchada_moscas"))
+	em(92, func(): olhar.call(w[0] + Vector2(-2.6, 1.6), 3.5))
+	em(120, func(): foto.call("3_sucata_nova"))
+	em(122, func(): olhar.call(w[0] + Vector2(1.3, 1.6), 5.0))
+	em(150, func(): foto.call("4_sucata_enferrujada"))
+	em(152, func():
+		var pa: Passaros = cena.passaros
+		var b: Dictionary = pa._novo("planador", w[0] + Vector2(30, 0))
+		b.centro = w[0] + Vector2(25, 5)
+		b.estado = Passaros.E.CIRCULANDO
+		b.alt = 22.0
+		b.alt_alvo = 22.0
+		pa.bandos[b.id] = b
+		olhar.call(w[0], 30.0))
+	em(470, func():
+		for b in (cena.passaros as Passaros).bandos.values():
+			if b.especie == "planador":
+				print("CARCACAS planador centro %s raio %.1f alt %.1f" % [b.centro, b.raio, b.alt])
+		foto.call("5_planador_por_cima"))
 
 
 ## Patch fauna, fase 3 (-- novo roteiro frutos): bolotas embaixo dos carvalhos no outono, sementes voando das bétulas e
