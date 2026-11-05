@@ -1,0 +1,31 @@
+{
+ "nome": "ninho_taca",
+ "categoria": "fauna/ninhos",
+ "tipo": "veiculo",
+ "area": [
+  1,
+  1
+ ],
+ "descricao": "Ninho em taça (pardelo, rubro): gravetos e capim na forquilha da árvore (patch fauna, fase 6).",
+ "ocupa_canto": false,
+ "partes": [
+  {
+   "nome": "corpo",
+   "pai": null,
+   "pivo": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "portas": [],
+ "tris": 308,
+ "dims": [
+  0.173,
+  0.182,
+  0.041
+ ],
+ "anima": false,
+ "estudo": "estudo_ninho.py"
+}

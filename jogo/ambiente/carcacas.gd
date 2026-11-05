@@ -138,6 +138,19 @@ func moscas(f: Dictionary) -> float:
 	return 0.15
 
 
+## Um carniceiro comendo (fase 6: o planador no chão): a carcaça envelhece `quanto` s a mais, mas só até o começo
+## dos restos (comer não apaga o osso). Devolve se ainda tem carne.
+func bicar(id: int, quanto: float) -> bool:
+	var f: Dictionary = eco.comida.get(id, {})
+	if f.get("tipo", "") != "carcaca":
+		return false
+	var e: Array = _tipo(String(f.especie)).get("etapas", [0.3, 0.7])
+	var lim := float(f.vida) * float(e[1])
+	if float(f.idade) < lim:
+		f.idade = minf(float(f.idade) + quanto, lim)
+	return etapa(f) != Etapa.RESTOS
+
+
 ## Carcaças com carne (inteiro ou inchado) a até `raio` de `c`: o que o carniceiro procura.
 func com_carne(c: Vector2, raio: float) -> Array:
 	return eco.comida_perto(c, raio, "carcaca").filter(func(f): return etapa(f) != Etapa.RESTOS)

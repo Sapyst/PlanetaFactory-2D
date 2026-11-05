@@ -2253,6 +2253,70 @@
   "estudo": "estudo_turbina_eolica.py",
   "modelo": "res://assets/modelos/energia/turbina_eolica.glb"
  },
+ "ninho_bolsa": {
+  "nome": "ninho_bolsa",
+  "categoria": "fauna/ninhos",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Ninho em bolsa tecida (cobrico, azulão): pende da ponta de um galho (patch fauna, fase 6).",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 304,
+  "dims": [
+   0.101,
+   0.076,
+   0.332
+  ],
+  "anima": false,
+  "estudo": "estudo_ninho.py",
+  "modelo": "res://assets/modelos/fauna/ninhos/ninho_bolsa.glb"
+ },
+ "ninho_taca": {
+  "nome": "ninho_taca",
+  "categoria": "fauna/ninhos",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Ninho em taça (pardelo, rubro): gravetos e capim na forquilha da árvore (patch fauna, fase 6).",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 308,
+  "dims": [
+   0.173,
+   0.182,
+   0.041
+  ],
+  "anima": false,
+  "estudo": "estudo_ninho.py",
+  "modelo": "res://assets/modelos/fauna/ninhos/ninho_taca.glb"
+ },
  "passaro_azulao": {
   "nome": "passaro_azulao",
   "categoria": "fauna/passaros",
@@ -2261,7 +2325,7 @@
    1,
    1
   ],
-  "descricao": "Azulão: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "descricao": "Azulão: pássaro nativo (patch fauna); voo, planar, parado, bicando, pousar e morto (de lado e de costas).",
   "ocupa_canto": false,
   "partes": [
    {
@@ -2293,7 +2357,7 @@
    1,
    1
   ],
-  "descricao": "Cobrico: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "descricao": "Cobrico: pássaro nativo (patch fauna); voo, planar, parado, bicando, pousar e morto (de lado e de costas).",
   "ocupa_canto": false,
   "partes": [
    {
@@ -2317,6 +2381,38 @@
   "estudo": "estudo_passaro.py",
   "modelo": "res://assets/modelos/fauna/passaros/passaro_cobrico.glb"
  },
+ "passaro_geado": {
+  "nome": "passaro_geado",
+  "categoria": "fauna/passaros",
+  "tipo": "veiculo",
+  "area": [
+   1,
+   1
+  ],
+  "descricao": "Geado: pássaro nativo (patch fauna); voo, planar, parado, bicando, pousar e morto (de lado e de costas).",
+  "ocupa_canto": false,
+  "partes": [
+   {
+    "nome": "corpo",
+    "pai": null,
+    "pivo": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "portas": [],
+  "tris": 738,
+  "dims": [
+   0.284,
+   0.671,
+   0.147
+  ],
+  "anima": true,
+  "estudo": "estudo_passaro.py",
+  "modelo": "res://assets/modelos/fauna/passaros/passaro_geado.glb"
+ },
  "passaro_pardelo": {
   "nome": "passaro_pardelo",
   "categoria": "fauna/passaros",
@@ -2325,7 +2421,7 @@
    1,
    1
   ],
-  "descricao": "Pardelo: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "descricao": "Pardelo: pássaro nativo (patch fauna); voo, planar, parado, bicando, pousar e morto (de lado e de costas).",
   "ocupa_canto": false,
   "partes": [
    {
@@ -2357,7 +2453,7 @@
    1,
    1
   ],
-  "descricao": "Planador-cinza: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "descricao": "Planador-cinza: pássaro nativo (patch fauna); voo, planar, parado, bicando, pousar e morto (de lado e de costas).",
   "ocupa_canto": false,
   "partes": [
    {
@@ -2389,7 +2485,7 @@
    1,
    1
   ],
-  "descricao": "Rubro: pássaro nativo (patch fauna); voo, planar, parado e bicando.",
+  "descricao": "Rubro: pássaro nativo (patch fauna); voo, planar, parado, bicando, pousar e morto (de lado e de costas).",
   "ocupa_canto": false,
   "partes": [
    {

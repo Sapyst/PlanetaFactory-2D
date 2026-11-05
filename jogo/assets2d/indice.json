@@ -5141,11 +5141,11 @@
   "pasta": "sprites/fauna_passaros/passaro_pardelo",
   "quadro": [
    24,
-   22
+   24
   ],
   "ancora": [
    12.0,
-   14.8
+   15.4
   ],
   "quadros": 8,
   "linhas": 16,
@@ -5155,7 +5155,9 @@
    "planar",
    "parado",
    "bicando",
-   "pousar"
+   "pousar",
+   "morto",
+   "morto_costas"
   ],
   "animacao": "passaro",
   "avisos": 0,
@@ -5169,7 +5171,7 @@
   ],
   "ancora": [
    11.0,
-   13.2
+   12.8
   ],
   "quadros": 8,
   "linhas": 16,
@@ -5179,7 +5181,9 @@
    "planar",
    "parado",
    "bicando",
-   "pousar"
+   "pousar",
+   "morto",
+   "morto_costas"
   ],
   "animacao": "passaro",
   "avisos": 0,
@@ -5188,12 +5192,12 @@
  "passaro_azulao": {
   "pasta": "sprites/fauna_passaros/passaro_azulao",
   "quadro": [
-   26,
-   24
+   28,
+   26
   ],
   "ancora": [
-   13.0,
-   16.3
+   14.0,
+   16.7
   ],
   "quadros": 8,
   "linhas": 16,
@@ -5203,7 +5207,9 @@
    "planar",
    "parado",
    "bicando",
-   "pousar"
+   "pousar",
+   "morto",
+   "morto_costas"
   ],
   "animacao": "passaro",
   "avisos": 0,
@@ -5217,7 +5223,7 @@
   ],
   "ancora": [
    12.0,
-   14.6
+   14.2
   ],
   "quadros": 8,
   "linhas": 16,
@@ -5227,7 +5233,9 @@
    "planar",
    "parado",
    "bicando",
-   "pousar"
+   "pousar",
+   "morto",
+   "morto_costas"
   ],
   "animacao": "passaro",
   "avisos": 0,
@@ -5236,12 +5244,12 @@
  "passaro_planador": {
   "pasta": "sprites/fauna_passaros/passaro_planador",
   "quadro": [
-   62,
-   54
+   64,
+   56
   ],
   "ancora": [
-   31.0,
-   37.9
+   32.0,
+   37.5
   ],
   "quadros": 8,
   "linhas": 16,
@@ -5251,7 +5259,9 @@
    "planar",
    "parado",
    "bicando",
-   "pousar"
+   "pousar",
+   "morto",
+   "morto_costas"
   ],
   "animacao": "passaro",
   "avisos": 0,
@@ -5304,6 +5314,72 @@
    "morto"
   ],
   "animacao": "rato",
+  "avisos": 0,
+  "luz": null
+ },
+ "passaro_geado": {
+  "pasta": "sprites/fauna_passaros/passaro_geado",
+  "quadro": [
+   24,
+   24
+  ],
+  "ancora": [
+   12.0,
+   15.4
+  ],
+  "quadros": 8,
+  "linhas": 16,
+  "tipo_linha": "direcao",
+  "variantes": [
+   "voo",
+   "planar",
+   "parado",
+   "bicando",
+   "pousar",
+   "morto",
+   "morto_costas"
+  ],
+  "animacao": "passaro",
+  "avisos": 0,
+  "luz": null
+ },
+ "ninho_taca": {
+  "pasta": "sprites/fauna_ninhos/ninho_taca",
+  "quadro": [
+   14,
+   12
+  ],
+  "ancora": [
+   6.7,
+   6.4
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
+  "avisos": 0,
+  "luz": null
+ },
+ "ninho_bolsa": {
+  "pasta": "sprites/fauna_ninhos/ninho_bolsa",
+  "quadro": [
+   24,
+   18
+  ],
+  "ancora": [
+   5.1,
+   14.6
+  ],
+  "quadros": 1,
+  "linhas": 4,
+  "tipo_linha": "rotacao",
+  "variantes": [
+   "base"
+  ],
+  "animacao": "parado",
   "avisos": 0,
   "luz": null
  }

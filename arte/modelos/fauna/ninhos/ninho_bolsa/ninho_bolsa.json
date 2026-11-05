@@ -1,0 +1,31 @@
+{
+ "nome": "ninho_bolsa",
+ "categoria": "fauna/ninhos",
+ "tipo": "veiculo",
+ "area": [
+  1,
+  1
+ ],
+ "descricao": "Ninho em bolsa tecida (cobrico, azulão): pende da ponta de um galho (patch fauna, fase 6).",
+ "ocupa_canto": false,
+ "partes": [
+  {
+   "nome": "corpo",
+   "pai": null,
+   "pivo": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "portas": [],
+ "tris": 304,
+ "dims": [
+  0.101,
+  0.076,
+  0.332
+ ],
+ "anima": false,
+ "estudo": "estudo_ninho.py"
+}

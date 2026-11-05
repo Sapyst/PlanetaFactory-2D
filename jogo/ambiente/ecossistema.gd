@@ -255,6 +255,20 @@ func perto_da_agua(t: Vector2i, r: int) -> bool:
 
 
 # ------------------------------------------------------------------ árvores e arbustos perto (fases 2 e 3)
+## A árvore de pé no tile `t` (âncora da árvore natural): o nome do modelo, ou "" se não há (cortada, queimada,
+## caída, corroída, construção em cima, árvore morta). Fase 6: os ninhos dos pássaros conferem a árvore deles.
+func arvore_em(t: Vector2i) -> String:
+	if mapa.limpos.has(t) or mapa.tiles.has(t) or not mapa.arvores.get(t, {}).is_empty():
+		return ""
+	var o := gerador.distribuicao.obstaculo(t)
+	if o.is_empty() or Vector2i(o.ancora) != t:
+		return ""
+	var nome := String(o.nome)
+	if not Distribuicao.eh_arvore(nome) or nome == "arvore_morta":
+		return ""
+	return nome
+
+
 ## Perfil da folhagem pela árvore, o mesmo do material 3D (Materiais.PERFIL_FOLHA, pelo material de cada modelo):
 ## -1 copa que não muda (campina, fungo), 0 perene (pinheiro), 1 caduca laranja (carvalho), 2 salgueiro (amarela e
 ## perde um pouco no inverno), 3 acácia (seca e perde no verão), 4 caduca amarela (bétula).

@@ -164,7 +164,13 @@ func _trilha(delta: float) -> void:
 	for r in ratos.ratos.values():
 		if r.estado != Ratos.E.TOCA:
 			_carimbo(_img_trilha, (r.pos as Vector2) - Vector2(_trilha_c), 0.38, 1.0)
+	if extras_capim.is_valid():                          # fase 6: corpo no chão e pássaro pousado no capim também abrem
+		for e in extras_capim.call():
+			_carimbo(_img_trilha, (e[0] as Vector2) - Vector2(_trilha_c), float(e[1]), 1.0)
 	_tex_trilha.update(_img_trilha)
+
+
+var extras_capim: Callable    ## fase 6: [[posição, raio]…] de quem mais deita o capim (corpos, pássaros no chão; o mundo põe)
 
 
 ## Mancha redonda e suave (raio em m) no canal G do mapa (o capim abre; o chão não gasta), em `p` (tiles a partir do
@@ -261,9 +267,9 @@ func _ratos(delta: float) -> void:
 		if ratos.mortos.has(id) and is_instance_valid(n.no):
 			# morreu: o mesmo nó deita de lado e espera o DesenhoCarcacas adotar (vira a carcaça)
 			_parar_morto(n.anim)
-			(n.no as Node).set_meta("bicho", id)
+			(n.no as Node).set_meta("bicho", Ratos.corpo_id(id))
 			(n.no as Node).set_meta("pronta", true)
-			DesenhoCarcacas.corpos[id] = n.no
+			DesenhoCarcacas.corpos[Ratos.corpo_id(id)] = n.no
 			continue
 		if is_instance_valid(n.no):
 			(n.no as Node).queue_free()

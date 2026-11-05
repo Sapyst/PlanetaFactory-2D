@@ -7,6 +7,10 @@ extends Node3D
 ## chão, freia ("pousar") e fica olhando em volta / comendo ("parado"/"bicando"); decolando ou fugindo, sai um de cada
 ## vez numa onda (o susto passa de um para o outro). O planador-cinza plana e bate devagar.
 ## Sons: canto (por espécie), revoada (bando levantando) e o grito do planador.
+## Fase 6: quem morre cai (o corpo despenca girando, mole, e deita na pose "morto" onde a carcaça está; o mesmo nó vira
+## a carcaça: DesenhoCarcacas.corpos); a revoada de migração é uma faixa comprida e solta no rumo da viagem; os do
+## chão bicam em volta dos frutos; o planador no chão fica de frente para a carne e bica; filhotes que voam do ninho
+## nascem no ninho e vão para o bando.
 
 const MAX_PASSAROS := 90          ## no máximo isso desenhado ao mesmo tempo (celular)
 const ESCALA := 0.75              ## o pássaro perto das árvores do jogo (que são pequenas)
@@ -14,34 +18,80 @@ const POR_COPA := 4               ## pássaros por copa de árvore
 const SEPARA := 0.35              ## m: distância que um pássaro mantém do outro
 
 var passaros: Passaros
+var foco_de: Callable             ## onde a câmera olha (sons de migração só perto)
 var _bandos: Dictionary = {}      ## id do bando → Array de pássaros (ver _novo_passaro)
-var _cenas: Dictionary = {}
+var _caindo: Array = []           ## fase 6: corpos despencando até o chão (depois viram carcaça)
+var _nascer: Dictionary = {}      ## id do bando → [posição do ninho, quantos]: os próximos pássaros nascem ali
 var _t := 0.0
+var _t_mig := {}                  ## id do bando migrando → quando tocou o som pela última vez
+static var _cenas: Dictionary = {}
 
 
-func _cena(esp: String) -> PackedScene:
+static func _cena(esp: String) -> PackedScene:
 	if not _cenas.has(esp):
 		var m: Dictionary = Registro.modelos.get("passaro_" + esp, {})
 		_cenas[esp] = load(m.modelo) if not m.is_empty() else null
 	return _cenas[esp]
 
 
-func _novo_passaro(esp: String, k: int, id: int, onde: Vector3) -> Dictionary:
+## O nó do pássaro (raiz que vira com o rumo + o modelo de lado), sem pôr na árvore. Meta "passaro" = a espécie (o 2D
+## desenha o sprite dela; também o corpo morto).
+static func _montar(esp: String) -> Dictionary:
 	var cena := _cena(esp)
 	if cena == null:
 		return {}
 	var raiz := Node3D.new()
+	raiz.set_meta("passaro", esp)
 	var mod: Node3D = cena.instantiate()
 	mod.rotation.y = PI / 2.0                       # o modelo olha para +X; o jogo, para −Z
 	mod.scale = Vector3.ONE * ESCALA
 	raiz.add_child(mod)
-	add_child(raiz)
 	Materiais.converter(mod)
 	var anims := mod.find_children("*", "AnimationPlayer", true, false)
 	var anim: AnimationPlayer = anims[0] if not anims.is_empty() else null
 	for nome in ["voo", "planar", "parado", "bicando"]:
 		if anim != null and anim.has_animation(nome):
 			anim.get_animation(nome).loop_mode = Animation.LOOP_LINEAR
+	return {"no": raiz, "anim": anim}
+
+
+## Morto de lado ou de costas: sorteado pelo corpo (o mesmo ao cair e ao recriar a carcaça carregando o jogo).
+static func de_costas(corpo: Variant) -> bool:
+	return hash(str(corpo)) % 2 == 1
+
+
+static func _parar_morto(anim: AnimationPlayer, costas := false) -> void:
+	var nome := "morto_costas" if costas else "morto"
+	if anim != null and anim.has_animation(nome):
+		anim.speed_scale = 1.0
+		anim.play(nome)
+		anim.seek(anim.current_animation_length, true)
+		anim.pause()
+
+
+## Corpo do pássaro morto já deitado (a carcaça recriada ao carregar o jogo; `variante` = a espécie; `corpo` = a chave
+## do corpo, que decide se caiu de lado ou de costas).
+static func corpo_morto(pos: Vector3, ang: float, variante := "pardelo", corpo: Variant = "") -> Node3D:
+	var m := _montar(variante if variante != "" else "pardelo")
+	if m.is_empty():
+		return null
+	var no: Node3D = m.no
+	var costas := de_costas(corpo)
+	no.position = pos
+	no.rotation.y = ang
+	no.set_meta("pronta", true)
+	no.set_meta("costas", costas)
+	no.ready.connect(func(): _parar_morto(m.anim, costas), CONNECT_ONE_SHOT)
+	return no
+
+
+func _novo_passaro(esp: String, k: int, id: int, onde: Vector3) -> Dictionary:
+	var m := _montar(esp)
+	if m.is_empty():
+		return {}
+	var raiz: Node3D = m.no
+	var anim: AnimationPlayer = m.anim
+	add_child(raiz)
 	var h := float(hash(Vector2i(id, k)) % 1000) / 1000.0
 	var h2 := float(hash(Vector2i(k, id * 7)) % 1000) / 1000.0
 	raiz.position = onde + Vector3((h - 0.5) * 3.0, (h2 - 0.5), (h2 - 0.5) * 3.0)
@@ -77,9 +127,18 @@ func _process(delta: float) -> void:
 		var lista: Array = _bandos.get(id, [])
 		var centro := Grade.ponto_mundo(b.pos, float(b.alt))
 		while lista.size() < int(b.n) and total + lista.size() < MAX_PASSAROS:
-			var p := _novo_passaro(String(b.especie), lista.size(), int(id), centro)
+			var onde := centro
+			var nasce: Array = _nascer.get(id, [])
+			if not nasce.is_empty():                   # filhote saindo do ninho: nasce lá
+				onde = nasce[0]
+				nasce[1] = int(nasce[1]) - 1
+				if int(nasce[1]) <= 0:
+					_nascer.erase(id)
+			var p := _novo_passaro(String(b.especie), lista.size(), int(id), onde)
 			if p.is_empty():
 				break
+			if onde != centro:
+				(p.no as Node3D).position = onde
 			lista.append(p)
 		_bandos[id] = lista
 		total += lista.size()
@@ -89,12 +148,22 @@ func _process(delta: float) -> void:
 			for p in _bandos[id]:
 				(p.no as Node3D).queue_free()
 			_bandos.erase(id)
+	_cair(delta)
 
 
-## Onde o pássaro `i` fica parado: num galho de uma das copas do lugar, senão no chão em volta.
+## Onde o pássaro `i` fica parado: num galho de uma das copas do lugar, senão no chão em volta (perto dos frutos,
+## quando há: bicando). O planador pousa onde a lógica pôs (do lado da carne).
 func _lugar_parado(b: Dictionary, p: Dictionary, i: int) -> Vector3:
+	if b.especie == "planador":
+		return Grade.ponto_mundo(b.pos, 0.02)
 	var poleiros: Array = b.get("poleiros", [])
-	if i < poleiros.size() * POR_COPA:
+	var frutas: Array = b.get("frutas", [])
+	var nos_galhos := poleiros.size() * POR_COPA
+	if not frutas.is_empty() and i >= mini(nos_galhos, int(b.n) / 2):   # metade (pelo menos) desce aos frutos
+		var fr: Vector2 = frutas[i % frutas.size()]
+		p.come = true
+		return Grade.ponto_mundo(fr + Vector2.from_angle(float(p.fase) * TAU) * (0.16 + 0.1 * float(i % 3)), 0.02)
+	if i < nos_galhos:
 		var pol: Array = poleiros[i % poleiros.size()]
 		var anel := i / poleiros.size()
 		var c: Vector2 = (pol[0] as Vector2) + Vector2.from_angle(float(anel) * 1.6 + float(p.fase) * 1.3) * 0.2
@@ -131,6 +200,15 @@ func _desenhar_bando(b: Dictionary, lista: Array, delta: float) -> void:
 			p.espera = float(p.espera) - delta
 			alvo = no.position
 			parado_aqui = true
+		elif estado == Passaros.E.MIGRANDO:
+			# revoada de migração: faixa comprida e solta no rumo da viagem (uns na frente, outros atrás e dos lados)
+			var vg: Vector3 = p.vaga
+			var rm: Vector2 = b.get("rumo_mig", Vector2.UP)
+			var fr := Vector3(rm.x, 0.0, -rm.y)
+			var ld := Vector3(-fr.z, 0.0, fr.x)
+			var ang := _t * 0.5 + float(p.fase) * TAU
+			alvo = centro + (fr * vg.x * 3.2 + ld * vg.z * 1.3 + Vector3.UP * vg.y * 0.8) * espalha \
+					+ Vector3(sin(ang), sin(ang * 1.4) * 0.4, cos(ang * 0.7)) * 0.5
 		else:
 			# vaga em volta do centro: gira e ondula devagar (o bando "respira" e muda de forma)
 			var vg: Vector3 = p.vaga
@@ -163,6 +241,14 @@ func _desenhar_bando(b: Dictionary, lista: Array, delta: float) -> void:
 			var horiz := Vector2(vel.x, vel.z)
 			if horiz.length() > 0.3:
 				p.rumo = atan2(-vel.x, -vel.z)
+		if parado_aqui and bool(p.pousado) and b.get("olha") != null:   # o planador de frente para a carne
+			var ol := Grade.ponto_mundo(b.olha) - no.position
+			p.rumo = atan2(-ol.x, -ol.z)
+			p.come = true
+		elif parado_aqui and bool(p.pousado) and not (b.get("frutas", []) as Array).is_empty() and bool(p.come):
+			var fr := Grade.ponto_mundo(_fruta_perto(b, no.position)) - no.position
+			if Vector2(fr.x, fr.z).length() > 0.05:
+				p.rumo = atan2(-fr.x, -fr.z)            # bicando o fruto
 		no.rotation.y = rotate_toward(no.rotation.y, float(p.rumo), delta * 6.0)
 		_animar(b, p, estado, parado_aqui, delta)
 
@@ -182,7 +268,8 @@ func _animar(b: Dictionary, p: Dictionary, estado: int, parado_aqui: bool, delta
 		if p.t_troca <= 0.0:                       # alterna olhar em volta e comer; às vezes vira o corpo
 			p.t_troca = randf_range(1.5, 4.5)
 			p.rumo = float(p.rumo) + randf_range(-1.2, 1.2)
-			p.come = randf() < 0.55
+			var no_fruto := not (b.get("frutas", []) as Array).is_empty() or b.get("olha") != null
+			p.come = randf() < (0.85 if no_fruto else 0.55)
 		if bool(b.dormindo):
 			_tocar(p, "parado", 0.15)
 		else:
@@ -218,3 +305,92 @@ func efeitos_de(eventos: Array) -> void:
 					dst.append_array(_bandos[e.de])
 					_bandos[e.para] = dst
 					_bandos.erase(e.de)
+			"morreu":
+				_derrubar(e)
+			"migracao":
+				var foco: Vector2 = foco_de.call() if foco_de.is_valid() else (e.pos as Vector2)
+				if (e.pos as Vector2).distance_to(foco) < 45.0 and Time.get_ticks_msec() - int(_t_mig.get(e.id, -99999)) > 4500:
+					_t_mig[e.id] = Time.get_ticks_msec()
+					Som.tocar("bando_migrando", Grade.ponto_mundo(e.pos, minf(float(e.get("alt", 18.0)), 12.0)), -4.0)
+			"mergulho":
+				Som.tocar("planador_grito", Grade.ponto_mundo(e.pos, float(e.get("alt", 10.0))), -1.0)
+			"voaram":                              # filhotes do ninho: os novos do bando nascem no ninho
+				_nascer[e.para] = [Grade.ponto_mundo(e.pos, float(e.get("alto", 1.5))), int(e.n)]
+
+
+## Os pássaros no chão agora (pousados rente ao chão, não nos galhos): [posição, raio] para o capim abrir em volta.
+func no_chao() -> Array:
+	var out: Array = []
+	for lista in _bandos.values():
+		for p in lista:
+			var no: Node3D = p.no
+			if bool(p.pousado) and is_instance_valid(no):
+				var g := Vector2(no.position.x, -no.position.z)
+				if no.position.y - Grade.altura_em(g) < 0.12:
+					out.append([g, 0.6 if String(no.get_meta("passaro", "")) == "planador" else 0.18])
+	return out
+
+
+func _fruta_perto(b: Dictionary, onde: Vector3) -> Vector2:
+	var melhor: Vector2 = b.frutas[0]
+	var p := Vector2(onde.x, -onde.z)
+	for f: Vector2 in b.frutas:
+		if f.distance_to(p) < melhor.distance_to(p):
+			melhor = f
+	return melhor
+
+
+## Um pássaro do bando morreu: o desenhado mais perto de onde a carcaça vai ficar despenca até lá (mole, girando),
+## deita na pose "morto" e passa para o DesenhoCarcacas (o mesmo nó vira a carcaça).
+func _derrubar(e: Dictionary) -> void:
+	var lista: Array = _bandos.get(e.id, [])
+	if lista.is_empty():
+		return                                         # não estava desenhado: a carcaça aparece já deitada
+	var chao := Grade.ponto_mundo(e.pos, 0.0)
+	var k := 0
+	for i in lista.size():
+		if (lista[i].no as Node3D).position.distance_to(chao) < (lista[k].no as Node3D).position.distance_to(chao):
+			k = i
+	var p: Dictionary = lista[k]
+	lista.remove_at(k)
+	var no: Node3D = p.no
+	var costas := de_costas(e.corpo)
+	no.set_meta("costas", costas)
+	_parar_morto(p.anim, costas)
+	var v: Vector3 = p.vel
+	_caindo.append({"no": no, "vel": Vector3(v.x * 0.4, minf(v.y, 0.5), v.z * 0.4), "chao": chao, "corpo": String(e.corpo),
+			"giro": Vector3(randf_range(-7.0, 7.0), randf_range(-3.0, 3.0), randf_range(-7.0, 7.0)), "t": 0.0})
+
+
+func _cair(delta: float) -> void:
+	for i in range(_caindo.size() - 1, -1, -1):
+		var c: Dictionary = _caindo[i]
+		var no: Node3D = c.no
+		if not is_instance_valid(no):
+			_caindo.remove_at(i)
+			continue
+		c.t = float(c.t) + delta
+		var chao: Vector3 = c.chao
+		var v: Vector3 = c.vel
+		v.y -= 9.8 * delta
+		var h := Vector2(chao.x - no.position.x, chao.z - no.position.z)   # a deriva leva ao lugar da carcaça
+		var falta := maxf(0.15, sqrt(maxf(0.0, 2.0 * maxf(no.position.y - chao.y, 0.0) / 9.8)))
+		v.x = lerpf(v.x, h.x / falta, clampf(delta * 4.0, 0.0, 1.0))
+		v.z = lerpf(v.z, h.y / falta, clampf(delta * 4.0, 0.0, 1.0))
+		v.y = maxf(v.y, -14.0)
+		c.vel = v
+		no.position += v * delta
+		var alto := no.position.y - chao.y
+		var giro: Vector3 = c.giro
+		var mole := clampf(alto / 1.2, 0.0, 1.0)           # perto do chão, endireita para deitar na pose
+		no.rotation.x = lerp_angle(0.0, no.rotation.x + giro.x * delta, mole)
+		no.rotation.z = lerp_angle(0.0, no.rotation.z + giro.z * delta, mole)
+		no.rotation.y += giro.y * delta * mole
+		if alto <= 0.0 or float(c.t) > 6.0:
+			no.position = chao
+			no.rotation.x = 0.0
+			no.rotation.z = 0.0
+			no.set_meta("bicho", c.corpo)
+			no.set_meta("pronta", true)
+			DesenhoCarcacas.corpos[c.corpo] = no
+			_caindo.remove_at(i)

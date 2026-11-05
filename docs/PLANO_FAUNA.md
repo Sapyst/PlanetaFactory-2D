@@ -219,18 +219,70 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
   - **Código:** `Ratos` (`ambiente/ratos.gd`) é a lógica (fonte "rato" no `Ecossistema`); `DesenhoRatos` faz o 3D,
     as tocas, o mapa da trilha (`trilha_mapa` global, 4 px por tile) e os sons. No 2D: `_sincronizar_ratos`, as
     tocas no `PlantasReagem2D` e a trilha no `chao_2d`. O roteiro é `-- roteiro ratos`.
-  - **Fica para depois:** a aranha caçar o rato de propósito (fase 8) e o planador pegar rato (fase 6). No sprite
+  - **Fica para depois:** a aranha caçar o rato de propósito (fase 8; o planador pegar rato ficou pronto na fase 6). No sprite
     do saltador, o rabo fino some e o tufo parece um pontinho solto.
 
-## Fase 6 — Pássaros completos ⏳ · custo médio
+## Fase 6 — Pássaros completos ✅ · custo médio
 - ✅ (S) 5 espécies, bandos em massa, fuga, sementes, noite e migração na lógica.
-- ⬜ (S) Comem as frutas da fase 3 e morrem como os outros bichos (viram carcaça).
-- ⬜ (C) Ninhos nas árvores.
-- ⬜ (S) Migração visível: revoadas grandes na troca de estação; no inverno alguns tipos vão embora e outros chegam.
-- ⬜ Conferir:
-  - o desempenho no celular com até 90 pássaros;
-  - o planador pousando;
-  - a semente brotando, em vídeo.
+- ✅ (S) Comem as frutas da fase 3 e morrem como os outros bichos (viram carcaça).
+- ✅ (C) Ninhos nas árvores.
+- ✅ (S) Migração visível: revoadas grandes na troca de estação; no inverno alguns tipos vão embora e outros chegam.
+- ⏳ Conferir:
+  - ✅ o planador pousando (foto no 3D e no 2D);
+  - ✅ a semente brotando, em vídeo;
+  - ⏳ o desempenho no celular com até 90 pássaros (medido só no PC; no celular, ainda não).
+- **Feito (2026-11-05):**
+  - **Morte:** explosão e raio derrubam quem está perto e a até 9 m de altura (no máximo 6 por bando de uma vez);
+    velhice e doença levam um de vez em quando, 5× mais no chão envenenado e 1,5× no inverno. O pássaro desenhado
+    mais perto despenca mole, girando, até onde a carcaça fica, e deita de lado ou de costas (sorteado pelo corpo;
+    as duas poses que Sapyst escolheu). O mesmo nó vira a carcaça, com moscas e podridão da fase 4 (o pássaro incha
+    pouco). Na pose de morto, a ponta da mão e o corpo encostam juntos no chão (o ângulo da asa é procurado no
+    exportador).
+  - **Planador carniceiro:** depois de rodar 12 s por cima da carne, sem nada assustando ali, ele desce em espiral,
+    pousa do lado de frente para ela e bica. A carne acaba 15× mais rápido, mas o osso fica (`Carcacas.bicar`).
+    Depois ele sobe pesado e volta ao giro alto. De noite não desce.
+  - **Planador caçador:** olha os ratos fora da toca em campo aberto (sem arbusto em cima) e mergulha. O rato vê a
+    sombra a 14 m (pardo 40%, saltador 60%) e corre para a toca; do céu, a toca é o lugar seguro. Se não chega a
+    tempo, morre, vira carcaça, e o planador pousa e come. Se escapa, o planador sobe e espera 25 s.
+  - **Comer fruta à vista:** metade do bando (pelo menos) desce aos frutos e bica de frente para eles.
+  - **Ninhos (os dois, por espécie):** **taça** de gravetos na forquilha (pardelo e rubro; discreta, aparece quando a
+    árvore perde a folha) e **bolsas** tecidas (cobrico e azulão; 1 a 3 por árvore, penduradas na beira de baixo da
+    copa por um raminho fino que vem do galho; aparecem o ano todo). Bando pousado nas copas na primavera e no começo
+    do verão faz ninho: obra (o ninho cresce e os adultos trazem graveto) → ovos → filhotes (piam e os adultos trazem
+    comida) → os filhotes voam do ninho e entram no bando. Na primavera seguinte o mesmo ninho é reformado. Cai com
+    a árvore (cortada, queimada, caída, corroída), com fogo e com construção encostada. O ninho velho cai no inverno.
+    Fica no save. O bando prefere pousar perto do ninho dele.
+  - **Migração:** na troca de estação, quem vai embora junta todos os bandos num só e parte alto (para o sul no
+    verão e no outono; para o norte no inverno e na primavera). Na janela da estação passa, a cada 2 a 4 min, de dia,
+    uma revoada grande e alta (25 a 45), uma faixa comprida e solta no rumo da viagem, com o chamado do bando lá no
+    alto. Quem chega vem num bando grande que desce e fica.
+  - **Geado** (a espécie de inverno que Sapyst escolheu): claro, peito branco, asa branca de ponta preta e topete
+    branco. Chega no fim do outono em bando grande e fica até o fim do inverno, comendo no chão. O azulão vai
+    embora; o cobrico e o rubro ficam poucos.
+  - **Sons:** `filhotes` (o pio fino e insistente, a candidata A), `geado_canto` (trinado macio e um "tiu") e
+    `bando_migrando` (dezenas de chamados longe, lá no alto).
+  - **Achados e corrigidos de passagem:**
+    - Pássaro pousado com a asa aberta: a mão da asa ficava 50° para fora e o leque aberto. De cima, no 3D e no
+      2D, o pássaro parecia um "Λ". Agora a mão segue reta para trás e as primárias se fecham (`MAO_FECHADA`).
+    - Muda nascendo na cinza aparecia carbonizada e sem folha: o material da vegetação lê o queimado do tile. Agora
+      a muda que brota abre um ponto vivo na cinza (`AmbienteVivo._brotar`) e o capim volta em volta dela.
+    - A chave do corpo do rato no registro de corpos (`rato_<id>`) podia colidir com a de uma aranha de mesmo id.
+    - O capim de 40 cm escondia o pássaro no chão e o corpo morto: agora ele se abre em volta deles também (como
+      em volta do rato).
+  - **Desempenho (PC, xvfb):** com 90 pássaros perto da câmera, o processo subiu 1,3 ms por quadro no 3D (+45
+    chamadas de desenho) e 0,6 ms no 2D (+4 chamadas). No celular ainda não foi medido.
+  - **Arte:** `estudo_passaro.py` (asa fechada, geado, `pose_morto`), `exportar_passaro.py` (ações morto e
+    morto_costas), `estudo_ninho.py` e `exportar_ninho.py` (taça e bolsa de ~300 triângulos com a trama assada, e os
+    pontos de cada uma das 38 árvores em `dados/ninhos_arvores.json`). No 2D, `sprite_modelo.py` faz os pássaros
+    com 7 ações e os dois ninhos (a bolsa sobe 34 cm para a folha, e o 2D desce o mesmo tanto).
+  - **Código:** `Passaros` (morte, caça, carniceiro, migração; estados MERGULHANDO e MIGRANDO), `NinhosPassaros`
+    (`ambiente/ninhos_passaros.gd`, lógica), `DesenhoNinhosPassaros` (3D: ninho, raminho, visitas, piado, queda),
+    `DesenhoPassaros` (queda do morto, faixa da migração, frutos, planador de frente para a carne, filhotes nascendo
+    no ninho). No 2D, `_sincronizar_passaros` desenha também os que caem e os que visitam, e `_sincronizar_ninhos`
+    desenha os ninhos (a taça só sem folha). Números em `fauna.json` ("morte", "caca", "migracao", "ninhos").
+    Os roteiros são `-- roteiro passaros6` (fotos), `semente` (vídeo) e `passaros90` (desempenho).
+  - **Fica para depois:** medir no celular. O raminho até a bolsa não aparece no 2D (é fino demais para o
+    sprite). Do céu, a revoada de migração vista de cima ainda lembra "X" no capim.
 
 ## Fase 7 — A natureza reage à IA do jogador ⬜ · custo médio
 - (C) A fauna se afasta do barulho e da poluição; em volta da fábrica fica quieto e cinza.

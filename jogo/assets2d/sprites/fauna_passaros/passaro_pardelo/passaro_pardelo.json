@@ -3,11 +3,11 @@
  "categoria": "fauna/passaros",
  "quadro": [
   24,
-  22
+  24
  ],
  "ancora": [
   12.0,
-  14.8
+  15.4
  ],
  "fps": 12,
  "quadros": 8,
@@ -36,7 +36,9 @@
   "planar",
   "parado",
   "bicando",
-  "pousar"
+  "pousar",
+  "morto",
+  "morto_costas"
  ],
  "metros_por_pixel": 0.028749999999999998,
  "camera_elevacao_graus": 35,

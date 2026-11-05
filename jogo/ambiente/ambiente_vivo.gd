@@ -448,6 +448,7 @@ func plantar_perto(c: Vector2, raio: float, do_bioma := false, cresce := 1.0) ->
 			melhor = t
 	if melhor != null:
 		plantas[melhor] = 0.05
+		_brotar(melhor)
 		if do_bioma:
 			var esp := especie_do_bioma(melhor)
 			if esp != "":
@@ -463,10 +464,17 @@ func plantar_em(t: Vector2i, especie := "") -> bool:
 	if plantas.size() >= int(_d.plantas.max) or not pode_plantar(t):
 		return false
 	plantas[t] = 0.05
+	_brotar(t)
 	if especie != "":
 		especies[t] = especie
 	versao_plantas += 1
 	return true
+
+
+## A muda que brota abre um ponto vivo na cinza: o tile dela deixa de ser carvão (senão a folhagem dela nasceria
+## carbonizada e sem folha: o material da vegetação lê o queimado do tile, fase 6 do patch fauna).
+func _brotar(t: Vector2i) -> void:
+	somar(t, QUEIM, -0.75)
 
 
 ## Mudas crescem (mais devagar no chão sujo; rápido na primavera, quase parando no inverno — `ritmo_estacao`); planta

@@ -110,7 +110,11 @@ MAT = {
                  plumagem_mat('PlanadorPeito', (0.42, 0.42, 0.41), (0.22, 0.23, 0.24), escala=40),
                  pena_mat('PlanadorPena', (0.15, 0.16, 0.18), (0.025, 0.025, 0.03), (0.28, 0.29, 0.31), 0.45, 0.95)],
 }
+MAT['geado'] = [plumagem_mat('GeadoCorpo', (0.34, 0.31, 0.26), (0.09, 0.08, 0.065), faixas=0.25),     # fase 6: chega no inverno
+                plumagem_mat('GeadoPeito', (0.80, 0.79, 0.76), (0.55, 0.54, 0.51), escala=45),
+                pena_mat('GeadoPena', (0.80, 0.79, 0.76), (0.02, 0.02, 0.02), (0.60, 0.56, 0.48), 0.10, 0.24)]
 M_BICO = {'pardelo': liso_mat('BicoClaro', (0.55, 0.45, 0.22), 0.4, 0.2), 'planador': liso_mat('Bico', (0.10, 0.09, 0.08), 0.35, 0.3)}
+M_BICO['geado'] = M_BICO['pardelo']
 for _n, (_cc, _ce, _pc, _pe, (_b, _p, _bo), _bico) in PALETAS.items():
     MAT[_n] = [plumagem_mat(_n + 'Corpo', _cc, _ce, faixas=0.08), plumagem_mat(_n + 'Peito', _pc, _pe, escala=45),
                pena_mat(_n + 'Pena', _b, _p, _bo, 0.08, 0.27)]
@@ -134,6 +138,10 @@ ESPECIES = {
     'rubro': dict(escala=0.95, altura=0.075, largura=1.0, envergadura=0.54, corte=0.45, corda=0.085,
                   primarias=9, prim_comp=(0.060, 0.085), prim_larg=0.016, secundarias=10, sec_comp=0.062, sec_larg=0.017,
                   cauda_n=9, cauda_comp=0.07, leque=0.6, bico=0.020, bico_r=0.0095, crista=False, fitas=True),
+    # geado (fase 6, chega no inverno em bando grande): corpo mais cheio (pena fofa do frio), topete branco
+    'geado': dict(escala=1.0, altura=0.075, largura=1.12, envergadura=0.55, corte=0.45, corda=0.085,
+                  primarias=9, prim_comp=(0.060, 0.085), prim_larg=0.016, secundarias=10, sec_comp=0.062, sec_larg=0.017,
+                  cauda_n=9, cauda_comp=0.062, leque=0.55, bico=0.017, bico_r=0.0095, crista=True, fitas=False),
     'planador': dict(escala=2.4, altura=0.07, largura=0.9, envergadura=0.75, corte=0.40, corda=0.072,
                      primarias=7, prim_comp=(0.075, 0.105), prim_larg=0.011, secundarias=13, sec_comp=0.060, sec_larg=0.013,
                      cauda_n=11, cauda_comp=0.06, leque=0.8, bico=0.026, bico_r=0.0075, lemes=True, dedos=True),
@@ -463,11 +471,11 @@ def pose_pousar(arm, u):
     bat = math.cos(2 * PI * u * 2.5) * (1 - k)
     enc = 0.42 if arm.get('especie') == 'planador' else 0.6
     for lado in 'ed':
-        asa(arm, lado, (0.55 + 0.45 * bat) * (1 - k) - 0.10 * k, dobra=-0.62 * k, varre=-0.35 * (1 - k) + 1.5 * k,
+        asa(arm, lado, (0.55 + 0.45 * bat) * (1 - k) - 0.12 * k, dobra=0.0, varre=-0.35 * (1 - k) + 1.5 * k,
             torce=0.35 * (1 - k), ponta=0.3 * (1 - k) - 0.05 * k)
         _o(arm, f'asa_{lado}1').scale = (1.0, 1.0 - (1.0 - enc) * k, 1.0)
         mao = (0.62 if arm.get('especie') == 'planador' else 1.0) / enc
-        _o(arm, f'asa_{lado}2').scale = (1.0, 1.0 + (mao - 1.0) * k, 1.0)
+        _o(arm, f'asa_{lado}2').scale = (1.0 - (1.0 - MAO_FECHADA) * k, 1.0 + (mao - 1.0) * k, 1.0)
     _o(arm, 'corpo').rotation_euler = (0.35 * (1 - k), 0, 0)    # positivo = bico para cima (x local do osso = −y)
     _o(arm, 'cauda').rotation_euler = (-0.3 * (1 - k), 0, 0)
     _o(arm, 'corpo').location = (0, 0, 0.04 * (1 - k) * arm.get('escala_p', 1.0))
@@ -515,21 +523,114 @@ def pose_planar(arm, u=0.0):
     lemes(arm, 1.0)
 
 
+MAO_FECHADA = 0.3   ## asa fechada: a mão estreita até isso (as primárias se juntam umas sobre as outras)
+
+
 def pose_pousado(arm, bica=0.0):
     """Asa fechada sobre o dorso: o braço varre para trás e encolhe (as secundárias se encavalam, como na dobra de
-    verdade) e a mão segue para trás, com as primárias até a ponta da cauda."""
+    verdade) e a mão segue reta para trás com as primárias juntas (a mão estreita: o leque fecha), deitadas do punho
+    até a ponta da cauda. De cima, o pássaro pousado é uma gota com a asa no dorso (antes a mão ficava 50° para
+    fora e o leque aberto: de cima parecia um "Λ" de asas abertas)."""
     pose_zero(arm)
     enc = 0.42 if arm.get('especie') == 'planador' else 0.6
     for lado in 'ed':
-        # a mão gira para dentro o quanto as primárias abrem (~0,6 rad): elas ficam deitadas, paralelas ao corpo
-        asa(arm, lado, -0.10, dobra=-0.62, varre=1.50, torce=0.0, ponta=-0.05)
+        asa(arm, lado, -0.12, dobra=0.0, varre=1.50, torce=0.0, ponta=-0.05)
         _o(arm, f'asa_{lado}1').scale = (1.0, enc, 1.0)
-        _o(arm, f'asa_{lado}2').scale = (1.0, (0.62 if arm.get('especie') == 'planador' else 1.0) / enc, 1.0)
+        _o(arm, f'asa_{lado}2').scale = (MAO_FECHADA, (0.62 if arm.get('especie') == 'planador' else 1.0) / enc, 1.0)
     lemes(arm, 0.0)
     if bica > 0.0:
         _o(arm, 'corpo').rotation_euler = (-0.5 * bica, 0, 0)     # x local do osso = −y: negativo baixa o bico
         _o(arm, 'cabeca').rotation_euler = (-0.75 * bica, 0, 0)
         _o(arm, 'cauda').rotation_euler = (0.35 * bica, 0, 0)
+
+
+# ------------------------------------------------------------------ morto (fase 6)
+def _min_z(arm, grupos=None):
+    """Menor z (mundo) da malha deformada; com `grupos`, só os vértices em que um desses ossos pesa mais."""
+    bpy.context.view_layer.update()
+    o = next(c for c in arm.children if c.type == 'MESH')
+    dg = bpy.context.evaluated_depsgraph_get()
+    oe = o.evaluated_get(dg)
+    me = oe.to_mesh()
+    gi = {g.index: g.name for g in o.vertex_groups}
+    zs = []
+    for v in o.data.vertices:
+        if grupos is not None:
+            if not v.groups or gi[max(v.groups, key=lambda g: g.weight).group] not in grupos:
+                continue
+        zs.append((oe.matrix_world @ me.vertices[v.index].co).z)
+    oe.to_mesh_clear()
+    return min(zs) if zs else 0.0
+
+
+def assentar(arm, folga=0.0015):
+    """Sobe/desce o corpo até o ponto mais baixo encostar no chão (z = 0 do pé): nada enterrado, nada flutuando."""
+    pb = arm.pose.bones['corpo']
+    z0 = arm.matrix_world.translation.z
+    for _ in range(3):
+        pb.location.z -= (_min_z(arm) - z0 - folga) / arm.scale.z
+
+
+def asa_fechada(arm, lado):
+    enc = 0.42 if arm.get('especie') == 'planador' else 0.6
+    asa(arm, lado, -0.12, dobra=0.0, varre=1.50, torce=0.0, ponta=-0.05)
+    _o(arm, f'asa_{lado}1').scale = (1.0, enc, 1.0)
+    _o(arm, f'asa_{lado}2').scale = (MAO_FECHADA, (0.62 if arm.get('especie') == 'planador' else 1.0) / enc, 1.0)
+
+
+def _morto_lado(arm, lev):
+    """Caído de lado (rolou ~76° sobre o lado direito): a asa de baixo fechada, a de cima meio aberta e caída por cima das
+    costas até o chão; pés encolhidos para a frente, cabeça tombada, cauda torta."""
+    pose_zero(arm)
+    asa_fechada(arm, 'd')
+    asa(arm, 'e', lev, dobra=-0.30, varre=0.75, torce=0.25, ponta=-0.1)
+    _o(arm, 'corpo').rotation_euler = (0.0, math.radians(76), 0.0)
+    _o(arm, 'cabeca').rotation_euler = (-0.35, 0.0, 0.55)
+    _o(arm, 'cauda').rotation_euler = (0.0, 0.25, 0.12)
+    p = _o(arm, 'pernas')
+    p.rotation_euler = (0.9, 0.0, 0.0)
+    p.scale = (1.0, 0.55, 1.0)
+    lemes(arm, 0.3)
+    assentar(arm)
+
+
+def _morto_costas(arm, lev):
+    """De costas (rolou ~175°): as duas asas meio abertas deitadas no chão, pés para cima encolhidos, cabeça virada."""
+    pose_zero(arm)
+    for lado in 'ed':
+        asa(arm, lado, lev, dobra=-0.25, varre=0.55, torce=0.1, ponta=0.05)
+    _o(arm, 'corpo').rotation_euler = (0.0, math.radians(175), 0.0)
+    _o(arm, 'cabeca').rotation_euler = (0.25, 0.0, 1.0)
+    _o(arm, 'cauda').rotation_euler = (0.15, 0.0, 0.0)
+    p = _o(arm, 'pernas')
+    p.rotation_euler = (0.45, 0.0, 0.0)
+    p.scale = (1.0, 0.5, 1.0)
+    lemes(arm, 0.6)
+    assentar(arm)
+
+
+def pose_morto(arm, costas=False):
+    """Pássaro morto no chão (fase 6): de lado (a asa de cima caída até o chão) ou de costas (as duas abertas no chão).
+    O ângulo da asa solta é procurado para a ponta da mão E o corpo encostarem no chão juntos (a mão nem enterrada nem
+    no ar, o corpo nem levantado pela asa); o resultado fica guardado no esqueleto."""
+    chave = 'morto_lev_costas' if costas else 'morto_lev_lado'
+    pose = _morto_costas if costas else _morto_lado
+    if chave not in arm:
+        maos = {'asa_e2', 'asa_d2'} if costas else {'asa_e2'}
+        o = next(c for c in arm.children if c.type == 'MESH')
+        corpo = {g.name for g in o.vertex_groups if not g.name.startswith('asa_' if costas else 'asa_e')}
+
+        def nota(lev):
+            pose(arm, lev)
+            z0 = arm.matrix_world.translation.z
+            return (_min_z(arm, maos) - z0) + (_min_z(arm, corpo) - z0)
+        notas = {k * 0.08: nota(k * 0.08) for k in range(-14, 40)}
+        melhor = min(notas, key=notas.get)
+        for k in range(-8, 9):                           # refina em volta
+            lev = melhor + k * 0.01
+            notas[lev] = nota(lev)
+        arm[chave] = min(notas, key=notas.get)
+    pose(arm, arm[chave])
 
 
 # ------------------------------------------------------------------ cena
@@ -545,7 +646,7 @@ planadores = {
     'pousado': montar_passaro('planador_pousado', 'planador', Vector((7.6, -1.8, 0.3)), 0.6),
 }
 coloridos = {}
-for i, n in enumerate(('cobrico', 'azulao', 'rubro')):
+for i, n in enumerate(('cobrico', 'azulao', 'rubro', 'geado')):
     coloridos[n + '_pousado'] = montar_passaro(n + '_pousado', n, Vector((2.6 + i * 0.32, -1.0, 0)), 0.5 + i * 0.4)
     coloridos[n + '_voo'] = montar_passaro(n + '_voo', n, Vector((2.6 + i * 0.5, -0.2, 0.45)), 0.2)
     pose_pousado(coloridos[n + '_pousado'], 1.0 if n == 'rubro' else 0.0)

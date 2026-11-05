@@ -5,14 +5,16 @@ exporta com o esqueleto e as ações (24 quadros/s):
   "planar"  — 24 quadros: asas abertas, balanço leve;
   "parado"  — 48 quadros: pousado, olhando em volta;
   "bicando" — 24 quadros: duas bicadas no chão (comer e pegar semente);
-  "pousar"  — 24 quadros: chega freando e fecha as asas (ao contrário = decolar).
+  "pousar"  — 24 quadros: chega freando e fecha as asas (ao contrário = decolar);
+  "morto", "morto_costas" — 2 quadros: caído de lado / de costas, encostado no chão (fase 6: vira carcaça).
 Uso: blender -b --python exportar_passaro.py -- <especie> [<especie>…]"""
 import bpy, math, os, sys, json
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 ESTUDO = os.path.join(AQUI, 'estudo_passaro.py')
 ESPECIES = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else ['pardelo']
-NOMES = {'pardelo': 'Pardelo', 'cobrico': 'Cobrico', 'azulao': 'Azulão', 'rubro': 'Rubro', 'planador': 'Planador-cinza'}
+NOMES = {'pardelo': 'Pardelo', 'cobrico': 'Cobrico', 'azulao': 'Azulão', 'rubro': 'Rubro', 'planador': 'Planador-cinza',
+         'geado': 'Geado'}
 
 for esp in ESPECIES:
     sys.argv = [sys.argv[0], '--python', ESTUDO, '--', 'nada', 'jogo']
@@ -85,6 +87,8 @@ for esp in ESPECIES:
     acao('parado', 48, lambda u: NS['pose_parado'](arm, u))
     acao('bicando', 24, lambda u: NS['pose_bicar'](arm, u))
     acao('pousar', 24, lambda u: NS['pose_pousar'](arm, u))     # tocada ao contrário = decolar
+    acao('morto', 2, lambda u: NS['pose_morto'](arm, False))
+    acao('morto_costas', 2, lambda u: NS['pose_morto'](arm, True))
     NS['pose_zero'](arm)
     sc.render.fps = 24
     saida = os.path.join(AQUI, '..', 'modelos', 'fauna', 'passaros', f'passaro_{esp}')
@@ -99,7 +103,7 @@ for esp in ESPECIES:
     dims = [round(max(p[i] for p in pts) - min(p[i] for p in pts), 3) for i in range(3)]
     tris = sum(len(p.vertices) - 2 for p in corpo.data.polygons)
     json.dump({'nome': f'passaro_{esp}', 'categoria': 'fauna/passaros', 'tipo': 'veiculo', 'area': [1, 1],
-               'descricao': f'{NOMES.get(esp, esp)}: pássaro nativo (patch fauna); voo, planar, parado e bicando.',
+               'descricao': f'{NOMES.get(esp, esp)}: pássaro nativo (patch fauna); voo, planar, parado, bicando, pousar e morto (de lado e de costas).',
                'ocupa_canto': False, 'partes': [{'nome': 'corpo', 'pai': None, 'pivo': [0.0, 0.0, 0.0]}], 'portas': [],
                'tris': tris, 'dims': dims, 'anima': True, 'estudo': 'estudo_passaro.py'},
               open(os.path.join(saida, f'passaro_{esp}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

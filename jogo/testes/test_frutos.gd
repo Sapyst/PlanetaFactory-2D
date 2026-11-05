@@ -285,7 +285,12 @@ func test_semente_prefere_chao_morto() -> void:
 	var mudas: Array = f.eventos.filter(func(ev): return ev.tipo == "muda_semente")
 	verificar(mudas.size() >= 1, "brotou no queimado (%d)" % mudas.size())
 	for ev in mudas:
-		verificar(amb.valor(ev.tile, AmbienteVivo.QUEIM) > 0.5, "muda no chão queimado")
+		var t: Vector2i = ev.tile
+		var em_volta := 0.0
+		for o in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			em_volta += amb.valor(t + o, AmbienteVivo.QUEIM) * 0.25
+		verificar(em_volta > 0.5, "muda no chão queimado (em volta %.2f)" % em_volta)
+		verificar(amb.valor(t, AmbienteVivo.QUEIM) < 0.5, "a muda abriu um ponto vivo na cinza (fase 6)")
 
 
 func test_muda_cresce_pela_estacao() -> void:

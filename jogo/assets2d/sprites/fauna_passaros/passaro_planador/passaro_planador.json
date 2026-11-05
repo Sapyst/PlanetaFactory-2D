@@ -2,12 +2,12 @@
  "nome": "passaro_planador",
  "categoria": "fauna/passaros",
  "quadro": [
-  62,
-  54
+  64,
+  56
  ],
  "ancora": [
-  31.0,
-  37.9
+  32.0,
+  37.5
  ],
  "fps": 12,
  "quadros": 8,
@@ -36,7 +36,9 @@
   "planar",
   "parado",
   "bicando",
-  "pousar"
+  "pousar",
+  "morto",
+  "morto_costas"
  ],
  "metros_por_pixel": 0.028749999999999998,
  "camera_elevacao_graus": 35,

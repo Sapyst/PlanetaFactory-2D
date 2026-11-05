@@ -30,7 +30,7 @@
   "vel": 0.55, "vel_fuga": 2.4, "raio_busca": 12, "raio_vagar": 8, "sair_s": 0.8, "entrar_s": 0.6, "comer_s": [4, 8], "cavar_s": 2.5,
   "leva_chance": 0.45, "esquece_chance": 0.35, "medo_raio": 6, "pego_raio": 0.7, "trilha_passo": 0.03, "trilha_some_s": 1800,
   "aberto_chance": 0.5, "pasto_chance": 0.35,
-  "especies": {"pardo": {}, "saltador": {"vel": 0.85, "vel_fuga": 3.2, "raio_vagar": 13}}
+  "especies": {"pardo": {"alerta": 0.4}, "saltador": {"vel": 0.85, "vel_fuga": 3.2, "raio_vagar": 13, "alerta": 0.6}}
  },
  "carcacas": {
   "_nota": "fase 4: quem morre fica. Carne (larva; rato e pássaro depois) vira comida 'carcaca' no Ecossistema e apodrece pela idade: inteiro até etapas[0] da vida, inchado até etapas[1], restos até o fim; quando some, aduba adubo_raio m em volta (adubo = quanto). Aranha é máquina: sucata que vaza oleo, enferruja e afunda. max por espécie (a mais velha some). moscas = desenho em volta da carne; carniceiro = o planador desce a alt m e circula com giro m por cima da carcaça com carne a até raio m",
@@ -39,11 +39,33 @@
   "tipos": {
    "larva": {"vida_s": 1500, "valor": 2.0, "moscas": true, "adubo": 0.8, "etapas": [0.3, 0.7], "max": 40},
    "aranha": {"sucata": true, "vida_s": 2400, "oleo": 0.35, "fumaca_s": 45, "max": 40},
-   "passaro": {"vida_s": 700, "valor": 0.5, "moscas": true, "adubo": 0.3, "etapas": [0.3, 0.65], "max": 12},
+   "passaro": {"vida_s": 700, "valor": 0.5, "moscas": true, "adubo": 0.3, "etapas": [0.3, 0.65], "max": 12, "incha": 0.35},
    "rato": {"vida_s": 600, "valor": 0.6, "moscas": true, "adubo": 0.3, "etapas": [0.3, 0.65], "max": 20}
   },
   "moscas": {"liga": true, "por_carcaca": 9, "raio": 0.7, "alt": [0.12, 1.0], "px": 2.0, "max": 120, "estacoes": [0.8, 1.0, 0.7, 0.0], "som_dist": 14},
-  "carniceiro": {"raio": 45, "giro": 6.0, "alt": 9.0}
+  "carniceiro": {"raio": 45, "giro": 6.0, "alt": 9.0, "pousa_apos_s": 12}
+ },
+ "morte": {
+  "_nota": "fase 6: pássaro morre e vira carcaça. natural_h = mortes por pássaro por hora (velhice); × doente_x onde a saúde do chão < doente_saude (veneno, cinza) e × inverno_x no inverno. Explosão e raio derrubam quem está a até alt_max m de altura no raio (no máximo max_por_vez por bando): o mundo chama Passaros.ferir com o raio e a chance de cada um (explosao, raio_eletrico)",
+  "liga": true, "natural_h": 0.03, "doente_saude": 0.15, "doente_x": 5.0, "inverno_x": 1.5, "alt_max": 9.0, "max_por_vez": 6,
+  "explosao": {"raio": 4.0, "chance": 0.55}, "raio_eletrico": {"raio": 3.0, "chance": 0.9}
+ },
+ "caca": {
+  "_nota": "fase 6: o planador caça rato fora da toca em campo aberto (sem arbusto a 1,2 m nem árvore a 1,5 m) a até raio m: olha a cada olha_s com chance; mergulha a vel × mergulho_vel; o rato vê a sombra a ve_dist m com a chance 'alerta' da espécie (ratos.especies) e corre para a toca; pega a pega_dist m (desistindo depois de mergulho_max_s); errou: espera espera_s. No chão, comendo (carcaça do rato ou carniça), a carne envelhece come_x vezes mais rápido (Carcacas.bicar)",
+  "liga": true, "raio": 30, "olha_s": 2.5, "chance": 0.3, "mergulho_vel": 2.0, "ve_dist": 14.0, "pega_dist": 0.9,
+  "mergulho_max_s": 6.0, "espera_s": 25, "come_x": 15.0
+ },
+ "migracao": {
+  "_nota": "fase 6: na troca de estação quem vai embora (fator 0 na estação nova) se junta e parte alto. Na janela da estação (vai_depois = da fração da estação em diante, quem cai mais de 0,25 na próxima; chega_ate = até essa fração, quem subiu mais de 0,25 desde a anterior), de dia, a cada intervalo_s passa uma revoada grande (bando) alta (alt m) a vel m/s cruzando o céu; quem chega vem com bando_chega pássaros, desce e fica. Rumo: fim do verão e outono para o sul; inverno e primavera para o norte",
+  "liga": true, "intervalo_s": [120, 240], "bando": [25, 45], "bando_chega": [18, 32], "alt": [16, 24], "vel": 9.0,
+  "vai_depois": 0.5, "chega_ate": 0.5
+ },
+ "ninhos": {
+  "_nota": "fase 6: bando pousado em copa (primavera/verão: estacoes) faz ninho com chance_s a cada olha_s; até max ninhos ativos perto da câmera, a dist_min m um do outro, longe_construcao tiles de construção, saúde do chão ≥ saude_min + saude_extra. obra_s → ovos (ovos) → ovos_s → filhotes → filhotes_s → voam (entram no bando da espécie). Visita de adulto a cada visita_s (bando a até visita_raio m). Vazio no inverno há velho_s: cai (em média cai_s). Bolsa: até bolsas_max por árvore. Cai junto com a árvore, fogo ou construção a cai_construcao tiles. Som dos filhotes: piado_s, até som_dist m",
+  "liga": true, "olha_s": 2.0, "chance_s": 0.04, "estacoes": [1.0, 0.6, 0.0, 0.0], "max": 8, "dist_min": 5.0,
+  "longe_construcao": 6, "saude_extra": 0.1, "obra_s": 240, "ovos_s": 600, "filhotes_s": 600, "ovos": [2, 4],
+  "visita_s": [12, 25], "visita_raio": 40, "velho_s": 3600, "cai_s": 600, "bolsas_max": 3, "cai_construcao": 2,
+  "piado_s": [3, 7], "som_dist": 18
  },
  "frutos": {
   "_nota": "fase 3: frutos caem embaixo das plantas perto da câmera (a cada intervalo_s, chance × estacoes [primavera, verão, outono, inverno] por planta, até por_fonte embaixo de cada uma e max perto da câmera) e viram comida no Ecossistema; apodrecem em vida_s. Sementes no vento: na troca de estação, cada árvore da espécie solta com chance × peso da estação; pegam a dist m a favor do vento, até max_por_vez mudas. voando = o desenho (janela = fração do começo da estação em que voam)",
@@ -59,10 +81,11 @@
    "voando": {"raio": 28, "por_arvore": 8, "ciclo_s": 40, "max": 180, "janela": 0.35, "px": 2.2}}
  },
  "especies": {
-  "pardelo":  {"peso": 4.0, "bando": [12, 28], "vel": 6.5, "alt": [4.0, 8.0], "pousa_s": [10, 26], "canto": "pardelo_canto", "canto_s": 5.0, "estacoes": [1.0, 1.0, 1.0, 0.8], "sementes": true},
-  "cobrico":  {"peso": 2.0, "bando": [8, 18], "vel": 7.0, "alt": [4.0, 7.0], "pousa_s": [8, 20], "canto": "cobrico_canto", "canto_s": 6.0, "estacoes": [1.0, 1.0, 1.0, 0.4], "sementes": true},
-  "azulao":   {"peso": 1.5, "bando": [3, 7], "vel": 6.0, "alt": [5.0, 9.0], "pousa_s": [14, 30], "canto": "azulao_canto", "canto_s": 8.0, "estacoes": [1.0, 1.0, 0.5, 0.0], "sementes": true},
-  "rubro":    {"peso": 1.0, "bando": [2, 5], "vel": 6.0, "alt": [4.0, 8.0], "pousa_s": [14, 34], "canto": "rubro_canto", "canto_s": 9.0, "estacoes": [0.7, 1.0, 1.0, 0.3], "sementes": true},
-  "planador": {"peso": 0.9, "bando": [1, 2], "vel": 7.5, "alt": [18.0, 28.0], "giro": [10.0, 16.0], "canto": "planador_grito", "canto_s": 22.0, "estacoes": [1.0, 1.0, 1.0, 1.0], "sementes": false, "max": 2}
+  "pardelo":  {"peso": 4.0, "bando": [12, 28], "vel": 6.5, "alt": [4.0, 8.0], "pousa_s": [10, 26], "canto": "pardelo_canto", "canto_s": 5.0, "estacoes": [1.0, 1.0, 1.0, 0.8], "sementes": true, "ninho": "taca"},
+  "cobrico":  {"peso": 2.0, "bando": [8, 18], "vel": 7.0, "alt": [4.0, 7.0], "pousa_s": [8, 20], "canto": "cobrico_canto", "canto_s": 6.0, "estacoes": [1.0, 1.0, 1.0, 0.4], "sementes": true, "ninho": "bolsa"},
+  "azulao":   {"peso": 1.5, "bando": [3, 7], "vel": 6.0, "alt": [5.0, 9.0], "pousa_s": [14, 30], "canto": "azulao_canto", "canto_s": 8.0, "estacoes": [1.0, 1.0, 0.5, 0.0], "sementes": true, "ninho": "bolsa"},
+  "rubro":    {"peso": 1.0, "bando": [2, 5], "vel": 6.0, "alt": [4.0, 8.0], "pousa_s": [14, 34], "canto": "rubro_canto", "canto_s": 9.0, "estacoes": [0.7, 1.0, 1.0, 0.3], "sementes": true, "ninho": "taca"},
+  "geado":    {"peso": 3.0, "bando": [14, 32], "vel": 6.5, "alt": [3.0, 7.0], "pousa_s": [12, 30], "canto": "geado_canto", "canto_s": 6.0, "estacoes": [0.0, 0.0, 0.35, 1.0], "sementes": true},
+  "planador": {"peso": 0.9, "bando": [1, 2], "vel": 7.5, "alt": [18.0, 28.0], "giro": [10.0, 16.0], "canto": "planador_grito", "canto_s": 22.0, "estacoes": [1.0, 1.0, 1.0, 1.0], "sementes": false, "max": 2, "pousa_s": [30, 60]}
  }
 }

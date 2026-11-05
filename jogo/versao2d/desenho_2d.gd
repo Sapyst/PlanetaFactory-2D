@@ -34,6 +34,7 @@ var _corpos: Dictionary = {}       ## id do nó 3D do corpo (DesenhoCarcacas) �
 var _ratos2d: Dictionary = {}      ## id do rato → {p, esp}: fase 5 (sprite rato_<espécie>, o nó 3D manda)
 var _afundando: Dictionary = {}     ## nó 3D da árvore dissolvendo (mundo._dissolver) → par de sprites
 var _passaros: Dictionary = {}      ## nó 3D do pássaro (DesenhoPassaros) → par de sprites "passaro_<espécie>"
+var _ninhos2d: Dictionary = {}      ## fase 6: nó 3D de cada ninho (DesenhoNinhosPassaros: pivô da taça/bolsa) → par
 const ARVORE_MORTA := "arvore_morta"
 const COR_CORROIDA := Color(0.92, 0.86, 0.72)   ## madeira desbotada pelo ácido (puxa para a terra da cratera)
 const ARANHA := "aranha_animada"
@@ -619,19 +620,23 @@ func _sincronizar_corpos() -> void:
 		vivos[id] = true
 		var larva := no is Larva
 		var rato := String(no.get_meta("rato", ""))
+		var passaro := String(no.get_meta("passaro", ""))       # fase 6: pássaro morto (de lado ou de costas)
 		var c: Dictionary = _corpos.get(id, {})
 		if c.is_empty():
-			var nome_c := ("rato_" + rato) if rato != "" else (LARVA if larva else ARANHA)
+			var nome_c := ("rato_" + rato) if rato != "" else (("passaro_" + passaro) if passaro != "" else (LARVA if larva else ARANHA))
 			if not Catalogo2D.tem(nome_c):
 				continue
 			var p := _par(nome_c)
 			if p.is_empty():
 				continue
 			var ang := no.rotation.y - PI / 2.0 if rato != "" else no.rotation.y
-			c = {"p": p, "linha": Catalogo2D.linha_do_angulo(p.m, ang), "q": 0 if larva or rato != "" else 11, "larva": larva,
-					"no": no, "t0": _t}
+			c = {"p": p, "linha": Catalogo2D.linha_do_angulo(p.m, ang), "q": 0 if larva or rato != "" or passaro != "" else 11,
+					"larva": larva, "no": no, "t0": _t}
 			_corpos[id] = c
-		_por(c.p, no.global_position, int(c.linha), int(c.q), "morto" if rato != "" else ("andar" if larva else "morte"))
+		var var_c := "morto" if rato != "" else ("andar" if larva else "morte")
+		if passaro != "":
+			var_c = "morto_costas" if bool(no.get_meta("costas", false)) else "morto"
+		_por(c.p, no.global_position, int(c.linha), int(c.q), var_c)
 		var spr := c.p.spr as Sprite2D
 		if not (spr.material is ShaderMaterial):
 			var mt := ShaderMaterial.new()
@@ -819,10 +824,104 @@ func _sincronizar_passaros() -> void:
 			(pa.som as Sprite2D).offset -= alto                       # a sombra fica no chão
 			(pa.som as Sprite2D).modulate.a = clampf(1.0 - alt / 25.0, 0.25, 1.0)
 			(pa.spr as Sprite2D).z_index = 20 if alt > 1.0 else 0     # voando: por cima das árvores e construções
+	# fase 6: quem morreu despencando (mole, girando) e os adultos indo e voltando do ninho
+	var extras: Array = []
+	for c in dp._caindo:
+		extras.append([c.no, "morto_costas" if bool((c.no as Node3D).get_meta("costas", false)) else "morto", null])
+	var dn = mundo.get("_desenho_ninhos")
+	if dn != null:
+		for v in dn.visitas:
+			extras.append([v.no, String(v.acao), v.anim])
+	for ex in extras:
+		var no: Node3D = ex[0]
+		if not is_instance_valid(no):
+			continue
+		var esp := "passaro_" + String(no.get_meta("passaro", ""))
+		if not Catalogo2D.tem(esp):
+			continue
+		vistos[no] = true
+		if not _passaros.has(no):
+			var par := _par(esp)
+			if par.is_empty():
+				continue
+			_passaros[no] = par
+		var pa: Dictionary = _passaros[no]
+		var variante := String(ex[1]).trim_suffix("<")
+		if not variante in ["voo", "planar", "parado", "bicando", "pousar", "morto", "morto_costas"]:
+			variante = "voo"
+		var q := 0
+		var anim: AnimationPlayer = ex[2]
+		if anim != null and anim.current_animation != "" and anim.current_animation_length > 0.0:
+			q = clampi(int(anim.current_animation_position / anim.current_animation_length * 8.0), 0, 7)
+		var pos := no.global_position
+		_por(pa, pos, Catalogo2D.linha_do_angulo(pa.m, no.rotation.y), q, variante)
+		var alt := pos.y - Grade.altura_em(Vector2(pos.x, -pos.z))
+		var alto := Camera2DJogo.projetar(pos) - Camera2DJogo.projetar(Vector3(pos.x, pos.y - alt, pos.z))
+		(pa.som as Sprite2D).offset -= alto
+		(pa.som as Sprite2D).modulate.a = clampf(1.0 - alt / 25.0, 0.25, 1.0)
+		(pa.spr as Sprite2D).z_index = 20 if alt > 1.0 else 0
+		(pa.spr as Sprite2D).rotation = no.rotation.x * 0.8 if variante.begins_with("morto") else 0.0   # girando na queda
 	for no in _passaros.keys():
 		if not vistos.has(no):
+			(_passaros[no].spr as Sprite2D).rotation = 0.0
 			_soltar(_passaros[no])
 			_passaros.erase(no)
+	_sincronizar_ninhos()
+
+
+## Fase 6: os ninhos (os pivôs do DesenhoNinhosPassaros, com a mesma posição e o mesmo giro do 3D), ordenados pelo
+## próprio pé: a bolsa do lado de cá da copa fica na frente, a do lado de lá, atrás. A taça (na forquilha, dentro da
+## copa) só aparece quando a árvore está sem folha (outono avançado e inverno nas que perdem folha; verão seco na
+## acácia), como no 3D, onde a folha a esconde. Ninho caído fica no chão e some.
+const COPA_RALA := {1: [3], 4: [3], 2: [3], 3: [1]}      ## perfil da folha → estações sem folha
+
+func _sincronizar_ninhos() -> void:
+	var dn = mundo.get("_desenho_ninhos")
+	if dn == null:
+		return
+	var vistos := {}
+	var raizes: Array = []
+	for r in dn.nos.values():
+		raizes.append([r.no, String(r.tipo), false])
+	for c in dn.caindo:
+		raizes.append([c.no, "bolsa" if bool(c.get("bolsa", false)) else "taca", true])
+	var est: int = mundo.clima.estacao if mundo.get("clima") != null else 0
+	for rz in raizes:
+		var raiz: Node3D = rz[0]
+		if not is_instance_valid(raiz):
+			continue
+		var nome := "ninho_" + String(rz[1])
+		if not Catalogo2D.tem(nome):
+			continue
+		var ralo := 1.0
+		if rz[1] == "taca" and not bool(rz[2]):
+			var t3 := Grade.tile_de_mundo((raiz.get_child(0) as Node3D).global_position) if raiz.get_child_count() > 0 else Vector2i.ZERO
+			var o: Dictionary = mundo.gerador.distribuicao.obstaculo(t3)
+			var perfil := Ecossistema.perfil_folha(String(o.get("nome", ""))) if not o.is_empty() else 0
+			ralo = 1.0 if est in COPA_RALA.get(perfil, []) else 0.0
+		for piv: Node3D in raiz.get_children():
+			if not piv.has_meta("piv"):
+				continue                                       # o raminho até a bolsa (fica de fora no 2D: fino demais)
+			vistos[piv] = true
+			var pa: Dictionary = _ninhos2d.get(piv, {})
+			if pa.is_empty():
+				pa = _par(nome)
+				if pa.is_empty():
+					continue
+				_ninhos2d[piv] = pa
+			var pos := piv.global_position
+			if rz[1] == "bolsa" and not bool(rz[2]):
+				pos.y -= 0.34 * piv.scale.y                   # a folha da bolsa foi feita 34 cm acima (ela pende da origem)
+			var z_o := pos.z + 0.06 if rz[1] == "taca" and not bool(rz[2]) else NAN   # a taça na frente do tronco
+			_por(pa, pos, Catalogo2D.linha_do_angulo(pa.m, piv.global_rotation.y), 0, "", z_o)
+			(pa.spr as Sprite2D).scale = Vector2.ONE * piv.scale.x * raiz.scale.x          # cresce na obra, some caído
+			(pa.spr as Sprite2D).visible = ralo > 0.5
+			(pa.som as Sprite2D).visible = ralo > 0.5 and bool(rz[2])                   # sombra só no chão
+	for piv in _ninhos2d.keys():
+		if not vistos.has(piv):
+			(_ninhos2d[piv].spr as Sprite2D).scale = Vector2.ONE
+			_soltar(_ninhos2d[piv])
+			_ninhos2d.erase(piv)
 
 
 ## Vida pequena (fase 1 do patch fauna): os mesmos pontos do 3D, na camada própria com o enquadramento do mundo.

@@ -7,7 +7,7 @@
  ],
  "ancora": [
   11.0,
-  13.2
+  12.8
  ],
  "fps": 12,
  "quadros": 8,
@@ -36,7 +36,9 @@
   "planar",
   "parado",
   "bicando",
-  "pousar"
+  "pousar",
+  "morto",
+  "morto_costas"
  ],
  "metros_por_pixel": 0.028749999999999998,
  "camera_elevacao_graus": 35,

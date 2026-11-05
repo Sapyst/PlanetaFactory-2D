@@ -915,6 +915,62 @@ def revoada(rng):
     return reverb(junta((x, 1.0, 0), (piado, 0.35, rng.uniform(0.05, 0.3))), 0.4, 0.12, 6000)
 
 
+def filhotes(rng):
+    """Filhotes no ninho pedindo comida (fase 6): 3 ou 4 bicos abertos, cada um num "tsi" fino e insistente (40–60 ms, 6,5–8 kHz,
+    subindo um pouco), 6 a 9 por segundo, desencontrados; um adulto chega e o coro aperta."""
+    d = 1.8
+    partes = []
+    for v in range(int(rng.integers(3, 5))):
+        f0 = rng.uniform(6500, 7600)
+        taxa = rng.uniform(6.0, 9.0)
+        t0 = rng.uniform(0.0, 0.15)
+        while t0 < d - 0.06:
+            dd = rng.uniform(0.04, 0.06)
+            s = silaba(rng, varre(f0 * 0.94, f0 * rng.uniform(1.0, 1.06), dd, 0.8), (1.0, 0.12), 0.08,
+                       ataque=0.003, queda=0.01)
+            aperta = 1.0 + 0.6 * np.clip((t0 - 0.6) / 0.4, 0, 1)        # o adulto chegou: mais forte e mais rápido
+            partes.append((s, rng.uniform(0.5, 0.9) * min(aperta, 1.4), t0))
+            t0 += (1.0 / taxa) / aperta * rng.uniform(0.8, 1.2)
+    return reverb(junta(*partes), 0.35, 0.12, 9000)
+
+
+def geado_canto(rng):
+    """GEADO (inverno, bando grande no chão aberto): trinado rolado e macio "tirrrr" (notas de 22 ms a ~30/s em
+    volta de 3,4 kHz, caindo um pouco) e um "tiu" assobiado no fim; o chamado de contato dos bandos do frio."""
+    notas = []
+    base = rng.uniform(3200, 3600)
+    for i in range(int(rng.integers(9, 14))):
+        f = base * (1.0 - 0.008 * i)
+        notas.append((silaba(rng, varre(f * 1.06, f * 0.94, 0.022, 1.0), (1.0, 0.18), 0.06, ataque=0.003, queda=0.006),
+                      0.7 + 0.3 * np.sin(np.pi * i / 10)))
+    tiu = silaba(rng, varre(base * 1.25, base * 0.85, 0.14, 1.3), (1.0, 0.12), 0.05, (7, 0.01), ataque=0.01, queda=0.05)
+    x = frase(rng, notas, 0.011)
+    x = junta((x, 1.0, 0.0), (tiu, 0.8, len(x) / TAXA + 0.09))
+    return reverb(x, 0.55, 0.16, 6500)
+
+
+def bando_migrando(rng):
+    """Bando migrando ALTO por cima: dezenas de chamados de contato curtos e fracos ("tsii", "tiu"), desencontrados,
+    sem batida de asa audível (está longe), com o agudo cortado pela distância e eco largo de céu aberto; passa
+    crescendo e some (5 s)."""
+    d = 5.0
+    n = int(d * TAXA)
+    passa = np.sin(np.pi * np.clip(np.arange(n) / n, 0, 1)) ** 1.6     # vem, passa por cima e vai
+    partes = []
+    for k in range(int(rng.integers(40, 60))):
+        t0 = rng.uniform(0.1, d - 0.3)
+        f0 = rng.uniform(3800, 6200)
+        if rng.uniform() < 0.6:
+            s = silaba(rng, varre(f0, f0 * rng.uniform(0.75, 0.9), rng.uniform(0.05, 0.09), 1.4), (1.0, 0.2), 0.08)
+        else:
+            s = silaba(rng, varre(f0 * 0.8, f0, rng.uniform(0.06, 0.1), 0.7), (1.0, 0.15), 0.05)
+        partes.append((s, rng.uniform(0.3, 1.0) * float(passa[int(t0 * TAXA)]), t0))
+    x = junta(*partes)
+    x = pb(x, 5200, 2)                                                # o agudo some com a distância
+    sopro = banda(rosa(len(x), rng), 300, 1800) * 0.04 * np.interp(np.arange(len(x)), np.arange(n), passa)
+    return reverb(x + sopro, 1.4, 0.35, 4500)
+
+
 def solda_arco(rng):
     """Solda a arco (braço do drone construtor): zumbido elétrico de 100 Hz + chiado frito com estouros ao acaso,
     que oscila com o movimento da tocha. Alterna com solda_mig enquanto o drone trabalha."""
@@ -1139,11 +1195,14 @@ SONS = [
     ('sapo', sapo, -17, 0, 0.003), ('amb_moscas', amb_moscas, -26, 0.6, 0),
     ('rato_chiado', rato_chiado, -20, 0, 0.001), ('rato_guincho', rato_guincho, -20, 0, 0.001),
     ('rato_cavar', rato_cavar, -24, 0, 0.001),
+    ('filhotes', filhotes, -24, 0, 0.002), ('geado_canto', geado_canto, -24, 0, 0.002),
+    ('bando_migrando', bando_migrando, -26, 0, 0.002),
 ]
 
 
 VARIACOES = {'aranha_passo': 4, 'pardelo_canto': 3, 'cobrico_canto': 3, 'azulao_canto': 3, 'rubro_canto': 2,
-             'planador_grito': 2, 'revoada': 2, 'sapo': 3, 'rato_chiado': 3, 'rato_guincho': 2}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
+             'planador_grito': 2, 'revoada': 2, 'sapo': 3, 'rato_chiado': 3, 'rato_guincho': 2,
+             'filhotes': 2, 'geado_canto': 3, 'bando_migrando': 2}       ## nome → quantos arquivos (nome.wav, nome__2.wav…): o jogo sorteia um a cada vez
 
 
 if __name__ == '__main__':

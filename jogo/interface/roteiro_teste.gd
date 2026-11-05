@@ -59,6 +59,9 @@ func _ready() -> void:
 		"frutos": _roteiro_frutos()
 		"carcacas": _roteiro_carcacas()
 		"ratos": _roteiro_ratos()
+		"passaros6": _roteiro_passaros6()
+		"semente": _roteiro_semente()
+		"passaros90": _roteiro_passaros90()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -2716,6 +2719,302 @@ func _roteiro_obras() -> void:
 			var ob: Obras = cena.obras
 			var fora := ob.construtores().filter(func(d): return d.e != Drones.E.HANGAR).size()
 			print("OBRAS q=%d fila=%d esperando=%d drones_fora=%d" % [q, ob.pendentes(), ob.esperando(), fora]))
+
+
+## Patch fauna, fase 6: ninhos (taça e bolsa) nas copas com um bando pousado, o planador descendo e comendo a carcaça,
+## pássaros caindo mortos (explosão) e deitados, uma revoada de migração e o inverno com o geado no chão.
+func _roteiro_passaros6() -> void:
+	var w := {"a": Vector2.ZERO, "b": Vector2.ZERO, "pol": []}
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_passaros6")
+		get_viewport().get_texture().get_image().save_png("user://fotos_passaros6/%s.png" % nome)
+		print("PASSAROS6 foto ", nome)
+	var olhar := func(p: Vector2, dist: float) -> void:
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(p)
+		cam.distancia = dist
+		cam.posicionar()
+	em(2, func():
+		Sessao.config.fps = false
+		var p: Passaros = cena.passaros
+		var eco: Ecossistema = cena.ecossistema
+		p._t_nasce = 1.0e9
+		p._t_mig = 1.0e9
+		p.bandos.clear()
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = 0
+		cl.hora = 0.40
+		cl.forcar("limpo", true)
+		cl.restante = 1.0e9
+		var melhor := INF
+		for y in range(-45, 46, 3):                       # copas vivas perto do núcleo (3 ou mais árvores juntas)
+			for x in range(-45, 46, 3):
+				var q := Vector2(x, y)
+				if q.length() < 14.0 or q.length() > melhor:
+					continue
+				var pol := p.poleiros_em(q)
+				if pol.size() >= 3 and eco.saude(Vector2i(q.floor())) > 0.45 and not eco.perto_de_construcao(Vector2i(q.floor()), 6):
+					melhor = q.length()
+					w.a = q
+					w.pol = pol
+		for raio in range(6, 40, 2):                      # chão aberto perto, para a carcaça
+			for k in 24:
+				var q: Vector2 = w.a + Vector2.from_angle(TAU * k / 24.0) * raio
+				var livre: bool = w.b == Vector2.ZERO and eco.arbustos_perto(q, 2.0).is_empty() and eco.arvores_perto(q, 2.5).is_empty() \
+						and not eco.perto_de_construcao(Vector2i(q.floor()), 8)
+				for dy in range(-2, 3):                       # sem pedra nem enfeite em volta (o planador pousa no limpo)
+					for dx in range(-2, 3):
+						var t := Vector2i(q.floor()) + Vector2i(dx, dy)
+						livre = livre and cena.gerador.terreno(t) == GeradorMundo.Terreno.TERRA \
+								and cena.gerador.distribuicao.obstaculo(t).is_empty() and cena.gerador.distribuicao.jazida(t).is_empty()
+				if livre:
+					w.b = Vector2(q.floor()) + Vector2(0.5, 0.5)
+		print("PASSAROS6 copas ", w.a, " ", w.pol.size(), " aberto ", w.b)
+		_sem_ninhos(Vector2i(w.a))
+		var col: Colonia = cena.colonia
+		for id in col.aranhas.keys():
+			if (col.aranhas[id].pos as Vector2).distance_to(w.a) < 120.0:
+				col.aranhas.erase(id)
+		var b := p._novo("pardelo", w.a)
+		b.n = 16
+		b.estado = Passaros.E.POUSADO
+		b.alt = 0.0
+		b.t = 1.0e6
+		b.poleiros = w.pol
+		b.frutas = []
+		for k in 4:                                       # frutos no chão: metade do bando desce e bica
+			var fp: Vector2 = w.a + Vector2.from_angle(k * 1.6) * (1.2 + 0.4 * k)
+			var id := eco.por_comida("fruta", fp, 1.0)
+			eco.comida[id].especie = "bolota"
+			eco.comida[id].fonte = "arv_carvalho"
+			eco.comida[id].vida = 9000.0
+			b.frutas.append(fp)
+		p.bandos[b.id] = b
+		var c2 := p._novo("cobrico", w.pol[1][0])
+		c2.n = 7
+		c2.estado = Passaros.E.POUSADO
+		c2.alt = 0.0
+		c2.t = 1.0e6
+		c2.poleiros = [w.pol[1], w.pol[2]]
+		p.bandos[c2.id] = c2
+		var nn: NinhosPassaros = cena.ninhos_passaros
+		nn._d = nn._d.duplicate()
+		nn._d.chance_s = 0.0
+		nn._d.visita_s = [3, 6]
+		var pol0: Array = w.pol[0]
+		var pol1: Array = w.pol[1]
+		nn.ninhos[pol0[2]] = {"id": 901, "tile": pol0[2], "arvore": pol0[3], "pos": pol0[0], "alto": pol0[1], "especie": "pardelo",
+				"tipo": "taca", "n": 1, "fase": NinhosPassaros.F.FILHOTES, "t": 0.0, "idade": 0.0, "ovos": 3, "ninhadas": 0, "t_visita": 1.0}
+		nn.ninhos[pol1[2]] = {"id": 902, "tile": pol1[2], "arvore": pol1[3], "pos": pol1[0], "alto": pol1[1], "especie": "cobrico",
+				"tipo": "bolsa", "n": 3, "fase": NinhosPassaros.F.FILHOTES, "t": 0.0, "idade": 0.0, "ovos": 3, "ninhadas": 0, "t_visita": 2.0}
+		olhar.call(w.a, 6.0))
+	em(238, func():
+		var dn: DesenhoNinhosPassaros = cena._desenho_ninhos
+		var cam3: Camera3D = cena.camera
+		for r in dn.nos.values():
+			for piv: Node3D in (r.no as Node3D).get_children():
+				print("PASSAROS6 ninho %s em %s tela %s" % [r.tipo, str(piv.global_position), str(Vector2i(cam3.unproject_position(piv.global_position)))])
+		var dp: DesenhoPassaros = cena._desenho_passaros
+		print("PASSAROS6 no chao ", dp.no_chao().size()))
+	em(240, func(): foto.call("1_bando_frutos_ninhos"))
+	em(242, func(): olhar.call((w.pol[1][0] as Vector2), 4.5))
+	em(300, func(): foto.call("2_bolsas"))
+	em(302, func(): olhar.call((w.pol[0][0] as Vector2), 3.0))
+	em(360, func(): foto.call("3_taca_verao"))
+	em(362, func():
+		var p: Passaros = cena.passaros
+		(cena.carcacas as Carcacas).morreu("rato", w.b, "rato_roteiro")
+		var pl := p._novo("planador", w.b + Vector2(6, 0))
+		pl.estado = Passaros.E.CIRCULANDO
+		pl.centro = w.b
+		pl.alt = 9.0
+		pl.alt_alvo = 9.0
+		pl.raio = 6.0
+		pl.raio0 = 13.0
+		pl.alt0 = 22.0
+		pl.t_sobre = 11.0
+		p.bandos[pl.id] = pl
+		olhar.call(w.b, 7.0))
+	for q in range(380, 760, 40):
+		em(q, func():
+			for x in (cena.passaros as Passaros).bandos.values():
+				if x.especie == "planador":
+					print("PASSAROS6 q=%d planador %s alt %.1f d %.1f" % [Engine.get_process_frames(), Passaros.E.keys()[int(x.estado)], float(x.alt), (x.pos as Vector2).distance_to(w.b)]))
+	em(700, func():
+		for x in (cena.passaros as Passaros).bandos.values():
+			if x.especie == "planador":
+				for p3 in (cena._desenho_passaros as DesenhoPassaros)._bandos.get(x.id, []):
+					print("PASSAROS6 planador desenhado em ", Vector2((p3.no as Node3D).position.x, -(p3.no as Node3D).position.z), " logica ", x.pos, " carne ", w.b)
+		olhar.call(w.b, 2.6))
+	em(740, func(): foto.call("4_planador_comendo"))
+	em(742, func():
+		var p: Passaros = cena.passaros
+		for x in p.bandos.values():
+			if x.especie == "pardelo":
+				print("PASSAROS6 mortos ", p.ferir((x.pos as Vector2) + Vector2(0.5, 0.0), 4.0, 1.0, "explosao"))
+		olhar.call(w.a, 3.5))
+	em(752, func(): foto.call("5_caindo"))
+	em(830, func(): foto.call("6_mortos_no_chao"))
+	em(832, func():
+		var p: Passaros = cena.passaros
+		var mg := p.passagem("cobrico", w.a, 2, false)
+		mg.alt = 8.0
+		mg.alt_alvo = 8.0
+		mg.pos = w.a - (mg.rumo_mig as Vector2) * 22.0
+		mg.destino = w.a + (mg.rumo_mig as Vector2) * 80.0
+		olhar.call(w.a, 16.0))
+	em(905, func(): foto.call("7_migracao"))
+	em(907, func():
+		var cl: Clima = cena.clima
+		cl.estacao = 3
+		cl.t_estacao = float(Registro.clima.get("estacao_s", 604800)) * 0.5
+		var p: Passaros = cena.passaros
+		var g := p._novo("geado", w.a + Vector2(2.5, -1.5))
+		g.n = 22
+		g.estado = Passaros.E.POUSADO
+		g.alt = 0.0
+		g.t = 1.0e6
+		g.poleiros = []
+		p.bandos[g.id] = g
+		olhar.call(w.a, 6.0))
+	em(1080, func(): foto.call("8_inverno_geado"))
+	em(1082, func(): olhar.call((w.pol[0][0] as Vector2), 3.0))
+	em(1140, func(): foto.call("9_taca_inverno"))
+
+
+## Vídeo da semente: um bando com semente cruza uma faixa de chão queimado e a semente que cai vira muda.
+## Grava um quadro a cada 2 (user://video_semente/) para o ffmpeg.
+func _roteiro_semente() -> void:
+	var w := {"a": Vector2.ZERO, "plantou": -1}
+	em(2, func():
+		Sessao.config.fps = false
+		var p: Passaros = cena.passaros
+		p._t_nasce = 1.0e9
+		p._t_mig = 1.0e9
+		p.bandos.clear()
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = 1
+		cl.hora = 0.42
+		cl.forcar("limpo", true)
+		cl.restante = 1.0e9
+		var g: GeradorMundo = cena.gerador
+		for raio in range(16, 40, 2):                     # faixa de terra firme perto do núcleo
+			for k in 16:
+				var q := Vector2.from_angle(TAU * k / 16.0) * raio
+				var ok: bool = w.a == Vector2.ZERO
+				for dx in range(-6, 7):
+					for dy in range(-3, 4):
+						ok = ok and g.terreno(Vector2i(q.floor()) + Vector2i(dx, dy)) == GeradorMundo.Terreno.TERRA \
+								and not (cena.mapa as MapaOcupacao).tiles.has(Vector2i(q.floor()) + Vector2i(dx, dy))
+				if ok:
+					w.a = Vector2(q.floor()) + Vector2(0.5, 0.5)
+		var amb: AmbienteVivo = cena.ambiente
+		for dy in range(-3, 4):
+			for dx in range(-6, 7):
+				var t := Vector2i(w.a.floor()) + Vector2i(dx, dy)
+				(cena.mapa as MapaOcupacao).limpar_obstaculo(t)
+				amb.somar(t, AmbienteVivo.QUEIM, 0.85)
+		p._d = p._d.duplicate(true)
+		p._d.semente.chance_s = 1.0
+		var b := p._novo("pardelo", w.a + Vector2(-6, 0))
+		b.n = 12
+		b.alt = 3.0
+		b.alt_alvo = 3.0
+		b.vel = Vector2(6.5, 0.0)
+		b.t_semente = 1.2
+		b.sementes = 1
+		b.semente_esp = "arv_carvalho"
+		b.destino = w.a + Vector2(14, 0)
+		b.pousar = false
+		b.estado = Passaros.E.VOANDO
+		p.bandos[b.id] = b
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(w.a + Vector2(1.5, 0))
+		cam.distancia = 4.0
+		cam.posicionar()
+		print("SEMENTE faixa ", w.a))
+	for q in range(4, 400, 2):
+		em(q, func():
+			DirAccess.make_dir_recursive_absolute("user://video_semente")
+			get_viewport().get_texture().get_image().save_png("user://video_semente/q%04d.png" % q))
+	em(44, func():                                      # a semente caiu: a câmera desce até a muda
+		var amb: AmbienteVivo = cena.ambiente
+		for t in amb.plantas:
+			w.muda = t
+			var cam = cena.camera
+			cam.alvo = Grade.ponto_mundo(DesenhoPlantas.pos_de(t))
+			cam.distancia = 3.0
+			cam.posicionar()
+			print("SEMENTE muda em ", t))
+	for q in range(70, 400, 6):                         # crescimento acelerado (vídeo): de muda a arvoreta
+		em(q, func():
+			var amb: AmbienteVivo = cena.ambiente
+			if w.has("muda") and amb.plantas.has(w.muda):
+				amb.plantas[w.muda] = lerpf(0.06, 0.6, clampf((q - 70) / 300.0, 0.0, 1.0))
+				amb.versao_plantas += 1)
+	for q in range(10, 400, 10):
+		em(q, func():
+			var p: Passaros = cena.passaros
+			if w.plantou < 0 and p.plantadas > 0:
+				w.plantou = q
+				print("SEMENTE plantou no quadro ", q, " mudas ", (cena.ambiente as AmbienteVivo).plantas.size(), " em ", (cena.ambiente as AmbienteVivo).plantas.keys()))
+
+
+## Desempenho com 90 pássaros desenhados perto da câmera: mede o tempo de processo por quadro e as chamadas de
+## desenho sem pássaro e depois com os bandos (seis bandos de 15, voando e pousados).
+func _roteiro_passaros90() -> void:
+	var med := {"base": [], "cheio": []}
+	em(2, func():
+		Sessao.config.fps = false
+		var p: Passaros = cena.passaros
+		p._t_nasce = 1.0e9
+		p._t_mig = 1.0e9
+		p.bandos.clear()
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.hora = 0.42
+		cl.forcar("limpo", true)
+		cl.restante = 1.0e9
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(Vector2(20, 10))
+		cam.distancia = 14.0
+		cam.posicionar())
+	for q in range(60, 210):
+		em(q, func(): med.base.append([Performance.get_monitor(Performance.TIME_PROCESS), Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)]))
+	em(210, func():
+		var p: Passaros = cena.passaros
+		for k in 6:
+			var b := p._novo(["pardelo", "cobrico", "geado", "pardelo", "rubro", "azulao"][k], Vector2(20, 10) + Vector2.from_angle(k * 1.05) * 7.0)
+			b.n = 15
+			b.alt = 0.0 if k % 2 == 0 else 5.0
+			b.alt_alvo = b.alt
+			b.estado = Passaros.E.POUSADO if k % 2 == 0 else Passaros.E.VOANDO
+			b.t = 1.0e6
+			b.destino = Vector2(20, 10) + Vector2.from_angle(k * 1.05 + 2.0) * 9.0
+			p.bandos[b.id] = b)
+	for q in range(300, 450):
+		em(q, func(): med.cheio.append([Performance.get_monitor(Performance.TIME_PROCESS), Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)]))
+	em(451, func():
+		var n := 0
+		for l in (cena._desenho_passaros as DesenhoPassaros)._bandos.values():
+			n += (l as Array).size()
+		print("PASSAROS90 desenhados ", n)
+		(cena.passaros as Passaros).bandos.clear())
+	med["depois"] = []
+	for q in range(520, 670):
+		em(q, func(): med.depois.append([Performance.get_monitor(Performance.TIME_PROCESS), Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)]))
+	em(671, func():
+		for k in ["base", "cheio", "depois"]:
+			var tp := 0.0
+			var dc := 0.0
+			for m in med[k]:
+				tp += float(m[0])
+				dc += float(m[1])
+			print("PASSAROS90 %s processo %.2f ms chamadas %.0f (%d quadros)" % [k, tp / med[k].size() * 1000.0, dc / med[k].size(), med[k].size()]))
 
 
 func _sem_ninhos(w: Vector2i) -> void:

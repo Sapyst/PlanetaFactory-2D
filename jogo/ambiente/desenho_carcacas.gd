@@ -94,6 +94,8 @@ func _garantir(k: String, f: Dictionary) -> Dictionary:
 				no = Aranha.new(pos, float(f.ang))
 			"rato":
 				no = DesenhoRatos.corpo_morto(pos, float(f.ang), String(f.get("variante", "pardo")))
+			"passaro":
+				no = DesenhoPassaros.corpo_morto(pos, float(f.ang), String(f.get("variante", "pardelo")), f.get("bicho", ""))
 		if no == null:
 			return {}
 		if no.get_parent() == null:
@@ -185,7 +187,9 @@ func _sucata(n: Dictionary, s: Dictionary, delta: float) -> void:
 
 func _carcaca(n: Dictionary, f: Dictionary) -> void:
 	var rel := Carcacas.idade_rel(f)
-	var e: Array = Registro.fauna.get("carcacas", {}).get("tipos", {}).get(String(f.especie), {}).get("etapas", [0.3, 0.7])
+	var tipo: Dictionary = Registro.fauna.get("carcacas", {}).get("tipos", {}).get(String(f.especie), {})
+	var e: Array = tipo.get("etapas", [0.3, 0.7])
+	var incha := float(tipo.get("incha", 1.1))             # quanto o inchado cresce para cima (pássaro: pouco)
 	var e0 := float(e[0])
 	var e1 := float(e[1])
 	var podre: float
@@ -196,12 +200,12 @@ func _carcaca(n: Dictionary, f: Dictionary) -> void:
 		var k := (rel - e0) / (e1 - e0)
 		podre = lerpf(0.15, 0.5, k)
 		var i := smoothstep(0.0, 0.5, k)
-		esc = Vector3(1.0 + 0.15 * i, 1.0 + 1.1 * i, 1.0 + 0.15 * i)
+		esc = Vector3(1.0 + 0.15 * i, 1.0 + incha * i, 1.0 + 0.15 * i)
 	else:                                                   # restos: murcha e seca
 		var k := (rel - e1) / (1.0 - e1)
 		podre = lerpf(0.5, 1.0, smoothstep(0.0, 0.6, k))
 		var m := smoothstep(0.0, 0.4, k)
-		esc = Vector3(1.15 - 0.07 * m, lerpf(2.1, 0.35, m), 1.15 - 0.07 * m)
+		esc = Vector3(1.15 - 0.07 * m, lerpf(1.0 + incha, 0.35, m), 1.15 - 0.07 * m)
 	_param(n, "podre", podre)
 	var apaga := clampf(float(f.idade) / 60.0, 0.0, 1.0)              # o ácido aceso vai apagando no primeiro minuto
 	_luz(n, (1.0 - apaga) * 0.6)

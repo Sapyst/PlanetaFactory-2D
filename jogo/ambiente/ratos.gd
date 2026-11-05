@@ -68,6 +68,34 @@ func assustar(c: Vector2, raio: float) -> void:
 	_sustos.append([c, raio])
 
 
+## Sombra de ave caçando (fase 6: o planador mergulhando): quem está fora a até `raio` de `c` corre para a toca (do
+## céu, a toca é o lugar seguro, mesmo perto). Quem está longe da toca demora e pode ser pego.
+func assustar_do_ceu(c: Vector2, raio: float) -> void:
+	for r in ratos.values():
+		if int(r.estado) in [E.TOCA, E.ENTRANDO, E.FUGINDO] or (r.pos as Vector2).distance_to(c) > raio:
+			continue
+		if not tocas.has(r.toca):
+			continue
+		r.alvo = tocas[r.toca].pos
+		r.estado = E.FUGINDO
+		r.t = 10.0
+		r.comida = -1
+		r.carga = ""
+		eventos.append({"tipo": "fugiu", "id": r.id, "pos": r.pos})
+
+
+## Um predador pegou o rato (fase 6: o planador). Morre no próximo passo e vira carcaça.
+func matar(id: int, causa := "") -> void:
+	if ratos.has(id):
+		ratos[id].morto = true
+		ratos[id].causa = causa
+
+
+## A chave do corpo do rato no registro de corpos (DesenhoCarcacas.corpos): única entre bichos de outras fontes.
+static func corpo_id(id: int) -> String:
+	return "rato_%d" % id
+
+
 ## Quanto querem estar fora agora (0..1): crepúsculo e noite muito, meio-dia pouco, inverno pouco.
 func atividade(clima: Clima) -> float:
 	if clima == null:
@@ -113,7 +141,8 @@ func tick(dt: float, clima: Clima, foco: Vector2) -> void:
 		mortos[r.id] = 0.0
 		if tocas.has(r.toca):
 			tocas[r.toca].n = maxi(0, int(tocas[r.toca].n) - 1)
-		eco.morreu("rato", "rato", r.pos, {"id": r.id, "variante": String(r.get("especie", "pardo")), "rumo": float(r.rumo)})
+		eco.morreu("rato", "rato", r.pos, {"id": corpo_id(r.id), "variante": String(r.get("especie", "pardo")),
+				"rumo": float(r.rumo), "causa": String(r.get("causa", ""))})
 	_sustos.clear()
 
 
