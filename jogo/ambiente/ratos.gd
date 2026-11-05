@@ -490,7 +490,10 @@ func _perigo(p: Vector2) -> Variant:
 		if p.distance_to(s[0]) < float(s[1]):
 			return s[0]
 	var r := _n("medo_raio", 6.0)
+	var vista := float(Registro.inimigos.get("comportamento", {}).get("aranha", {}).get("caca", {}).get("vista", 3.0))
 	for a in eco.perto(p, r, "alien"):
+		if bool(a.get("espreita", false)) and p.distance_to(a.pos) > vista:
+			continue                                         # fase 8: a aranha espreitando só é vista de perto
 		return a.pos
 	if ambiente != null and not ambiente.fogo.is_empty():
 		var n := 0

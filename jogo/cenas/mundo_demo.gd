@@ -158,7 +158,7 @@ func _ready() -> void:
 	ecossistema.registrar_fonte("alien", func() -> Array:
 		var out: Array = []
 		for ar in colonia.aranhas.values():
-			out.append({"id": ar.id, "pos": ar.pos, "especie": ar.get("especie", "aranha")})
+			out.append({"id": ar.id, "pos": ar.pos, "especie": ar.get("especie", "aranha"), "espreita": ar.get("espreita", false)})
 		return out)
 	plantas_reagem = PlantasReagem.new(ecossistema, semente + 53)
 	frutos = Frutos.new(ecossistema, ambiente, semente + 59)
@@ -168,6 +168,10 @@ func _ready() -> void:
 	ecossistema.registrar_fonte("rato", ratos.para_ecossistema)
 	passaros.ratos = ratos                               # fase 6: o planador caça rato em campo aberto
 	ratos.cabos = _cabos_baixos                          # fase 7: o rato pode roer a ponta baixa do cabo
+	colonia.eco = ecossistema                            # fase 8: os aliens caçam rato e pássaro e a larva come carcaça
+	colonia.carcacas = carcacas
+	colonia.ratos = ratos
+	colonia.passaros = passaros
 	disturbio = DisturbioFabrica.new(mapa, fabrica, poluicao)
 	ecossistema.fonte_disturbio = disturbio.em
 	ecossistema.fonte_fuligem = disturbio.fuligem
@@ -1769,12 +1773,18 @@ func _tick_mundo(dt: float) -> void:
 			_refazer_arvores(ev.tiles)
 		elif ev.tipo == "arvore_dissolvida":
 			_dissolver(ev.tile, ev.nome, ev.tiles, bool(ev.silencioso))
+			colonia.alimentar(Vector2(ev.tile) + Vector2(0.5, 0.5), "arvore")   # fase 8: matéria morta alimenta a cratera
 	infestacao.eventos.clear()
 	# pássaros: tiro, explosão e raio espantam; o foco é onde a câmera olha
 	for ev in colonia.eventos:
 		if ev.tipo == "tiro":
 			passaros.assustar(ev.de, 14.0)
 			ratos.assustar(ev.de, 10.0)
+		elif ev.tipo == "ninho_destruido" and String(ev.get("por", "")) != "" and is_instance_valid(controle):
+			# fase 8: uma espécie derrubou a toca da outra (o jogador pode usar a guerra a favor)
+			var quem := "As larvas" if String(ev.por) == "larva" else "As aranhas"
+			var o_que := "um ninho de aranha" if String(ev.get("especie", "")) == "aranha" else "uma cratera de larva"
+			controle._avisar("⚔️ %s derrubaram %s %s" % [quem, o_que, Clima.nome_rumo(Vector2(camera.alvo.x, -camera.alvo.z) - ev.pos).replace("de ", "a ")])
 		elif ev.tipo == "explosao":
 			passaros.assustar(ev.pos, 16.0 + 6.0 * float(ev.get("raio", 1.0)))
 			ratos.assustar(ev.pos, 12.0 + 4.0 * float(ev.get("raio", 1.0)))
@@ -3264,7 +3274,7 @@ func _hud() -> void:
 	var atacando := 0
 	var larvas_vindo := 0
 	for a in colonia.aranhas.values():
-		if a.estado == Colonia.E.ATACANDO:
+		if a.estado == Colonia.E.ATACANDO and not colonia.ninhos.has(int(a.get("alvo", -1))):   # (fase 8: indo contra a toca do outro não é ataque à fábrica)
 			if a.get("especie", "aranha") == "larva":
 				larvas_vindo += 1
 			else:

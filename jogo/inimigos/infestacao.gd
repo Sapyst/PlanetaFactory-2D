@@ -36,7 +36,8 @@ func _init(p_colonia: Colonia = null, semente := 11) -> void:
 ## Raio (tiles) da infestação de uma toca: cresce com a obra e com a idade.
 static func raio_de(n: Dictionary) -> float:
 	var k := clampf(float(n.get("idade", 0.0)) / MADURA_S, 0.0, 1.0)
-	return lerpf(RAIO_INI, RAIO_MAX, 1.0 - pow(1.0 - k, 2.0)) * (0.35 + 0.65 * clampf(float(n.get("obra", 1.0)), 0.0, 1.0))
+	return lerpf(RAIO_INI, RAIO_MAX, 1.0 - pow(1.0 - k, 2.0)) * (0.35 + 0.65 * clampf(float(n.get("obra", 1.0)), 0.0, 1.0)) \
+			+ float(n.get("raio_extra", 0.0))                # fase 8: a toca que ganha a disputa cobre o chão da outra
 
 
 func tick(dt: float) -> void:

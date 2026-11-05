@@ -298,8 +298,9 @@ func _ameaca_em(p: Vector2, folga := 0.0) -> Variant:
 				break
 	if colonia != null:
 		var r := float(m.monstro) + folga
+		var vista := float(Registro.inimigos.get("comportamento", {}).get("aranha", {}).get("caca", {}).get("vista", 3.0)) + folga
 		for ar in colonia.aranhas.values():
-			if p.distance_to(ar.pos) < r:
+			if p.distance_to(ar.pos) < (vista if bool(ar.get("espreita", false)) else r):   # fase 8: espreitando, só de perto
 				return ar.pos
 	return null
 

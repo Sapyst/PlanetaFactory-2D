@@ -333,20 +333,54 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
     - no 2D, o ninho no alto do poste é tão pequeno que não dá para conferir na foto;
     - "quieto" (insetos e sons) não aparece em foto: está só nos testes e no código.
 
-## Fase 8 — Comportamento e guerra das espécies alienígenas ⬜ · custo alto · mexe no combate
-- (S) Comportamento próprio por espécie, com um perfil `comportamento` no `inimigos.json`:
+## Fase 8 — Comportamento e guerra das espécies alienígenas ✅ · custo alto · mexe no combate
+- ✅ (S) Comportamento próprio por espécie, com um perfil `comportamento` no `inimigos.json`:
   - aranhas caçam em bando e abrem ninhos novos;
   - larvas ficam perto da cratera, cospem de longe e corroem.
-- (S) **Procriação** por regra de cada espécie:
+- ✅ (S) **Procriação** por regra de cada espécie:
   - aranha pela poluição do ninho (como hoje);
   - larva pelo chão corroído e pela matéria morta (comem carcaças e árvore dissolvida).
-- (S) **Guerra entre espécies.** Uma tabela `relacoes` (aranha × larva = hostil) diz quem ataca quem.
+- ✅ (S) **Guerra entre espécies.** Uma tabela `relacoes` (aranha × larva = hostil) diz quem ataca quem.
   - O território (teia no canal R e corrosão no canal G da `Infestacao`) empurra o do outro.
   - O vencedor cobre o chão do perdedor.
   - (C) O jogador pode usar isso: deixar duas espécies se desgastando, ou eliminar uma para a outra dominar.
-- (S) Aliens caçam ratos e pássaros (presas das fases 5 e 6).
+- ✅ (S) Aliens caçam ratos e pássaros (presas das fases 5 e 6).
 - **Por que por último entre os centrais:** é o que segura o combate do jogo. Mexer nele com o resto ainda mudando
   quebra o equilíbrio e os testes de ataque, que são muitos.
+- **Feito (2026-11-05):**
+  - **O jeito de cada espécie** (`inimigos.json`, "comportamento"):
+    - a aranha vai atrás da fonte de poluição até 160 m, abre ninhos novos (`expande`) e caça em dupla;
+    - a larva só ataca fonte a até 80 m da cratera, não abre cratera nova, cospe de longe e come carcaça.
+  - **Procriação** (a "raiva" do ninho que vira bicho novo):
+    - aranha: a poluição que o ninho absorve, como antes (fator 1,0);
+    - larva: a poluição pesa menos (0,6), mas cada carcaça comida até os ossos dá 3 e cada árvore dissolvida no chão
+      corroído a até 14 m da cratera dá 1,5 (`Colonia.alimentar`, chamado pelo evento "arvore_dissolvida").
+  - **Guerra** (`inimigos.json`, "relacoes" e "guerra"):
+    - um bicho que vê outro de espécie hostil a até 9 m vai brigar (estado BRIGANDO): a aranha morde (20 ♥/s), a
+      larva cospe. O bicho que estava atacando a fábrica só se distrai com inimigo a até 3 m e, acabada a briga,
+      volta para o ataque que fazia;
+    - a gosma da larva fere as aranhas no respingo;
+    - quando a toca inimiga (a até 45 m) está mais perto que a fábrica, o grupo de ataque vai contra ela (evento
+      "guerra") e não conta como ataque à fábrica no aviso da tela;
+    - **território:** onde as manchas das duas tocas se encostam, a mais forte (bichos + 2) cresce por cima (até 4
+      tiles a mais, `raio_extra` na `Infestacao`) e a mais fraca perde vida até cair. O chão dela vira do vencedor;
+    - toca derrubada pela outra espécie mostra o aviso "⚔️ As aranhas derrubaram a cratera das larvas a …" (com o
+      rumo).
+  - **Caça** (estados CACANDO e COMENDO):
+    - a cada 3 s, com chance de 35%, uma toca com bichos parados manda caçar o que estiver a até 16–20 m: rato fora
+      da toca, pássaro no chão e, para a larva, carcaça. Um bicho sempre fica em casa;
+    - a aranha vai em dupla, espreita devagar (45% da velocidade) e só é vista pelo rato e pelo pássaro a até 3 m;
+      a 3 m dá o bote (5 m/s) e pega a 0,8 m. Se errar, volta; desiste em 25 s;
+    - a larva cospe na presa viva (a gosma mata no respingo) e come carcaça em 8 s até sobrar o osso;
+    - presa morta vira carcaça (fase 4).
+  - **Código:** `Colonia` (`comp`, `hostil`, `_guerra`, `_brigar`, `_territorio`, `_cacar`, `_caca`, `_pegar`,
+    `_comendo`, `alimentar`, `_ferir_ninho` e `_ferir_aranha` com "por"), `Infestacao.raio_de` (+ `raio_extra`),
+    `Passaros._ameaca_em` e `Ratos._perigo` (espreita só vista de perto) e, no mundo, os avisos e a contagem do
+    ataque. Testes em `test_guerra_aliens.gd`. Roteiro `-- roteiro guerra8`.
+  - **Fica para depois:**
+    - a foto da caça não pega o bote: no 3D o rato some no capim e no 2D a espreita é lenta e o roteiro acaba
+      antes (a captura está nos testes);
+    - não teve som nem arte nova: a briga usa a mordida e o cuspe que já existiam.
 
 ## Fase 9 — Fauna grande e eventos raros ⬜ · custo alto
 - (C) Herbívoros grandes em manada, que migram e fogem de predadores e do fogo.

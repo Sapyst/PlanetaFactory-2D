@@ -26,8 +26,19 @@ extends RefCounted
 ##  campo    muro de campo (regra "regenera"): recupera ♥/s × energia da rede que chega nele (callable `energia`).
 ##
 ## Tudo que o desenho precisa saber sai em `eventos` (tiro, morte, ninho novo, estrutura destruída) a cada tick.
+##
+## Patch fauna, fase 8 (docs/PLANO_FAUNA.md), números em inimigos.json ("comportamento", "relacoes", "guerra"):
+##  jeito    cada espécie tem o seu: a larva fica perto da cratera (ataca fonte só até ataque_raio) e não expande; a
+##           aranha expande e caça em dupla.
+##  caça     bichos parados caçam presa perto da toca: a aranha espreita (devagar, só é vista de perto) e dá o bote
+##           em rato e em pássaro no chão; a larva cospe na presa e come carcaça (a cratera ganha raiva com isso).
+##  procria  a aranha pela poluição; a larva menos pela poluição e mais pela matéria morta (carcaça comida, árvore
+##           dissolvida no chão corroído: `alimentar`).
+##  guerra   espécies hostis (relacoes) brigam quando se veem (BRIGANDO); o grupo de ataque vai contra a toca inimiga
+##           se ela está mais perto que a fábrica; onde as manchas das tocas se encostam, a mais forte cresce por
+##           cima (raio_extra na Infestacao) e a mais fraca perde vida até cair — o vencedor cobre o chão.
 
-enum E { PARADA, ATACANDO, VOLTANDO, CONSTRUINDO, OBRA }
+enum E { PARADA, ATACANDO, VOLTANDO, CONSTRUINDO, OBRA, CACANDO, COMENDO, BRIGANDO }
 const FURIA_ZERO := 0.01     ## fúria até aqui conta como "em paz" (Convivência com ninhos, Simbiose)
 const TORRES := ["torre_defesa", "torre_metralhadora", "torre_foguetes", "artilharia"]
 
@@ -65,6 +76,16 @@ var _x: Dictionary
 var _f: Dictionary
 var _c: Dictionary                ## cratera (casa das larvas)
 var _l: Dictionary                ## larva ácida
+var _b: Dictionary                ## fase 8: comportamento por espécie
+var _rel: Dictionary              ## fase 8: relações entre espécies
+var _g: Dictionary                ## fase 8: guerra
+var eco: Ecossistema              ## (opcional, fase 8) a comida do chão (carcaças)
+var carcacas: Carcacas            ## (opcional) carcaça comida até os ossos
+var ratos: Ratos                  ## (opcional) presa
+var passaros: Passaros            ## (opcional) presa
+var _t_guerra := 0.0
+var _t_terr := 0.0
+var _t_caca := 0.0
 
 
 func _init(p_mapa: MapaOcupacao, p_poluicao: Poluicao, semente := 7) -> void:
@@ -77,6 +98,9 @@ func _init(p_mapa: MapaOcupacao, p_poluicao: Poluicao, semente := 7) -> void:
 	_f = Registro.inimigos.get("furia", {})
 	_c = Registro.inimigos.get("cratera", {})
 	_l = Registro.inimigos.get("larva", {})
+	_b = Registro.inimigos.get("comportamento", {})
+	_rel = Registro.inimigos.get("relacoes", {})
+	_g = Registro.inimigos.get("guerra", {})
 	_t_expansao = _x.get("intervalo_s", 150.0)
 	destruir = func(id: int) -> void: mapa.remover(id)
 
@@ -97,6 +121,16 @@ func _dados_toca(n: Dictionary) -> Dictionary:
 
 func _dados_bicho(ar: Dictionary) -> Dictionary:
 	return _l if ar.get("especie", "aranha") == "larva" else _a
+
+
+## Fase 8: o jeito da espécie (inimigos.json "comportamento").
+func comp(especie: String) -> Dictionary:
+	return _b.get(especie, {})
+
+
+## Fase 8: a espécie `a` ataca a `b`? (inimigos.json "relacoes")
+func hostil(a: String, b: String) -> bool:
+	return bool(_g.get("liga", true)) and String(_rel.get(a, {}).get(b, "")) == "hostil"
 
 
 # ------------------------------------------------------------------ ninhos do mapa
@@ -178,6 +212,9 @@ func tick(dt: float, fontes: Array[Dictionary]) -> void:
 	eventos.clear()
 	_listas()
 	_ninhos(dt, fontes)
+	_guerra(dt)
+	_territorio(dt)
+	_cacar(dt)
 	_obras(dt)
 	for id in aranhas.keys():
 		if aranhas.has(id):
@@ -213,7 +250,7 @@ func _ninhos(dt: float, fontes: Array[Dictionary]) -> void:
 		var fu := float(n.get("furia", 0.0))
 		var k := Grade.chunk_de(Vector2i(n.centro.floor()))
 		var tirou := poluicao.absorver(k, poluicao.em_chunk(k) * float(_n.get("taxa_absorcao", 0.06)) * dt)
-		n.raiva += tirou
+		n.raiva += tirou * float(comp(String(n.get("especie", "aranha"))).get("procria", {}).get("poluicao", 1.0))
 		n.absorvido += tirou
 		var dn := _dados_toca(n)
 		var larva: bool = n.get("especie", "aranha") == "larva"
@@ -226,17 +263,23 @@ func _ninhos(dt: float, fontes: Array[Dictionary]) -> void:
 		var grupo_aqui := maxi(2, (int(dn.get("grupo_ataque", grupo)) if larva else grupo) - roundi(float(_f.get("grupo_menos", 2)) * fu))
 		var paradas := aranhas_do_ninho(id, E.PARADA)
 		if paradas.size() >= grupo_aqui:
-			var alvo := _fonte_mais_perto(n.centro, fontes, 1.0 + float(_f.get("raio_ataque", 0.5)) * fu)
+			var raio_at := float(comp(String(n.get("especie", "aranha"))).get("ataque_raio", _n.get("raio_ataque", 160)))
+			var alvo := _fonte_mais_perto(n.centro, fontes, 1.0 + float(_f.get("raio_ataque", 0.5)) * fu, raio_at)
+			var inimiga := _toca_inimiga_perto(id)          # fase 8: a toca da outra espécie, se está mais perto
+			var guerra := false
+			if inimiga >= 0 and (alvo < 0 or n.centro.distance_to(ninhos[inimiga].centro) < n.centro.distance_to(_centro_de(alvo))):
+				alvo = inimiga
+				guerra = true
 			if alvo >= 0:
 				for a in paradas.slice(0, grupo_aqui):
 					aranhas[a].estado = E.ATACANDO
 					aranhas[a].alvo = alvo
-				eventos.append({"tipo": "ataque", "ninho": id, "alvo": alvo})
+				eventos.append({"tipo": "guerra" if guerra else "ataque", "ninho": id, "alvo": alvo})
 
 
-func _fonte_mais_perto(p: Vector2, fontes: Array[Dictionary], mult := 1.0) -> int:
+func _fonte_mais_perto(p: Vector2, fontes: Array[Dictionary], mult := 1.0, raio := -1.0) -> int:
 	var melhor := -1
-	var md: float = float(_n.get("raio_ataque", 160)) * mult
+	var md: float = (float(_n.get("raio_ataque", 160)) if raio < 0.0 else raio) * mult
 	for f in fontes:
 		if not mapa.estruturas.has(f.id):
 			continue
@@ -304,6 +347,12 @@ func _aranha(ar: Dictionary, dt: float) -> void:
 				_chegou_obra(ar)
 			else:
 				_mover(ar, ar.destino, dt, 1.0)
+		E.CACANDO:
+			_caca(ar, dt)
+		E.COMENDO:
+			_comendo(ar, dt)
+		E.BRIGANDO:
+			_brigar(ar, dt)
 		E.OBRA:
 			if not ninhos.has(ar.ninho):
 				ar.estado = E.ATACANDO
@@ -388,6 +437,9 @@ func _morder(ar: Dictionary, id: int, dt: float) -> void:
 	var em: Dictionary = mapa.estruturas[id]
 	ar.mordida = Grade.centro_da_area(em.minimo, em.area, em.rot)       # para onde as pernas golpeiam (desenho)
 	var dano := float(_a.get("dano", 15)) * (1.0 + float(_f.get("dano", 0.8)) * furia(ar)) * dt
+	if ninhos.has(id) and hostil(String(ar.get("especie", "aranha")), String(ninhos[id].get("especie", "aranha"))):
+		_ferir_ninho(id, dano, String(ar.get("especie", "aranha")))    # fase 8: a toca da outra espécie
+		return
 	ferir_estrutura(id, dano, ar.pos)
 
 
@@ -425,7 +477,27 @@ func _cuspir(ar: Dictionary, id: int, dt: float) -> void:
 	var de: Vector2 = ar.pos + ((para - ar.pos) as Vector2).normalized() * 0.6     # a boca fica na frente do corpo
 	var dur: float = de.distance_to(para) / float(_l.get("velocidade_cuspe", 13.0)) + 0.15
 	var dano := float(_l.get("dano_cuspe", 9)) * (1.0 + float(_f.get("dano", 0.8)) * furia(ar))
-	cuspes.append({"larva": ar.id, "de": de, "para": para, "t": 0.0, "dur": dur, "dano": dano, "raio": float(_l.get("raio_respingo", 1.3))})
+	cuspes.append({"larva": ar.id, "de": de, "para": para, "t": 0.0, "dur": dur, "dano": dano, "raio": float(_l.get("raio_respingo", 1.3)),
+			"especie": String(ar.get("especie", "larva"))})
+	eventos.append({"tipo": "cuspe", "id": ar.id, "de": de, "para": para, "dur": dur})
+
+
+## Fase 8: cuspe num ponto (bicho inimigo, presa): o mesmo arco; `extra` vai na gosma (presa = mata rato e pássaro).
+func _cuspir_em(ar: Dictionary, para0: Vector2, dt: float, extra := {}) -> void:
+	ar.preso = 0.0
+	ar.mordida = para0
+	ar.mordendo = true
+	ar.recarga = float(ar.get("recarga", 0.0)) - dt
+	if float(ar.recarga) > 0.0:
+		return
+	ar.recarga = 1.0 / float(_l.get("cadencia_cuspe", 0.5)) * _rng.randf_range(0.85, 1.15)
+	var para := para0 + Vector2(_rng.randf_range(-0.35, 0.35), _rng.randf_range(-0.35, 0.35))
+	var de: Vector2 = ar.pos + ((para - ar.pos) as Vector2).normalized() * 0.6
+	var dur: float = de.distance_to(para) / float(_l.get("velocidade_cuspe", 13.0)) + 0.15
+	var g := {"larva": ar.id, "de": de, "para": para, "t": 0.0, "dur": dur, "dano": float(_l.get("dano_cuspe", 9)),
+			"raio": float(_l.get("raio_respingo", 1.3)), "especie": String(ar.get("especie", "larva"))}
+	g.merge(extra)
+	cuspes.append(g)
 	eventos.append({"tipo": "cuspe", "id": ar.id, "de": de, "para": para, "dur": dur})
 
 
@@ -448,10 +520,14 @@ func _voar_cuspes(dt: float) -> void:
 				var id: int = mapa.tiles.get(t, -1)
 				if id >= 0 and not feitos.has(id):
 					feitos[id] = true
-					ferir_estrutura(id, float(g.dano), g.de)
+					if ninhos.has(id) and hostil(String(g.get("especie", "larva")), String(ninhos[id].get("especie", "aranha"))):
+						_ferir_ninho(id, float(g.dano), String(g.get("especie", "larva")))    # fase 8
+					else:
+						ferir_estrutura(id, float(g.dano), g.de)
 				if ambiente != null:
 					ambiente.somar(t, AmbienteVivo.SUJ, float(_l.get("suja", 0.25)) * 0.5)
 		eventos.append({"tipo": "respingo", "pos": p, "larva": g.larva})
+		_respingo_em_bichos(g, p)
 
 
 ## Ninhos com fúria a partir de `limite` (aviso da Leitura ambiental).
@@ -657,17 +733,22 @@ func ferir_aranha(a: int, dano: float) -> void:
 		_ferir_aranha(a, dano)
 
 
-func _ferir_aranha(a: int, dano: float) -> void:
+func _ferir_aranha(a: int, dano: float, por := "") -> void:
 	aranhas[a].vida -= dano
 	if aranhas[a].vida <= 0.0:
-		eventos.append({"tipo": "aranha_morta", "id": a, "pos": aranhas[a].pos, "especie": aranhas[a].get("especie", "aranha")})
+		eventos.append({"tipo": "aranha_morta", "id": a, "pos": aranhas[a].pos, "especie": aranhas[a].get("especie", "aranha"),
+				"por": por})
 		aranhas.erase(a)
 
 
-func _ferir_ninho(n: int, dano: float) -> void:
+## `por` (fase 8): a espécie que derrubou ("" = o jogador).
+func _ferir_ninho(n: int, dano: float, por := "") -> void:
+	if not ninhos.has(n):
+		return
 	ninhos[n].vida -= dano
 	if ninhos[n].vida <= 0.0:
-		eventos.append({"tipo": "ninho_destruido", "id": n, "pos": ninhos[n].centro})
+		eventos.append({"tipo": "ninho_destruido", "id": n, "pos": ninhos[n].centro, "especie": ninhos[n].get("especie", "aranha"),
+				"por": por})
 		ninhos.erase(n)
 		mapa.remover(n)
 
@@ -894,7 +975,8 @@ func _expandir(dt: float) -> void:
 	var prontos := []
 	for id in ninhos:
 		# só expande quem está sendo "irritado" pela poluição (absorveu o bastante desde a última vez)
-		if ninhos[id].get("especie", "aranha") == "aranha" and ninhos[id].obra >= 1.0 \
+		var esp := String(ninhos[id].get("especie", "aranha"))
+		if bool(comp(esp).get("expande", esp == "aranha")) and ninhos[id].obra >= 1.0 \
 				and ninhos[id].absorvido >= float(_x.get("poluicao_para_expandir", 30)) \
 				and aranhas_do_ninho(id, E.PARADA).size() >= int(_x.get("construtoras", 3)):
 			prontos.append(id)
@@ -973,3 +1055,339 @@ func _obras(dt: float) -> void:
 			n.obra = minf(1.0, n.obra + dt / tempo * mini(operarias, 3) / 3.0)
 			if n.obra >= 1.0:
 				eventos.append({"tipo": "ninho_pronto", "id": id})
+
+
+# ------------------------------------------------------------------ fase 8: guerra entre espécies
+func _centro_de(id: int) -> Vector2:
+	if ninhos.has(id):
+		return ninhos[id].centro
+	if not mapa.estruturas.has(id):
+		return Vector2.INF
+	var e: Dictionary = mapa.estruturas[id]
+	return Grade.centro_da_area(e.minimo, e.area, e.rot)
+
+
+## A toca pronta de espécie hostil mais perto da toca `id`, a até guerra.raio_ninhos (−1 = nenhuma).
+func _toca_inimiga_perto(id: int) -> int:
+	if not bool(_g.get("liga", true)):
+		return -1
+	var n: Dictionary = ninhos[id]
+	var esp := String(n.get("especie", "aranha"))
+	var melhor := -1
+	var md := float(_g.get("raio_ninhos", 45.0))
+	for o in ninhos:
+		var m: Dictionary = ninhos[o]
+		if o == id or float(m.obra) < 1.0 or not hostil(esp, String(m.get("especie", "aranha"))):
+			continue
+		var d: float = n.centro.distance_to(m.centro)
+		if d < md:
+			md = d
+			melhor = o
+	return melhor
+
+
+## Bicho que vê um inimigo de outra espécie vai brigar (os que atacam a fábrica só se o inimigo encosta).
+func _guerra(dt: float) -> void:
+	if not bool(_g.get("liga", true)) or _rel.is_empty():
+		return
+	_t_guerra -= dt
+	if _t_guerra > 0.0:
+		return
+	_t_guerra = float(_g.get("olha_s", 0.5))
+	var ve := float(_g.get("ve", 9.0))
+	var grade := {}
+	for a in aranhas.values():
+		var k := Vector2i(floori(a.pos.x / ve), floori(a.pos.y / ve))
+		if not grade.has(k):
+			grade[k] = []
+		grade[k].append(a)
+	for ar in aranhas.values():
+		if int(ar.estado) in [E.BRIGANDO, E.CONSTRUINDO, E.OBRA, E.COMENDO] or float(ar.get("atordoada", 0.0)) > 0.0:
+			continue
+		var alcance := ve if int(ar.estado) != E.ATACANDO else 3.0
+		var esp := String(ar.get("especie", "aranha"))
+		var k := Vector2i(floori(ar.pos.x / ve), floori(ar.pos.y / ve))
+		var melhor: Dictionary = {}
+		var md := alcance
+		for j in range(-1, 2):
+			for i in range(-1, 2):
+				for o in grade.get(k + Vector2i(i, j), []):
+					if o.id == ar.id or not hostil(esp, String(o.get("especie", "aranha"))):
+						continue
+					var d: float = ar.pos.distance_to(o.pos)
+					if d < md:
+						md = d
+						melhor = o
+		if not melhor.is_empty():
+			ar.antes = [int(ar.estado), int(ar.get("alvo", -1))]
+			ar.estado = E.BRIGANDO
+			ar.inimigo = melhor.id
+			ar.t_briga = 0.0
+			ar.espreita = false
+
+
+func _brigar(ar: Dictionary, dt: float) -> void:
+	ar.t_briga = float(ar.get("t_briga", 0.0)) + dt
+	var o: Dictionary = aranhas.get(int(ar.get("inimigo", -1)), {})
+	if o.is_empty() or ar.t_briga > 30.0:
+		var antes: Array = ar.get("antes", [E.VOLTANDO, -1])
+		if int(antes[0]) == E.ATACANDO and mapa.estruturas.has(int(antes[1])):
+			ar.estado = E.ATACANDO                         # volta para o ataque que estava fazendo
+			ar.alvo = int(antes[1])
+		else:
+			ar.estado = E.VOLTANDO
+		return
+	var d: float = ar.pos.distance_to(o.pos)
+	if String(ar.get("especie", "aranha")) == "larva":
+		if d <= float(_l.get("alcance_cuspe", 9.0)) - 0.5:
+			_cuspir_em(ar, o.pos, dt)
+		else:
+			_mover(ar, o.pos, dt, 1.0)
+		return
+	if d <= float(_a.get("alcance", 1.2)) + 0.3:
+		ar.mordendo = true
+		ar.preso = 0.0
+		ar.mordida = o.pos
+		_ferir_aranha(int(o.id), float(_g.get("dano_aranha", 20)) * (1.0 + float(_f.get("dano", 0.8)) * furia(ar)) * dt, "aranha")
+	else:
+		_mover(ar, o.pos, dt, 1.0)
+
+
+## Gosma que caiu: fere os bichos de espécie hostil a quem cuspiu e, se era caça, mata a presa no respingo.
+func _respingo_em_bichos(g: Dictionary, p: Vector2) -> void:
+	var esp := String(g.get("especie", "larva"))
+	var r := float(g.raio)
+	for a in aranhas.keys():
+		if aranhas.has(a) and hostil(esp, String(aranhas[a].get("especie", "aranha"))) and aranhas[a].pos.distance_to(p) <= r:
+			_ferir_aranha(a, float(g.dano), esp)
+	if not bool(g.get("presa", false)):
+		return
+	if ratos != null:
+		for x in ratos.ratos.values():
+			if x.estado != Ratos.E.TOCA and (x.pos as Vector2).distance_to(p) <= r:
+				ratos.matar(int(x.id), esp)
+	if passaros != null:
+		passaros.ferir(p, r, 0.6, esp)
+
+
+## Território: onde as manchas de duas tocas hostis se encostam, a mais forte (bichos + 2) cresce por cima e a mais
+## fraca perde vida até cair — o chão dela vira do vencedor.
+func _territorio(dt: float) -> void:
+	if not bool(_g.get("liga", true)) or _rel.is_empty():
+		return
+	_t_terr -= dt
+	if _t_terr > 0.0:
+		return
+	var passo := 1.0
+	_t_terr = passo
+	var ids := ninhos.keys()
+	var forca := {}
+	for a in aranhas.values():
+		forca[a.ninho] = int(forca.get(a.ninho, 2)) + 1
+	for i in ids.size():
+		for j in range(i + 1, ids.size()):
+			if not ninhos.has(ids[i]) or not ninhos.has(ids[j]):
+				continue
+			var a: Dictionary = ninhos[ids[i]]
+			var b: Dictionary = ninhos[ids[j]]
+			if float(a.obra) < 1.0 or float(b.obra) < 1.0 or not hostil(String(a.get("especie", "aranha")), String(b.get("especie", "aranha"))):
+				continue
+			var ra := Infestacao.raio_de(a)
+			var rb := Infestacao.raio_de(b)
+			var d: float = a.centro.distance_to(b.centro)
+			var encosto := clampf((ra + rb - d) / maxf(minf(ra, rb), 0.5), 0.0, 1.0)
+			if encosto <= 0.0:
+				continue
+			var fa := int(forca.get(ids[i], 2))
+			var fb := int(forca.get(ids[j], 2))
+			var forte: Dictionary = a if fa > fb or (fa == fb and float(a.get("idade", 0.0)) >= float(b.get("idade", 0.0))) else b
+			var fraco: Dictionary = b if forte == a else a
+			forte.raio_extra = minf(float(_g.get("extra_max", 4.0)), float(forte.get("raio_extra", 0.0)) + float(_g.get("cresce", 0.02)) * encosto * passo)
+			eventos.append({"tipo": "territorio", "forte": forte.id, "fraco": fraco.id, "encosto": encosto})
+			_ferir_ninho(int(fraco.id), float(_g.get("dano_territorio", 2.5)) * encosto * passo, String(forte.get("especie", "aranha")))
+
+
+# ------------------------------------------------------------------ fase 8: caça e comida
+## Bichos parados perto da toca saem atrás de presa: rato fora da toca, pássaros no chão (a aranha em dupla); a larva
+## também come carcaça.
+func _cacar(dt: float) -> void:
+	_t_caca -= dt
+	if _t_caca > 0.0:
+		return
+	_t_caca = 1.0
+	for id in ninhos:
+		var n: Dictionary = ninhos[id]
+		var c: Dictionary = comp(String(n.get("especie", "aranha"))).get("caca", {})
+		if float(n.obra) < 1.0 or not bool(c.get("liga", false)):
+			continue
+		n.t_caca = float(n.get("t_caca", _rng.randf() * float(c.get("olha_s", 3.0)))) - 1.0
+		if float(n.t_caca) > 0.0:
+			continue
+		n.t_caca = float(c.get("olha_s", 3.0))
+		if _rng.randf() > float(c.get("chance", 0.35)):
+			continue
+		var por_vez := int(c.get("por_vez", 1))
+		var paradas := aranhas_do_ninho(id, E.PARADA)
+		if paradas.size() < por_vez + 1:                   # alguém fica em casa
+			continue
+		var presa := _presa_perto(n, c)
+		if presa.is_empty():
+			continue
+		for a in paradas.slice(0, por_vez):
+			var ar: Dictionary = aranhas[a]
+			ar.estado = E.CACANDO
+			ar.presa = presa
+			ar.t_caca = 0.0
+			ar.bote = false
+			ar.t_bote = 0.0
+		eventos.append({"tipo": "caca", "ninho": id, "presa": presa.tipo, "pos": presa.pos})
+
+
+func _presa_perto(n: Dictionary, c: Dictionary) -> Dictionary:
+	var raio := float(c.get("raio", 16.0))
+	var presas: Array = c.get("presas", [])
+	var melhor: Dictionary = {}
+	var md := raio
+	if "carcaca" in presas and carcacas != null:
+		for f in carcacas.com_carne(n.centro, float(comp(String(n.get("especie", "larva"))).get("procria", {}).get("comida_raio", raio))):
+			var d: float = (f.pos as Vector2).distance_to(n.centro)
+			if d < md:
+				md = d
+				melhor = {"tipo": "carcaca", "id": int(f.id), "pos": f.pos}
+		if not melhor.is_empty():
+			return melhor                                  # comida parada primeiro
+	if "rato" in presas and ratos != null:
+		for x in ratos.ratos.values():
+			if x.estado in [Ratos.E.TOCA, Ratos.E.ENTRANDO, Ratos.E.SAINDO] or x.get("morto", false):
+				continue
+			var d: float = (x.pos as Vector2).distance_to(n.centro)
+			if d < md:
+				md = d
+				melhor = {"tipo": "rato", "id": int(x.id), "pos": x.pos}
+	if "passaro" in presas and passaros != null:
+		for b in passaros.bandos.values():
+			if int(b.estado) != Passaros.E.POUSADO or int(b.n) <= (b.get("poleiros", []) as Array).size() * 4:
+				continue                                   # só quem está no chão (os da copa ficam fora do alcance)
+			var d: float = (b.pos as Vector2).distance_to(n.centro)
+			if d < md:
+				md = d
+				melhor = {"tipo": "passaro", "id": int(b.id), "pos": b.pos}
+	return melhor
+
+
+## Onde está a presa agora (null = foi embora: entrou na toca, voou, acabou a carne).
+func _presa_pos(p: Dictionary) -> Variant:
+	match String(p.get("tipo", "")):
+		"rato":
+			var x: Dictionary = ratos.ratos.get(int(p.id), {}) if ratos != null else {}
+			if x.is_empty() or x.estado in [Ratos.E.TOCA, Ratos.E.ENTRANDO] or x.get("morto", false):
+				return null
+			return x.pos
+		"passaro":
+			var b: Dictionary = passaros.bandos.get(int(p.id), {}) if passaros != null else {}
+			if b.is_empty() or int(b.estado) != Passaros.E.POUSADO:
+				return null
+			return b.pos
+		"carcaca":
+			if eco == null or carcacas == null or not eco.comida.has(int(p.id)):
+				return null
+			var f: Dictionary = eco.comida[int(p.id)]
+			return f.pos if carcacas.etapa(f) != Carcacas.Etapa.RESTOS else null
+	return null
+
+
+func _caca(ar: Dictionary, dt: float) -> void:
+	var esp := String(ar.get("especie", "aranha"))
+	var c: Dictionary = comp(esp).get("caca", {})
+	ar.t_caca = float(ar.get("t_caca", 0.0)) + dt
+	var alvo: Variant = _presa_pos(ar.get("presa", {}))
+	if alvo == null or float(ar.t_caca) > float(c.get("desiste_s", 25.0)) or not ninhos.has(ar.ninho):
+		_desistir(ar)
+		return
+	var p: Vector2 = alvo
+	var d: float = ar.pos.distance_to(p)
+	if esp == "larva":
+		if String(ar.presa.tipo) == "carcaca":
+			if d < 0.9:
+				ar.estado = E.COMENDO
+				ar.t_come = float(c.get("comer_s", 8.0))
+				return
+			_mover(ar, p, dt, 1.0)
+		elif d <= float(_l.get("alcance_cuspe", 9.0)) - 0.5:
+			_cuspir_em(ar, p, dt, {"presa": true})
+		else:
+			_mover(ar, p, dt, 1.0)
+		return
+	# aranha: espreita devagar (só é vista de perto) até a distância do bote, e então corre
+	if bool(ar.get("bote", false)) or d <= float(c.get("bote_dist", 3.0)):
+		ar.bote = true
+		ar.espreita = false
+		ar.t_bote = float(ar.get("t_bote", 0.0)) + dt
+		_mover(ar, p, dt, float(c.get("bote_vel", 5.0)) / maxf(0.1, float(_a.get("velocidade", 1.4))))
+		if ar.pos.distance_to(p) <= float(c.get("pega", 0.8)):
+			_pegar(ar, p)
+		elif float(ar.t_bote) > 1.5:
+			_desistir(ar)                                  # errou o bote
+		return
+	ar.espreita = true
+	_mover(ar, p, dt, float(c.get("espreita_vel", 0.45)))
+
+
+func _pegar(ar: Dictionary, p: Vector2) -> void:
+	var pr: Dictionary = ar.presa
+	match String(pr.tipo):
+		"rato":
+			if ratos != null:
+				ratos.matar(int(pr.id), String(ar.get("especie", "aranha")))
+		"passaro":
+			if passaros != null and passaros.bandos.has(int(pr.id)):
+				passaros._matar(passaros.bandos[int(pr.id)], String(ar.get("especie", "aranha")), ar.pos)
+	ar.mordendo = true
+	ar.mordida = p
+	eventos.append({"tipo": "pegou", "id": ar.id, "presa": pr.tipo, "pos": p})
+	_desistir(ar)
+
+
+func _desistir(ar: Dictionary) -> void:
+	ar.estado = E.VOLTANDO
+	ar.presa = {}
+	ar.espreita = false
+	ar.bote = false
+
+
+## Larva comendo a carcaça: no fim a carne acaba (sobram os ossos) e a cratera ganha raiva (procria.carcaca).
+func _comendo(ar: Dictionary, dt: float) -> void:
+	ar.t_come = float(ar.get("t_come", 0.0)) - dt
+	var alvo: Variant = _presa_pos(ar.get("presa", {}))
+	if alvo == null:
+		_desistir(ar)
+		return
+	ar.mordendo = true
+	ar.mordida = alvo
+	if float(ar.t_come) > 0.0:
+		return
+	if carcacas != null:
+		carcacas.bicar(int(ar.presa.id), 1.0e6)
+	if ninhos.has(ar.ninho):
+		var n: Dictionary = ninhos[ar.ninho]
+		n.raiva = float(n.raiva) + float(comp(String(n.get("especie", "larva"))).get("procria", {}).get("carcaca", 0.0))
+	eventos.append({"tipo": "comeu", "id": ar.id, "pos": alvo})
+	_desistir(ar)
+
+
+## Matéria morta perto de uma cratera (árvore dissolvida no chão corroído): a cratera mais perto ganha raiva.
+func alimentar(p: Vector2, tipo := "arvore") -> void:
+	var melhor := -1
+	var md := INF
+	for id in ninhos:
+		var n: Dictionary = ninhos[id]
+		var pr: Dictionary = comp(String(n.get("especie", "aranha"))).get("procria", {})
+		if not pr.has(tipo):
+			continue
+		var d: float = n.centro.distance_to(p)
+		if d <= float(pr.get("comida_raio", 14.0)) and d < md:
+			md = d
+			melhor = id
+	if melhor >= 0:
+		var n: Dictionary = ninhos[melhor]
+		n.raiva = float(n.raiva) + float(comp(String(n.get("especie", "aranha"))).procria[tipo])

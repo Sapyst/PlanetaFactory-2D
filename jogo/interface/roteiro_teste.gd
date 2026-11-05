@@ -63,6 +63,7 @@ func _ready() -> void:
 		"semente": _roteiro_semente()
 		"passaros90": _roteiro_passaros90()
 		"natureza7": _roteiro_natureza7()
+		"guerra8": _roteiro_guerra8()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -3150,6 +3151,122 @@ func _roteiro_natureza7() -> void:
 		print("NATUREZA7 depois: fios do braço ", e.get("fios", []), " cortados ", e.get("cortados", []), " vida ", (cena.colonia as Colonia).vida.get(w.braco, -1))
 		olhar.call(Vector2(w.obra) + Vector2(2.0, 0.5), 3.4))
 	em(800, func(): foto.call("9_cabo_partido"))
+
+
+## Patch fauna, fase 8: um ninho de aranha e uma cratera de larva lado a lado — as manchas se empurram, os bichos
+## brigam, a toca mais fraca cai; aranha espreitando e dando o bote num rato; larva comendo uma carcaça.
+func _roteiro_guerra8() -> void:
+	var w := {"a": Vector2.ZERO, "ni": -1, "cr": -1}
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_guerra8")
+		get_viewport().get_texture().get_image().save_png("user://fotos_guerra8/%s.png" % nome)
+		print("GUERRA8 foto ", nome)
+	var olhar := func(p: Vector2, dist: float) -> void:
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(p)
+		cam.distancia = dist
+		cam.posicionar()
+	em(2, func():
+		Sessao.config.fps = false
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = 1
+		cl.hora = 0.42
+		cl.forcar("limpo", true)
+		cl.restante = 1.0e9
+		var c: Colonia = cena.colonia
+		var m: MapaOcupacao = cena.mapa
+		for y in range(-50, 51, 2):                       # chão livre a uns 30 m do núcleo para as duas tocas
+			for x in range(-50, 51, 2):
+				var q := Vector2i(x, y)
+				if w.ni >= 0 or Vector2(q).length() < 28.0 or Vector2(q).length() > 40.0:
+					continue
+				if m.motivo_bloqueio("ninho_aranha", q, 0) != "" or m.motivo_bloqueio("cratera_larva", q + Vector2i(10, 0), 0) != "":
+					continue
+				_sem_ninhos(q)
+				for id in c.aranhas.keys():
+					if (c.aranhas[id].pos as Vector2).distance_to(Vector2(q)) < 80.0:
+						c.aranhas.erase(id)
+				w.ni = c._criar_ninho(q, 1.0, "aranha")
+				w.cr = c._criar_ninho(q + Vector2i(10, 0), 1.0, "larva")
+				w.a = Vector2(q) + Vector2(6.5, 1.5)
+		for i in 5:
+			c._nova_aranha(w.ni)
+		for i in 3:
+			c._nova_aranha(w.cr)
+		c.ninhos[w.cr].vida = 120.0
+		print("GUERRA8 tocas ", w.ni, " ", w.cr, " em ", w.a)
+		olhar.call(w.a, 12.0))
+	em(150, func(): foto.call("1_ninho_e_cratera"))
+	em(152, func(): olhar.call(w.a, 7.0))
+	for q in range(160, 700, 6):
+		em(q, func():
+			var c: Colonia = cena.colonia
+			for ar in c.aranhas.values():
+				if int(ar.estado) == Colonia.E.BRIGANDO and not w.has("foto_briga"):
+					w.foto_briga = true
+					olhar.call((ar.pos as Vector2), 4.5)
+					return)
+	em(260, func(): foto.call("2_briga"))
+	em(420, func():
+		var c: Colonia = cena.colonia
+		print("GUERRA8 vida cratera ", c.ninhos.get(w.cr, {}).get("vida", -1), " extra ninho ", c.ninhos.get(w.ni, {}).get("raio_extra", 0.0))
+		olhar.call(w.a, 10.0))
+	em(470, func(): foto.call("3_territorio"))
+	em(472, func():
+		var c: Colonia = cena.colonia
+		if c.ninhos.has(w.cr):
+			c.ninhos[w.cr].vida = 1.0)                    # (apressa o fim da disputa para a foto)
+	em(620, func():
+		var c: Colonia = cena.colonia
+		print("GUERRA8 cratera caiu? ", not c.ninhos.has(w.cr))
+		olhar.call(w.a, 10.0))
+	em(680, func(): foto.call("4_cratera_tomada"))
+	em(682, func():                                      # um rato fora da toca perto do ninho: as aranhas caçam
+		var c: Colonia = cena.colonia
+		var r: Ratos = cena.ratos
+		r._t_toca = 1.0e9
+		c._b = c._b.duplicate(true)
+		c._b.aranha.caca.chance = 1.0
+		c._b.aranha.caca.presas = ["rato"]
+		c._n = c._n.duplicate()
+		c._n.grupo_ataque = 99                            # (a foto é da caça: o ninho não manda grupo agora)
+		for i in 4:                                       # (a guerra levou várias: o ninho repõe)
+			c._nova_aranha(w.ni)
+		var casa: Vector2 = c.ninhos[w.ni].centro + Vector2(-9, 9)
+		var t := r.nova_toca(casa, "pardo")
+		for id in r.ratos:
+			if int(r.ratos[id].toca) == t:
+				r.ratos[id].estado = Ratos.E.FAREJANDO
+				r.ratos[id].pos = (c.ninhos[w.ni].centro as Vector2) + Vector2(-7, 6)
+				r.ratos[id].t = 1.0e6
+				break
+		olhar.call((c.ninhos[w.ni].centro as Vector2) + Vector2(-6, 5), 5.5))
+	for q in range(690, 1000, 30):
+		em(q, func():
+			var c: Colonia = cena.colonia
+			var r: Ratos = cena.ratos
+			var est := {}
+			for ar in c.aranhas.values():
+				if int(ar.ninho) == w.ni:
+					est[Colonia.E.keys()[int(ar.estado)]] = int(est.get(Colonia.E.keys()[int(ar.estado)], 0)) + 1
+			var rr := []
+			for x in r.ratos.values():
+				if (x.pos as Vector2).distance_to(c.ninhos.get(w.ni, {}).get("centro", Vector2.ZERO)) < 20.0:
+					rr.append([Ratos.E.keys()[int(x.estado)], x.pos])
+			print("GUERRA8 q=%d aranhas %s ratos %s" % [Engine.get_process_frames(), str(est), str(rr)]))
+	for q in range(690, 1000, 4):
+		em(q, func():
+			var c: Colonia = cena.colonia
+			for ar in c.aranhas.values():
+				if int(ar.estado) == Colonia.E.CACANDO and bool(ar.get("espreita", false)) and not w.has("foto_espreita"):
+					w.foto_espreita = true
+					foto.call("5_espreitando")
+				if int(ar.estado) == Colonia.E.CACANDO and bool(ar.get("bote", false)) and not w.has("foto_bote"):
+					w.foto_bote = true
+					foto.call("6_bote"))
+	em(1000, func(): foto.call("7_depois_da_caca"))
 
 
 func _sem_ninhos(w: Vector2i) -> void:

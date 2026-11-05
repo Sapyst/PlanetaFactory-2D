@@ -95,7 +95,7 @@ func reindexar() -> void:
 			if not _indice.has(k):
 				_indice[k] = []
 			_indice[k].append({"tipo": tipo, "id": s.get("id", -1), "pos": p, "especie": String(s.get("especie", "")),
-					"n": int(s.get("n", 1))})
+					"n": int(s.get("n", 1)), "espreita": bool(s.get("espreita", false))})
 
 
 ## Quem está a até `raio` de `c` (do último índice), de um tipo ou de todos ("").
