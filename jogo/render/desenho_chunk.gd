@@ -616,7 +616,7 @@ const SUB := 3              ## vértices por tile no chão (o relevo precisa de 
 ##    ruído cruza meio nível — acompanha a curva do terreno, nunca a grade (a grade 1×1 só decide em que nível
 ##    cada construção fica; no patamar o desenho bate com esse nível);
 ##  - água afunda 0,12 m conforme a fração de água em volta (margem inclinada, sem rachar).
-## COLOR = (fração de água, correnteza x, correnteza y, 1 se rio). Normais pelas diferenças (luz nas encostas).
+## COLOR = (fração de água, correnteza x, correnteza y, 1 se rio / 0,35 se lago). Normais pelas diferenças (luz nas encostas).
 static func _chao_dados(c: ChunkDados, gerador: GeradorMundo) -> Dictionary:
 	var n := Grade.TAM_CHUNK
 	var base := c.coord * n
@@ -662,6 +662,8 @@ static func _chao_dados(c: ChunkDados, gerador: GeradorMundo) -> Dictionary:
 	mar_v.resize((v + 2) * (v + 2))
 	var relevo := gerador.relevo_ativo
 	rio_v.resize((v + 2) * (v + 2))
+	var lago_v := PackedFloat32Array()          # fração de lago (água parada: o limo da fase 2 do patch fauna)
+	lago_v.resize((v + 2) * (v + 2))
 	for vj in v + 2:
 		for vi in v + 2:
 			var g := Vector2(base) + Vector2(vi - 1, vj - 1) / float(SUB)
@@ -686,6 +688,7 @@ static func _chao_dados(c: ChunkDados, gerador: GeradorMundo) -> Dictionary:
 				if lf > 0.0:
 					h = lerpf(h, float(lg.nivel), smoothstep(0.0, 0.7, lf))
 					wa = maxf(wa, lf)
+					lago_v[vj * (v + 2) + vi] = maxf(lago_v[vj * (v + 2) + vi], lf)
 			# rio: distância ao traçado (borda = meia largura), contínua — nada de forma de tile
 			if not baldes.is_empty():
 				var bc := Vector2i((g / 3.0).floor())
@@ -748,7 +751,8 @@ static func _chao_dados(c: ChunkDados, gerador: GeradorMundo) -> Dictionary:
 			oclusao[vj * v + vi] = Vector2(clampf(oc * 0.42, 0.0, 1.0), clampf(conc * 9.0, 0.0, 1.0) * (1.0 - agua_v[k]))
 			mar_out[vj * v + vi] = mar_v[k]
 			var rv := rio_v[k]
-			cores[vj * v + vi] = Color(agua_v[k], 0.5 + 0.5 * rv.y, 0.5 + 0.5 * rv.z, 1.0 if rv.x > 0.01 else 0.0)
+			# A: 1 = rio (corre), 0,35 = lago (água parada, pega limo), 0 = resto
+			cores[vj * v + vi] = Color(agua_v[k], 0.5 + 0.5 * rv.y, 0.5 + 0.5 * rv.z, 1.0 if rv.x > 0.01 else (0.35 if lago_v[k] > 0.01 else 0.0))
 	var idx := PackedInt32Array()
 	idx.resize((v - 1) * (v - 1) * 6)
 	var w := 0

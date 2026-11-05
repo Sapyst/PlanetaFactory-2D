@@ -17,6 +17,12 @@
   "olhos": {"liga": true, "raio": 22, "max_pares": 3, "slot_s": 7.0, "vida_s": [2.5, 5.5], "chance": 0.55, "px": 1.6},
   "sons": {"liga": true, "grilos": [0.55, 1.0, 0.7, 0.05], "insetos_dia": [0.35, 1.0, 0.45, 0.0], "silencio_toca": [12, 34], "silencio_alien": 15, "sapo_s": [1.6, 4.5], "sapo_molhado": 0.25}
  },
+ "plantas_reagem": {
+  "_nota": "fase 2: folhas caindo das árvores caducas no outono (estacoes = taxa em [primavera, verão, outono, inverno]), levadas pelo vento, ficam um tanto no chão; galhos quebrados depois de tempestade (raios ou vento ≥ vento_min, soltos quando o vento cai abaixo de vento_fim), uns dias no chão; cogumelos no pé das árvores com o chão molhado (molhado_min), fora do inverno",
+  "folhas": {"liga": true, "raio": 28, "por_arvore": 18, "ciclo_s": 60, "estacoes": [0.0, 0.08, 1.0, 0.15], "max": 520, "px": 2.0},
+  "galhos": {"liga": true, "vento_min": 0.9, "vento_fim": 0.5, "raio": 30, "min": 6, "max_por_vez": 26, "max": 70, "vida_s": 1080, "some_s": 60},
+  "cogumelos": {"liga": true, "molhado_min": 0.45, "intervalo_s": 4.0, "raio": 25, "max": 50, "vida_s": 720, "cresce_s": 40, "murcha_s": 60}
+ },
  "especies": {
   "pardelo":  {"peso": 4.0, "bando": [12, 28], "vel": 6.5, "alt": [4.0, 8.0], "pousa_s": [10, 26], "canto": "pardelo_canto", "canto_s": 5.0, "estacoes": [1.0, 1.0, 1.0, 0.8], "sementes": true},
   "cobrico":  {"peso": 2.0, "bando": [8, 18], "vel": 7.0, "alt": [4.0, 7.0], "pousa_s": [8, 20], "canto": "cobrico_canto", "canto_s": 6.0, "estacoes": [1.0, 1.0, 1.0, 0.4], "sementes": true},

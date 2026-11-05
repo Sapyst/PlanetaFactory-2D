@@ -59,6 +59,10 @@ pocas={
 "type": "float",
 "value": 0.0
 }
+vico_grama={
+"type": "float",
+"value": 0.0
+}
 chuva_agora={
 "type": "float",
 "value": 0.0

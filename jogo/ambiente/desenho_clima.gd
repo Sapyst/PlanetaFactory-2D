@@ -115,6 +115,7 @@ func _process(delta: float) -> void:
 	RenderingServer.global_shader_parameter_set("nuvem_deslocamento", clima.deslocamento)
 	RenderingServer.global_shader_parameter_set("molhado", clima.molhado)
 	RenderingServer.global_shader_parameter_set("pocas", clima.pocas)
+	RenderingServer.global_shader_parameter_set("vico_grama", clima.vico)
 	RenderingServer.global_shader_parameter_set("chuva_agora", v.chuva)
 	RenderingServer.global_shader_parameter_set("vento_dir", clima.direcao_vento * (0.4 + v.vento))
 	_vento_tempo += delta * Clima.ritmo_vento(float(v.vento))

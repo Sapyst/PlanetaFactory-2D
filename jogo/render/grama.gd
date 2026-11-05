@@ -30,9 +30,10 @@ static func tufo() -> ArrayMesh:
 			var p0: Array = pts[k]
 			var p1: Array = pts[k + 1]
 			var n: Vector3 = ((p0[1] - p0[0]) as Vector3).cross(p1[0] - p0[0]).normalized()
-			for v in [[p0[0], p0[2]], [p0[1], p0[2]], [p1[0], p1[2]], [p0[1], p0[2]], [p1[1], p1[2]], [p1[0], p1[2]]]:
+			# UV.x = lado da folha (−1/+1): o shader alarga a ponta dos tufos com flor (fase 2 do patch fauna)
+			for v in [[p0[0], p0[2], -1.0], [p0[1], p0[2], 1.0], [p1[0], p1[2], -1.0], [p0[1], p0[2], 1.0], [p1[1], p1[2], 1.0], [p1[0], p1[2], -1.0]]:
 				st.set_normal(n)
-				st.set_uv(Vector2(0, v[1]))
+				st.set_uv(Vector2(v[2], v[1]))
 				st.add_vertex(v[0])
 	return st.commit()
 

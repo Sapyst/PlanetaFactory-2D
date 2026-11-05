@@ -22,6 +22,9 @@ global uniform vec3 alvo_camera;
 varying float altura;
 varying float queimando;
 varying vec3 tom;
+varying float flor;                 // patch fauna, fase 2: tufo com flor (0/1)
+varying vec3 cor_flor;
+varying float abre;                 // 0 fechada (noite) .. 1 aberta (dia)
 
 float _h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float _ruido(vec2 p) {                                   // ruído de valor suave (borda orgânica da infestação)
@@ -29,6 +32,20 @@ float _ruido(vec2 p) {                                   // ruído de valor suav
 	vec2 f = fract(p);
 	f = f * f * (3.0 - 2.0 * f);
 	return mix(mix(_h(i), _h(i + vec2(1, 0)), f.x), mix(_h(i + vec2(0, 1)), _h(i + vec2(1, 1)), f.x), f.y);
+}
+
+// Estação no capim: primavera verde-clara, verão normal, outono dourado, inverno pardo (troca no 1º quarto).
+vec3 cor_estacao(float e) {
+	vec3 c[4] = vec3[4](vec3(0.94, 1.08, 0.9), vec3(1.0), vec3(1.12, 0.98, 0.66), vec3(0.86, 0.84, 0.74));
+	int i = int(floor(e)) % 4;
+	return mix(c[(i + 3) % 4], c[i], smoothstep(0.0, 0.25, fract(e)));
+}
+
+// Quantas flores na estação: muitas na primavera, menos no verão, quase nada no outono, nenhuma no inverno.
+float flores_estacao(float e) {
+	float f[4] = float[4](1.0, 0.55, 0.12, 0.0);
+	int i = int(floor(e)) % 4;
+	return mix(f[(i + 3) % 4], f[i], smoothstep(0.0, 0.25, fract(e)));
 }
 
 void vertex() {
@@ -58,6 +75,30 @@ void vertex() {
 	tom *= mix(vec3(1.0), vec3(0.55, 0.47, 0.30), smoothstep(0.0, 0.35, cor_l + sorte));   // o ácido seca a grama
 	some = max(some, smoothstep(0.35, 0.8, inf + sorte));
 	some = max(some, smoothstep(0.15, 0.5, cor_l + sorte));                              // e come os tufos
+	// estação e viço (fase 2 do patch fauna): a chuva deixa o campo mais verde e alto por uns dias; a seca amarela e
+	// baixa (Clima.vico)
+	tom *= cor_estacao(estacao_atual);
+	float vv = vico_grama;
+	tom *= mix(vec3(1.0), vec3(0.84, 1.2, 0.78), max(vv, 0.0));
+	tom *= mix(vec3(1.0), vec3(1.6, 1.2, 0.45), max(-vv, 0.0));        // seca: palha
+	VERTEX.y *= 1.0 + 0.18 * max(vv, 0.0) - 0.22 * max(-vv, 0.0);
+	// flores: alguns tufos de capim saudável florescem pela estação; cada um com a sua cor; abrem de dia
+	float viva = (1.0 - smoothstep(0.1, 0.3, q)) * (1.0 - smoothstep(0.1, 0.4, amb.r)) * (1.0 - smoothstep(0.05, 0.3, inf + cor_l));
+	flor = step(_h(g * 1.91 + vec2(3.7, 1.3)), 0.075 * flores_estacao(estacao_atual) * viva * (0.8 + 0.4 * max(vv, 0.0)));
+	float k = _h(g * 4.3 + vec2(0.7, 9.1));
+	cor_flor = k < 0.35 ? vec3(0.92, 0.9, 0.78) : (k < 0.6 ? vec3(0.95, 0.76, 0.16) : (k < 0.82 ? vec3(0.52, 0.42, 0.84) : vec3(0.86, 0.34, 0.42)));
+	abre = smoothstep(-0.05, 0.3, sol_dir.y);
+	// só 2 das 5 folhas do tufo têm flor (pelo ângulo da folha, igual no pé e na ponta)
+	float setor = fract(atan(VERTEX.z, VERTEX.x) / 6.2832 * 5.0 + _h(g * 2.7) * 5.0);
+	flor *= step(setor, 0.4);
+	if (flor > 0.5 && altura > 0.95) {
+		// a ponta abre num miolo pequeno (~1,5 cm aberta, meio fechada)
+		vec2 radial = normalize(VERTEX.xz + vec2(1e-4));
+		vec2 lado = vec2(-radial.y, radial.x);
+		float pet = 0.007 + 0.011 * abre;
+		VERTEX.xz += lado * UV.x * pet + radial * pet;
+		VERTEX.y += pet;
+	}
 	float dist = distance(o.xz, alvo_camera.xz);
 	some = max(some, smoothstep(raio_vista - 6.0, raio_vista, dist));
 	some = max(some, smoothstep(raio_detalhe - 6.0, raio_detalhe, dist));
@@ -96,6 +137,10 @@ void vertex() {
 
 void fragment() {
 	vec3 c = mix(cor_base, cor_ponta, smoothstep(0.0, 1.0, altura)) * tom;
+	if (flor > 0.5 && altura > 0.74 - 0.06 * abre) {
+		// botão fechado à noite (verde e escuro com a cor por dentro); aberto de dia
+		c = mix(mix(cor_flor * 0.45, vec3(0.22, 0.3, 0.12), 0.55), cor_flor, abre);
+	}
 	ALBEDO = c;
 	ROUGHNESS = 0.9;
 	BACKLIGHT = vec3(0.25, 0.32, 0.12) * altura;          // luz atravessando a folha

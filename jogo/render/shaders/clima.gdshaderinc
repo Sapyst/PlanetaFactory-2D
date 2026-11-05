@@ -100,6 +100,7 @@ float vento_tranco(vec2 p, vec2 d, float sorte) {
 
 // Estação para a folhagem: índice (0 primavera, 1 verão, 2 outono, 3 inverno) + fração já passada dela.
 global uniform float estacao_atual;
+global uniform float vico_grama;      // patch fauna, fase 2: −1 capim seco … 0 normal … +1 viçoso depois da chuva
 
 // Oval de visão (ambiente/visao.gd): dentro desenha normal; borda em degradê; fora, névoa escura — quase preta onde
 // nunca foi visto, escurecida e sem cor onde já foi descoberto (visao_mapa, 1 pixel = 2×2 tiles).

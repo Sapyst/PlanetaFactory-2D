@@ -170,6 +170,7 @@ void fragment() {
 	vec3 c_agua = vec3(0.0);
 	float onda = 0.0;
 	float suja = 0.0;
+	float limo_v = 0.0;
 	if (agua > 0.0) {
 		vec2 corre = fluxo.z > 0.5 ? vec2(fluxo.x, -fluxo.y) * 0.35 : vec2(0.02, 0.013);
 		vec2 uva = uv + corre * TIME;
@@ -187,6 +188,28 @@ void fragment() {
 		}
 		// espuma rala bem na linha da margem
 		c_agua = mix(c_agua, vec3(0.62, 0.66, 0.66), smoothstep(0.62, 0.5, wf) * 0.35 * smoothstep(0.4, 0.7, onda));
+		// limo (fase 2 do patch fauna): só na água parada (lago, COLOR.a ≈ 0,35), na parte rasa da beira; cresce da
+		// primavera ao verão, some no inverno; manchas que derivam devagar, com fios mais claros
+		float parada = smoothstep(0.15, 0.3, fluxo.z) * (1.0 - smoothstep(0.5, 0.7, fluxo.z));
+		if (parada > 0.0) {
+			float est = estacao_atual;
+			float lim[4] = float[4](0.45, 1.0, 0.65, 0.1);
+			int ie = int(floor(est)) % 4;
+			float temporada = mix(lim[(ie + 3) % 4], lim[ie], smoothstep(0.0, 0.25, fract(est)));
+			float rasa = 1.0 - smoothstep(0.1, 0.55, mar_v.y);
+			// manchas grandes (~8 m) que derivam devagar, juntando na beira (onde o limo encalha); textura fina só
+			// dentro da mancha
+			vec2 deriva = mundo.xz * 0.12 + vec2(TIME * 0.002, TIME * 0.0015);
+			float mancha = texture(detalhe, deriva).r;
+			float beira_l = smoothstep(0.95, 0.55, wf);
+			float limo = parada * temporada * rasa * smoothstep(0.5, 0.58, mancha * 0.75 + beira_l * 0.42);
+			float fino = texture(detalhe, mundo.xz * 1.3 + vec2(0.41, 0.17)).r;
+			vec3 c_limo = vec3(0.15, 0.23, 0.07) * (0.8 + 0.4 * fino);
+			c_agua = mix(c_agua, c_limo, limo * 0.85);
+			onda *= 1.0 - 0.7 * limo;                       // o limo acalma o brilho da onda
+			limo_v = limo;
+			onda *= 1.0 - 0.7 * limo;                       // o limo acalma o brilho da onda
+		}
 		// água contaminada: turva (marrom-esverdeada) com espuma suja em manchas
 		vec4 amb_a = ambiente_em(grade, w1, w2);
 		suja = smoothstep(0.009, 0.18, min(amb_a.b, 0.45));
@@ -313,6 +336,7 @@ void fragment() {
 	EMISSION += fogo_cor * brasa * 1.3 * (1.0 - agua) * vd;
 	EMISSION += vec3(0.20, 0.32, 0.02) * acido * 0.35 * (0.85 + 0.15 * sin(TIME * 1.7 + grade.x)) * vd;   // ácido: brilho fraco
 	float oleo_r = smoothstep(0.35, 0.55, ambiente_em(grade, w1, w2).g);
-	ROUGHNESS = mix(mix(mix(mix(0.92, 0.55, molhado), 0.06, poca), 0.15, max(oleo_r, acido) * (1.0 - agua)), mix(0.08, 0.45, suja), agua);
-	SPECULAR = mix(0.5 + 0.4 * poca, mix(0.8, 0.3, suja), agua) * mix(0.05, 1.0, vd);   // água suja é opaca: reflete menos o céu
+	float fosca = max(suja, limo_v * 0.8);               // água suja e limo são opacos: refletem menos o céu
+	ROUGHNESS = mix(mix(mix(mix(0.92, 0.55, molhado), 0.06, poca), 0.15, max(oleo_r, acido) * (1.0 - agua)), mix(0.08, 0.45, fosca), agua);
+	SPECULAR = mix(0.5 + 0.4 * poca, mix(0.8, 0.3, fosca), agua) * mix(0.05, 1.0, vd);   // água suja é opaca: reflete menos o céu
 }

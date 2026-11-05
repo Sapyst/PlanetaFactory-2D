@@ -199,6 +199,47 @@ func perto_da_agua(t: Vector2i, r: int) -> bool:
 	return false
 
 
+# ------------------------------------------------------------------ árvores perto (fase 2: folhas, galhos, cogumelos)
+const CADUCAS := ["arv_carvalho", "arv_betula", "arv_acacia", "arv_salgueiro", "arvore_campina"]   ## perdem a folha no outono
+var _arv_cache := {}
+var _arv_chave := ""
+
+
+## Árvores de pé (não queimadas, caídas, corroídas nem limpas) a até `raio` de `c`:
+## [{tile, pos: Vector2, nome, alto (m), copa (raio m), caduca: bool}]. Guarda a última busca (a câmera parada não
+## refaz) e refaz quando o mapa muda.
+func arvores_perto(c: Vector2, raio: float) -> Array:
+	var chave := "%s|%d|%d|%d|%d" % [str(Vector2i((c / 3.0).floor())), int(raio), mapa.versao, mapa.arvores.size(), mapa.limpos.size()]
+	if chave == _arv_chave:
+		return _arv_cache.lista
+	var out: Array = []
+	var r := int(ceil(raio))
+	var ct := Vector2i(c.round())
+	for y in range(-r, r + 1):
+		for x in range(-r, r + 1):
+			var t := ct + Vector2i(x, y)
+			if Vector2(x, y).length() > raio or mapa.limpos.has(t) or mapa.tiles.has(t):
+				continue
+			var o := gerador.distribuicao.obstaculo(t)
+			if o.is_empty() or Vector2i(o.ancora) != t:
+				continue
+			var nome := String(o.nome)
+			var md: Dictionary = Registro.modelos.get(nome, {})
+			if md.get("categoria", "") != "mapa/vegetacao" or not (nome.begins_with("arv") or nome.begins_with("arvore")):
+				continue
+			if nome == "arvore_morta" or not mapa.arvores.get(t, {}).is_empty():
+				continue
+			var dims: Array = md.get("dims", [1, 1, 2])
+			var caduca := false
+			for pre in CADUCAS:
+				caduca = caduca or nome.begins_with(pre)
+			out.append({"tile": t, "pos": Vector2(t) + Vector2(0.5, 0.5), "nome": nome, "alto": float(dims[2]),
+					"copa": maxf(float(dims[0]), float(dims[1])) * 0.5, "caduca": caduca})
+	_arv_chave = chave
+	_arv_cache = {"lista": out}
+	return out
+
+
 # ------------------------------------------------------------------ salvamento
 func estado() -> Dictionary:
 	return {"comida": comida, "prox": _prox_comida}

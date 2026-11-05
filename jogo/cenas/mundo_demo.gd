@@ -40,6 +40,8 @@ var infestacao: Infestacao               ## teia e sujeira no chão em volta das
 var passaros: Passaros                   ## pássaros nativos (patch fauna): bandos, fuga, sementes que reflorestam
 var ecossistema: Ecossistema             ## patch fauna, fase 0: índice de quem vive perto, saúde do chão, eventos
 var _vida_pequena: DesenhoVidaPequena    ## patch fauna, fase 1: vagalumes, insetos, olhos no mato, sons de ambiente
+var plantas_reagem: PlantasReagem        ## patch fauna, fase 2: galhos depois da tempestade, cogumelos depois da chuva
+var _desenho_plantas_reagem: DesenhoPlantasReagem   ## + folhas caindo no outono
 var _desenho_passaros: DesenhoPassaros
 var _raios_passaros := 0
 var _teia_versao := -1
@@ -150,6 +152,7 @@ func _ready() -> void:
 		for ar in colonia.aranhas.values():
 			out.append({"id": ar.id, "pos": ar.pos, "especie": ar.get("especie", "aranha")})
 		return out)
+	plantas_reagem = PlantasReagem.new(ecossistema, semente + 53)
 	ecossistema.registrar_fonte("toca", func() -> Array:
 		var out: Array = []
 		for id in colonia.ninhos:
@@ -361,7 +364,7 @@ func _dados_salvar() -> Dictionary:
 	return {"modo": modo, "semente": semente, "tempo": _tempo,
 			"camera": [camera.alvo, camera.distancia, camera.angulo],
 			"mapa": {"estruturas": mapa.estruturas, "limpos": mapa.limpos.keys(), "prox": mapa._prox_id, "arvores": mapa.arvores},
-			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(), "ecossistema": ecossistema.estado(),
+			"fabrica": fabrica.estado(), "colonia": colonia.estado(), "poluicao": poluicao.valores, "clima": clima.estado(), "aplainado": gerador.aplainados(), "ambiente": ambiente.estado(), "agua": agua.estado(), "descoberta": descoberta.estado(), "varredura": varredura.estado(), "lancador": lancador.estado(), "genese": genese.estado(), "raios": raios.estado(), "drones": drones.estado(), "obras": obras.estado(), "ecossistema": ecossistema.estado(), "plantas_reagem": plantas_reagem.estado(),
 			"estoques": estoques, "inventario": inventario, "pesquisa": pesquisa.estado(),
 			"trens": trens.map(func(t: Trem): return t.para_salvar()), "prox_trem": _prox_trem}
 
@@ -414,6 +417,7 @@ func _carregar(d: Dictionary) -> void:
 	drones.restaurar(d.get("drones", {}))
 	obras.restaurar(d.get("obras", {}))
 	ecossistema.restaurar(d.get("ecossistema", {}))
+	plantas_reagem.restaurar(d.get("plantas_reagem", {}))
 	obras.dar_iniciais()                          # save de antes do patch RTS: ganha os construtores uma vez
 	for id in mapa.estruturas:
 		var nome: String = mapa.estruturas[id].nome
@@ -467,6 +471,12 @@ func _criar_desenhos() -> void:
 	_vida_pequena.clima = clima
 	_vida_pequena.camera = camera
 	add_child(_vida_pequena)
+	_desenho_plantas_reagem = DesenhoPlantasReagem.new()
+	_desenho_plantas_reagem.eco = ecossistema
+	_desenho_plantas_reagem.clima = clima
+	_desenho_plantas_reagem.plantas = plantas_reagem
+	_desenho_plantas_reagem.camera = camera
+	add_child(_desenho_plantas_reagem)
 	_desenho_colonia = DesenhoColonia.new()
 	_desenho_colonia.colonia = colonia
 	_desenho_colonia.mapa = mapa
@@ -1656,6 +1666,7 @@ func _tick_mundo(dt: float) -> void:
 		if ev.tipo == "aranha_morta":
 			ecossistema.morreu("alien", String(ev.get("especie", "aranha")), ev.pos)
 	ecossistema.tick(dt, Vector2(camera.alvo.x, -camera.alvo.z))
+	plantas_reagem.tick(dt, clima, ecossistema.foco)
 	_desenho_passaros.efeitos_de(passaros.eventos)
 	passaros.eventos.clear()
 	_eventos.append_array(colonia.eventos)

@@ -55,6 +55,7 @@ func _ready() -> void:
 		"drones": _roteiro_drones()
 		"obras": _roteiro_obras()
 		"vida": _roteiro_vida()
+		"plantas": _roteiro_plantas()
 		"limpeza2": _roteiro_limpeza2()
 		"lote16": _roteiro_lote16()
 		"lote17": _roteiro_lote17()
@@ -2177,6 +2178,104 @@ static func _farol_do_posto(m: MapaOcupacao, ids: Dictionary) -> int:
 		if m.estruturas[i].nome == "farol_cristal" and (melhor < 0 or i > melhor):
 			melhor = i
 	return melhor
+
+
+## Patch fauna, fase 2 (-- novo roteiro plantas): bosque de árvores caducas perto do núcleo. PNG em
+## user://fotos_plantas: flores de dia e de noite (primavera), folhas caindo (outono com vento), galhos e cogumelos
+## depois da tempestade e da chuva, capim seco e viçoso (verão), limo no lago mais perto.
+func _roteiro_plantas() -> void:
+	var w := [Vector2.ZERO]
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_plantas")
+		get_viewport().get_texture().get_image().save_png("user://fotos_plantas/%s.png" % nome)
+		print("PLANTAS foto ", nome)
+	var estacao := func(e: int, hora: float, estado: String) -> void:
+		var cl: Clima = cena.clima
+		cl.ciclo = false
+		cl.tempo_real = false
+		cl.estacao = e
+		cl.t_estacao = float(Registro.clima.get("estacao_s", 604800)) * 0.5
+		cl.hora = hora
+		cl.forcar(estado, true)
+		cl.restante = 1.0e9
+	em(2, func():
+		Sessao.config.fps = false
+		var eco: Ecossistema = cena.ecossistema
+		var n := -1
+		for y in range(-80, 81, 10):
+			for x in range(-80, 81, 10):
+				if Vector2(x, y).length() < 14.0:
+					continue
+				var k := eco.arvores_perto(Vector2(x, y), 10.0).filter(func(a): return a.caduca).size()
+				if k > n:
+					n = k
+					w[0] = Vector2(x, y)
+		print("PLANTAS bosque ", w[0], " caducas ", n)
+		_sem_ninhos(Vector2i(w[0]))
+		estacao.call(0, 0.45, "limpo")
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(w[0])
+		cam.distancia = 12.0
+		cam.posicionar())
+	em(80, func(): foto.call("1_primavera_dia"))
+	em(82, func(): cena.clima.hora = 0.02)
+	em(120, func(): foto.call("2_primavera_noite"))
+	em(122, func(): estacao.call(2, 0.45, "nublado"))
+	em(330, func():
+		var dp: DesenhoPlantasReagem = cena._desenho_plantas_reagem
+		print("PLANTAS folhas=%d no_chao=%d taxa=%.2f" % [dp.folhas.size(), dp.folhas.filter(func(f): return f.chao).size(), dp.taxa_folhas()])
+		foto.call("3_outono_folhas"))
+	em(332, func(): estacao.call(1, 0.45, "tempestade"))
+	em(390, func():
+		estacao.call(1, 0.45, "limpo")
+		cena.clima.valores.vento = 0.2
+		cena.clima.molhado = 0.95)
+	em(470, func():
+		var p: PlantasReagem = cena.plantas_reagem
+		p.t += 45.0                                  # os cogumelos já cresceram
+		print("PLANTAS galhos=%d cogumelos=%d" % [p.galhos.size(), p.cogumelos.size()])
+		var cam = cena.camera
+		if not p.cogumelos.is_empty():
+			cam.alvo = Grade.ponto_mundo(p.cogumelos[0].pos)
+		cam.distancia = 7.0
+		cam.posicionar())
+	em(480, func(): foto.call("4_cogumelos"))
+	em(481, func():
+		var p: PlantasReagem = cena.plantas_reagem
+		var cam = cena.camera
+		if not p.galhos.is_empty():
+			var perto: Dictionary = p.galhos[0]
+			for g in p.galhos:
+				if (g.pos as Vector2).distance_to(cena.ecossistema.foco) < (perto.pos as Vector2).distance_to(cena.ecossistema.foco):
+					perto = g
+			cam.alvo = Grade.ponto_mundo(perto.pos)
+			print("PLANTAS galho perto ", perto.pos, " tela depois ")
+		cam.distancia = 4.0
+		cam.posicionar())
+	em(486, func(): foto.call("4b_galhos"))
+	em(488, func():
+		cena.clima.vico = -0.9
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(w[0])
+		cam.distancia = 12.0
+		cam.posicionar())
+	em(510, func(): foto.call("5_verao_seco"))
+	em(512, func(): cena.clima.vico = 1.0)
+	em(540, func(): foto.call("6_viçoso_depois_da_chuva"))
+	em(542, func():
+		var g: GeradorMundo = cena.gerador
+		var lagos: Array = g.hidro.lagos(Vector2i(-160, -160), Vector2i(160, 160)) if g.relevo_ativo else []
+		var melhor: Dictionary = {}
+		for lg in lagos:
+			if melhor.is_empty() or (lg.centro as Vector2).length() < (melhor.centro as Vector2).length():
+				melhor = lg
+		if not melhor.is_empty():
+			print("PLANTAS lago ", melhor.centro, " raio ", melhor.raio)
+			var cam = cena.camera
+			cam.alvo = Grade.ponto_mundo(melhor.centro + Vector2(float(melhor.raio) * 0.7, 0.0))
+			cam.distancia = 18.0
+			cam.posicionar())
+	em(600, func(): foto.call("7_limo_no_lago"))
 
 
 ## Patch fauna, fase 1 (-- novo roteiro vida): campo de capim saudável perto do núcleo; noite de verão com

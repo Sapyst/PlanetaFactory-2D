@@ -14,6 +14,10 @@ var atual := "limpo"
 var valores: Dictionary = {}
 var molhado := 0.0
 var pocas := 0.0          ## 0..1: quanto as baixadas já encheram (enche devagar com chuva forte, seca mais devagar ainda)
+## Viço do capim (patch fauna, fase 2), −1 seco … 0 normal … +1 viçoso: a chuva enche (uns minutos de chuva forte
+## deixam o campo verde e alto); sem chuva volta devagar — uns 2 dias de jogo — ao normal da estação, que no verão
+## seco puxa para amarelo e baixo (−secura da estação).
+var vico := 0.0
 var deslocamento := Vector2.ZERO
 var direcao_vento := Vector2(1, 0.35).normalized()
 var t_vento := 0.0                   ## segundos de jogo (oscilação da direção)
@@ -146,6 +150,13 @@ func tick(dt: float) -> void:
 		molhado = minf(1.0, molhado + dt * 0.05 * valores.chuva)
 	else:
 		molhado = maxf(0.0, molhado - dt * 0.008)
+	# viço do capim: chuva enche; sem ela volta devagar ao normal da estação (o verão seco puxa para baixo)
+	if valores.chuva > 0.15:
+		vico = minf(1.0, vico + dt * 0.004 * valores.chuva)
+	else:
+		var es: Array = _d.get("estacoes", [])
+		var normal := -float(es[estacao].get("secura", 0.4)) * 0.8 + 0.15 if not es.is_empty() else 0.0
+		vico = move_toward(vico, normal, dt / (2.0 * float(_d.get("dia_s", 720))))
 	# poças: só chuva de verdade enche; secam do raso para o fundo (o mais fundo some por último)
 	if valores.chuva > 0.25:
 		pocas = minf(1.0, pocas + dt * 0.012 * valores.chuva)
@@ -254,7 +265,7 @@ func _sortear(pesos: Dictionary) -> String:
 func estado() -> Dictionary:
 	return {"atual": atual, "valores": valores, "molhado": molhado, "pocas": pocas, "deslocamento": deslocamento, "restante": restante,
 			"vento": direcao_vento, "rng": _rng.state, "estacao": estacao, "t_estacao": t_estacao, "hora": hora,
-			"t_vento": t_vento, "vento_medio": vento_medio}
+			"t_vento": t_vento, "vento_medio": vento_medio, "vico": vico}
 
 
 func restaurar(d: Dictionary) -> void:
@@ -271,3 +282,4 @@ func restaurar(d: Dictionary) -> void:
 	hora = d.get("hora", 0.3)
 	t_vento = d.get("t_vento", 0.0)
 	vento_medio = d.get("vento_medio", Vector2.ZERO)
+	vico = float(d.get("vico", 0.0))

@@ -46,6 +46,7 @@ var _fant_spr: Array[Sprite2D] = []
 var _fant_peg: Array[Polygon2D] = []
 var _fant_txt: Array[Label] = []
 var _fant_seta: Array[Polygon2D] = []
+var _plantas2d := PlantasReagem2D.new()   ## patch fauna, fase 2: folhas, galhos, cogumelos (escurecem com a noite)
 var _camada_vida := CanvasLayer.new()  ## patch fauna, fase 1: vagalumes/insetos/olhos acima do escuro da noite
 var _vida2d := VidaPequena2D.new()
 var _obra_spr: Dictionary = {}          ## id da obra (patch RTS) → Sprite2D do holograma
@@ -94,6 +95,7 @@ func _ready() -> void:
 	efeitos.add_child(ef)
 	add_child(fantasmas)
 	add_child(noite)
+	add_child(_plantas2d)
 	_camada_vida.layer = 2                        # acima do mundo (e do CanvasModulate dele), abaixo da interface
 	add_child(_camada_vida)
 	_vida2d.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -218,6 +220,7 @@ func _malha_chao(mi3: MeshInstance3D) -> ArrayMesh:
 	var v3: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
 	var nr: PackedVector3Array = a[Mesh.ARRAY_NORMAL]
 	var uv2: PackedVector2Array = a[Mesh.ARRAY_TEX_UV2] if a[Mesh.ARRAY_TEX_UV2] != null else PackedVector2Array()
+	var c3: PackedColorArray = a[Mesh.ARRAY_COLOR] if a[Mesh.ARRAY_COLOR] != null else PackedColorArray()   # A: 1 rio, 0,35 lago
 	var g := mi3.global_transform
 	var v2 := PackedVector2Array(); v2.resize(v3.size())
 	var uv := PackedVector2Array(); uv.resize(v3.size())
@@ -229,7 +232,7 @@ func _malha_chao(mi3: MeshInstance3D) -> ArrayMesh:
 		uv[i] = Vector2(p.x, -p.z)
 		var luz := clampf(1.0 + 0.9 * (nr[i].normalized().dot(sol) - 0.574), 0.55, 1.25) if i < nr.size() else 1.0
 		var mar := uv2[i] if i < uv2.size() else Vector2.ZERO
-		cor[i] = Color(mar.x, mar.y, luz, 1.0)
+		cor[i] = Color(mar.x, mar.y, luz, c3[i].a if i < c3.size() else 0.0)
 	var arr := []
 	arr.resize(Mesh.ARRAY_MAX)
 	arr[Mesh.ARRAY_VERTEX] = v2
@@ -658,6 +661,9 @@ func _sincronizar_passaros() -> void:
 func _sincronizar_vida() -> void:
 	if _vida2d.vida == null:
 		_vida2d.vida = mundo.get("_vida_pequena")
+	if _plantas2d.desenho == null:
+		_plantas2d.desenho = mundo.get("_desenho_plantas_reagem")
+		_plantas2d.plantas = mundo.get("plantas_reagem")
 	_camada_vida.transform = Transform2D(0.0, scale, 0.0, position)
 
 

@@ -76,7 +76,7 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
   cogumelo); para centenas de pontinhos ele pesaria muito mais que um MultiMesh. Os vagalumes da flor luminosa
   continuam lá.
 
-## Fase 2 — Plantas que reagem ⬜ · custo baixo · shaders e clima
+## Fase 2 — Plantas que reagem ✅ · custo baixo · shaders e clima
 - (C) Grama mais verde e alta por uns dias depois da chuva; amarela na seca.
   - A seca já aumenta o fogo (`Clima.secura`); aqui só aparece na cor.
 - (C) Flores por estação, que abrem de dia e fecham à noite.
@@ -84,6 +84,23 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
 - (C) Juncos e algas balançando na margem; água parada ganhando limo com o tempo.
 - (C) Depois de tempestade: galhos caídos, poças e cogumelos brotando (somem com o tempo).
 - **Por que aqui:** é visual sobre sistemas que já existem e ainda não depende de bicho nenhum.
+- **Já existia:** as poças nas baixadas, o chão molhado, a cor e a queda das folhas das árvores por estação, o junco
+  balançando no vento e a vitória-régia boiando.
+- **Feito:**
+  - **Viço do capim:** `Clima.vico`, de −1 a +1. A chuva enche; sem chuva volta ao normal da estação em uns 2 dias
+    de jogo, e o verão seco puxa para palha. O capim fica mais verde e alto ou amarelo e baixo, e também muda de
+    cor pela estação.
+  - **Flores:** 2 das 5 folhas de alguns tufos têm uma ponta colorida (branca, amarela, violeta ou rosa). Abrem de
+    dia e fecham à noite; muitas na primavera, nenhuma no inverno.
+  - **Folhas do outono:** caem girando das árvores caducas, levadas pelo vento, e ficam por cima do capim em volta
+    da árvore. O orçamento é de 520, das árvores mais perto da câmera.
+  - **Limo:** manchas grandes na água parada (o chunk marca lago na cor do vértice), juntando na beira. Mais forte
+    no verão e some no inverno.
+  - **Galhos:** caem embaixo das árvores quando passa uma tempestade (raios ou ventania; chuva comum não quebra
+    galho), ficam uns dias e afundam no capim.
+  - **Cogumelos:** brotam no pé das árvores com o chão molhado, fora do inverno; crescem, ficam um dia e murcham.
+  - **Código:** `PlantasReagem` é a lógica, `DesenhoPlantasReagem` o 3D e `PlantasReagem2D` o 2D. A busca de
+    árvores perto ficou no `Ecossistema` e serve às frutas da fase 3.
 
 ## Fase 3 — Frutas, arbustos e reflorestamento completo ⬜ · custo médio
 - (S) **Frutas** caindo embaixo de árvores e **arbustos**. Elas viram fontes de comida no `Ecossistema` e

@@ -21,7 +21,24 @@ uniform float primeira_agua = 11.0;
 
 varying vec2 grade;
 varying vec2 px;
-varying vec4 dados;      // r = água (campo contínuo), g = fundo, b = luz da encosta
+varying vec4 dados;      // r = água (campo contínuo), g = fundo, b = luz da encosta, a = 1 rio / 0,35 lago
+global uniform float estacao_atual;      // patch fauna, fase 2: capim e flores pela estação, limo
+global uniform float vico_grama;         // −1 seco … +1 viçoso depois da chuva
+global uniform vec3 sol_dir;             // y > 0 = dia (flor aberta)
+
+vec3 cor_estacao(float e) {
+	vec3 c[4] = vec3[4](vec3(0.94, 1.08, 0.9), vec3(1.0), vec3(1.12, 0.98, 0.66), vec3(0.86, 0.84, 0.74));
+	int i = int(floor(e)) % 4;
+	return mix(c[(i + 3) % 4], c[i], smoothstep(0.0, 0.25, fract(e)));
+}
+
+float por_estacao(float e, vec4 v) {
+	float f[4] = float[4](v.x, v.y, v.z, v.w);
+	int i = int(floor(e)) % 4;
+	return mix(f[(i + 3) % 4], f[i], smoothstep(0.0, 0.25, fract(e)));
+}
+
+float _hp(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 
 const vec2 TEX = vec2(140.0, 80.0);
 
@@ -62,6 +79,17 @@ void fragment() {
 		vec3 funda = texture(agua_funda, uva).rgb;
 		cor = dados.g + (b - 0.5) * 0.3 > 0.5 ? funda : rasa;
 		if (wf < 0.56 && b < 0.75) { cor = mix(cor, vec3(0.62, 0.70, 0.70), 0.6); }
+		// limo (fase 2): só água parada (lago), na parte rasa; manchas grandes que juntam na beira
+		float parada = step(0.15, dados.a) * step(dados.a, 0.6);
+		if (parada > 0.0) {
+			float temporada = por_estacao(estacao_atual, vec4(0.45, 1.0, 0.65, 0.1));
+			float mancha = texture(detalhe, grade * 0.12 + vec2(TIME * 0.002, TIME * 0.0015)).r;
+			float beira_l = smoothstep(0.95, 0.55, wf);
+			float rasa = 1.0 - smoothstep(0.1, 0.55, dados.g);
+			if (temporada * rasa > 0.05 && mancha * 0.75 + beira_l * 0.42 + (b - 0.5) * 0.06 > 0.54 + (1.0 - temporada * rasa) * 0.4) {
+				cor = mix(vec3(0.15, 0.23, 0.07), vec3(0.22, 0.31, 0.09), step(0.8, b));
+			}
+		}
 	} else {
 		// terra: camada no ponto deformado (borda ondulada) + pontilhado na passagem
 		vec2 pw = grade + w1 * 1.1 + w2 * 0.35 + (b - 0.5) * 0.3;
@@ -72,6 +100,20 @@ void fragment() {
 		// margem molhada
 		float beira = smoothstep(0.2, 0.5, wf);
 		cor *= 1.0 - 0.3 * step(0.5, beira + (b - 0.5) * 0.4);
+		// capim pela estação e pelo viço (fase 2: chuva verde, seca palha) — só no que é verde na textura — e
+		// flores de 1 pixel que abrem de dia (primavera muitas, inverno nenhuma)
+		float verde = clamp((cor.g - max(cor.r, cor.b)) * 8.0, 0.0, 1.0);
+		if (verde > 0.0) {
+			vec3 tn = cor_estacao(estacao_atual);
+			tn *= mix(vec3(1.0), vec3(0.86, 1.15, 0.8), max(vico_grama, 0.0));
+			tn *= mix(vec3(1.0), vec3(1.5, 1.15, 0.5), max(-vico_grama, 0.0));
+			cor = mix(cor, cor * tn, verde);
+			vec2 cel = floor(px);
+			if (_hp(cel) < 0.012 * por_estacao(estacao_atual, vec4(1.0, 0.55, 0.12, 0.0)) * verde && sol_dir.y > 0.0) {
+				float k = _hp(cel + 17.0);
+				cor = k < 0.35 ? vec3(0.92, 0.9, 0.78) : (k < 0.6 ? vec3(0.95, 0.76, 0.16) : (k < 0.82 ? vec3(0.52, 0.42, 0.84) : vec3(0.86, 0.34, 0.42)));
+			}
+		}
 		// piso de fábrica: o mapa já vem espalhado em volta das construções (e cresce a partir delas); 4 leituras
 		// deformadas dão a borda irregular; o pontilhado mistura com o chão de antes. Jazida nunca vira piso.
 		float f = (fabrica_em(grade + w1 * 1.3).r + fabrica_em(grade + w2 * 1.0).r
