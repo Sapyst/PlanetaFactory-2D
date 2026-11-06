@@ -15,7 +15,8 @@ const DIST := 75.0                ## além disso o bicho não é desenhado
 ## m andados por ciclo de cada ação (o pé não escorrega): andar e correr.
 const CICLO_M := {"galhudo": {"andar": 0.85, "correr": 2.0}, "uivador": {"andar": 0.72, "correr": 1.7, "espreitar": 0.42},
 		"corcova": {"andar": 0.85, "correr": 1.7}, "espreitador": {"andar": 0.62, "correr": 1.55, "espreitar": 0.34}}
-const BOIA := 0.06                ## o peixe morto boia meio afundado (a origem do modelo é o ponto mais baixo)
+const ESCALA_PEIXE := 1.4        ## o couraça desenhado 1,4× (um peixe de ~50 cm): em escala real ele sumia na água
+const BOIA := 0.06 * ESCALA_PEIXE ## o peixe morto boia meio afundado (a origem do modelo é o ponto mais baixo)
 const SUPERFICIE := 0.12          ## a água desenhada fica esse tanto abaixo do nível do tile (DesenhoChunk)
 
 var manadas: Manadas
@@ -46,6 +47,8 @@ static func _montar(tipo: String, esp: String) -> Dictionary:
 	var raiz := Node3D.new()
 	raiz.set_meta("fauna", nome_modelo(tipo, esp))        # o 2D desenha o sprite dele (também o corpo morto)
 	var mod: Node3D = cena.instantiate()
+	if tipo == "f":
+		mod.scale = Vector3.ONE * ESCALA_PEIXE
 	raiz.add_child(mod)
 	Materiais.converter(mod)
 	var anims := mod.find_children("*", "AnimationPlayer", true, false)

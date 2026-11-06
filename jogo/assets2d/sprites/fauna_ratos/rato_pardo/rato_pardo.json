@@ -6,8 +6,8 @@
   22
  ],
  "ancora": [
-  15.3,
-  12.3
+  15.1,
+  11.8
  ],
  "fps": 12,
  "quadros": 8,
@@ -42,6 +42,7 @@
  "metros_por_pixel": 0.028749999999999998,
  "camera_elevacao_graus": 35,
  "cabos": 0,
+ "escala": 1.5,
  "animacao": "rato",
  "avisos": []
 }

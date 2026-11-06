@@ -5274,8 +5274,8 @@
    22
   ],
   "ancora": [
-   15.3,
-   12.3
+   15.1,
+   11.8
   ],
   "quadros": 8,
   "linhas": 16,
@@ -5436,12 +5436,12 @@
  "peixe_couraca": {
   "pasta": "sprites/fauna_peixes/peixe_couraca",
   "quadro": [
-   26,
-   18
+   34,
+   24
   ],
   "ancora": [
-   10.7,
-   10.9
+   13.7,
+   14.7
   ],
   "quadros": 8,
   "linhas": 16,

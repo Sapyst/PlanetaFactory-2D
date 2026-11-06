@@ -43,6 +43,7 @@
  "metros_por_pixel": 0.028749999999999998,
  "camera_elevacao_graus": 35,
  "cabos": 0,
+ "escala": 1.0,
  "animacao": "predador",
  "avisos": []
 }

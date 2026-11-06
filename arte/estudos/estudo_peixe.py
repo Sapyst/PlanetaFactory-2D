@@ -88,6 +88,26 @@ def escamas_mat(nome, dorso, flanco, barriga):
     return m
 
 
+def osso_sujo_mat(nome, limpo, sujo, escala=70.0):
+    """Osso velho: manchas de encardido (ruído) entre o tom limpo e o sujo, fosco."""
+    m = bpy.data.materials.new(nome)
+    nt = m.node_tree
+    b = next(n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED')
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    nz = nt.nodes.new('ShaderNodeTexNoise')
+    nz.inputs['Scale'].default_value = escala
+    nz.inputs['Detail'].default_value = 6.0
+    nt.links.new(tc.outputs['Object'], nz.inputs['Vector'])
+    rp = nt.nodes.new('ShaderNodeValToRGB')
+    rp.color_ramp.elements[0].position, rp.color_ramp.elements[0].color = 0.35, (*sujo, 1)
+    rp.color_ramp.elements[1].position, rp.color_ramp.elements[1].color = 0.68, (*limpo, 1)
+    nt.links.new(nz.outputs['Fac'], rp.inputs['Fac'])
+    nt.links.new(rp.outputs['Color'], b.inputs['Base Color'])
+    b.inputs['Roughness'].default_value = 0.7
+    m.diffuse_color = (*limpo, 1)
+    return m
+
+
 def liso_mat(nome, cor, aspereza=0.5, brilho=0.0):
     m = bpy.data.materials.new(nome)
     b = next(n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
@@ -104,7 +124,7 @@ ESPECIES = {
 }
 PELE = escamas_mat('PeixePele', (0.075, 0.09, 0.03), (0.50, 0.52, 0.52), (0.78, 0.77, 0.72))
 MAT = {e: [PELE, liso_mat(e + 'Nadadeira', P['nadadeira'], 0.55), liso_mat('PeixeOlho', (0.01, 0.01, 0.01), 0.1, 1.0),
-           liso_mat('PeixeOsso', OSSO_COR, 0.45, 0.2), liso_mat('PeixeIris', (0.45, 0.36, 0.12), 0.4, 0.5)]
+           osso_sujo_mat('PeixeOsso', (0.46, 0.41, 0.31), (0.23, 0.20, 0.145)), liso_mat('PeixeIris', (0.45, 0.36, 0.12), 0.4, 0.5)]
        for e, P in ESPECIES.items()}
 for _e in MAT:
     MAT[_e][1].use_backface_culling = False
@@ -115,10 +135,19 @@ P_CORPO, P_NAD, P_OSSO, P_OLHO = 1, 2, 3, 4
 SECOES = [(0.150, 0.004, 0.004, 0.004, -0.004), (0.141, 0.015, 0.017, 0.015, -0.003), (0.122, 0.024, 0.029, 0.025, 0.0),
           (0.097, 0.029, 0.037, 0.031, 0.002), (0.062, 0.031, 0.042, 0.035, 0.004), (0.022, 0.029, 0.040, 0.033, 0.004),
           (-0.020, 0.025, 0.034, 0.028, 0.003), (-0.060, 0.019, 0.025, 0.020, 0.002), (-0.095, 0.012, 0.016, 0.013, 0.001),
-          (-0.122, 0.0075, 0.0095, 0.0085, 0.0), (-0.135, 0.006, 0.011, 0.011, 0.0)]
+          (-0.125, 0.0068, 0.0092, 0.0085, 0.0), (-0.135, 0.006, 0.011, 0.011, 0.0)]
 H0 = 0.05            # altura do eixo na montagem (depois tudo desce até o ponto mais baixo encostar em z = 0)
 OSSOS = [('corpo', 0.03, 0.12, None), ('coluna1', 0.03, -0.035, 'corpo'), ('coluna2', -0.035, -0.085, 'coluna1'),
          ('coluna3', -0.085, -0.128, 'coluna2'), ('cauda', -0.128, -0.20, 'coluna3')]
+
+
+def secao_x(x):
+    """Meia-largura, meia-altura em cima e embaixo e z do centro do corpo em x (interpolando as seções)."""
+    for (x0, *a), (x1, *b) in zip(SECOES, SECOES[1:]):
+        if x1 <= x <= x0:
+            u = (x0 - x) / (x0 - x1)
+            return tuple(a[k] * (1 - u) + b[k] * u for k in range(4))
+    return tuple(SECOES[0][1:] if x > SECOES[0][0] else SECOES[-1][1:])
 
 
 def pesos_x(x):
@@ -155,12 +184,34 @@ class Malha:
         return fa
 
 
-def nadadeira(m, pts, pesos_de, zona=0.5):
-    """Nadadeira fina (uma face dos dois lados, sem espessura: o material não esconde o verso)."""
-    vs = [m.v(p, pesos_de(p), zona) for p in pts]
-    for i in range(1, len(vs) - 1):
-        m.f((vs[0], vs[i], vs[i + 1]), I_NAD, P_NAD)
-    return vs
+def nadadeira(m, pts, pesos_de, zona=0.5, esp=0.0026):
+    """Nadadeira com espessura: grossa na base (os raios saem do corpo) e afinando até a borda livre, que é uma aresta
+    só (espessura zero). pts = contorno; pts[0] e pts[-1] são a base, no corpo. Duas faces em leque (uma de cada lado)
+    a partir de um ponto central grosso; a base fica dentro do corpo."""
+    n = len(pts)
+    nrm = Vector()
+    for i in range(n):                                   # normal do plano da nadadeira (Newell)
+        a, b = pts[i], pts[(i + 1) % n]
+        nrm += Vector(((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)))
+    nrm.normalize()
+    raiz = (pts[0] + pts[-1]) / 2
+    cen = sum(pts, Vector()) / n
+    c = raiz.lerp(cen, 0.35)
+    ct = m.v(c + nrm * esp / 2, pesos_de(c), zona)
+    cb = m.v(c - nrm * esp / 2, pesos_de(c), zona)
+    cima, baixo = [], []
+    for i, p in enumerate(pts):
+        if i in (0, n - 1):                              # base: grossa
+            cima.append(m.v(p + nrm * esp * 0.4, pesos_de(p), zona))
+            baixo.append(m.v(p - nrm * esp * 0.4, pesos_de(p), zona))
+        else:                                            # borda livre: fina (uma aresta)
+            v = m.v(p, pesos_de(p), zona)
+            cima.append(v)
+            baixo.append(v)
+    for i in range(n - 1):
+        m.f((ct, cima[i], cima[i + 1]), I_NAD, P_NAD)
+        m.f((cb, baixo[i + 1], baixo[i]), I_NAD, P_NAD)
+    return cima
 
 
 def montar(nome, especie, origem=Vector((0, 0, 0)), giro=0.0):
@@ -192,34 +243,48 @@ def montar(nome, especie, origem=Vector((0, 0, 0)), giro=0.0):
     cf = m.v(Vector((SECOES[-1][0] - 0.004, 0, H0)), {'cauda': 1.0}, 0.5)
     for i in range(L):
         m.f((aneis[-1][i], aneis[-1][(i + 1) % L], cf), I_PELE, P_CORPO)
-    # couraça: placas ósseas sobre a cabeça (uma no alto e uma em cada opérculo), com a costura de pele entre elas
-    for (a0, a1, sec0, sec1, esp, na) in ((0.62, 2.52, 1, 4, 0.0018, 4), (-0.70, 0.40, 2, 4, 0.0016, 3),
-                                          (2.74, 3.84, 2, 4, 0.0016, 3)):
-        n_a = na if JOGO_Q else 2 * na
+    # couraça: placas ósseas separadas (costuras de pele entre elas), cada uma seguindo a curva da cabeça e com a
+    # borda de trás curva — não uma máscara de borda reta: frontal e parietal no alto; em cada lado, a placa abaixo do
+    # olho (suborbital) e o opérculo (a tampa da guelra), de borda de trás em arco
+    def placa(x_frente, x_tras, a0, a1, nx, na, esp):
+        if not JOGO_Q:
+            nx, na = 2 * nx - 1, 2 * na - 1
+        # a corda entre dois pontos da grade passa por dentro da curva da cabeça: a placa sobe essa flecha a mais
+        flecha = 0.042 * (1.0 - math.cos(abs(a1 - a0) / (na - 1) / 2))
         cima, base = [], []
-        for k in range(sec0, sec1 + 1):
-            x, ry, ru, rd, dz = SECOES[k]
-            if k == sec1:
-                x += 0.004
+        for ix in range(nx):
             lin_c, lin_b = [], []
-            for j in range(n_a + 1):
-                a = a0 + (a1 - a0) * j / n_a
+            for ja in range(na):
+                ta = ja / (na - 1)
+                a = a0 + (a1 - a0) * ta
+                xf, xt = x_frente(ta), x_tras(ta)
+                x = xf + (xt - xf) * ix / (nx - 1)
+                ry, ru, rd, dz = secao_x(x)
                 ca, sa = math.cos(a), math.sin(a)
                 r = ru if sa >= 0 else rd
                 p = Vector((x, ry * ca, H0 + dz + r * sa))
                 nrm = Vector((0, ry * ca, r * sa)).normalized()
-                lin_c.append(m.v(p + nrm * esp, pesos_x(x), 0.5))
-                lin_b.append(m.v(p - nrm * 0.0015, pesos_x(x), 0.5))
+                borda = ix in (0, nx - 1) or ja in (0, na - 1)
+                lin_c.append(m.v(p + nrm * (esp * (0.6 if borda else 1.0) + flecha), pesos_x(x), 0.5))
+                lin_b.append(m.v(p - nrm * 0.0012, pesos_x(x), 0.5))
             cima.append(lin_c)
             base.append(lin_b)
-        for i in range(len(cima) - 1):
-            for j in range(n_a):
+        for i in range(nx - 1):
+            for j in range(na - 1):
                 m.f((cima[i][j], cima[i + 1][j], cima[i + 1][j + 1], cima[i][j + 1]), I_OSSO, P_OSSO)
         bordas = [[c[0] for c in cima], [c[-1] for c in cima], cima[0], cima[-1]]
         bbase = [[c[0] for c in base], [c[-1] for c in base], base[0], base[-1]]
-        for bc, bb in zip(bordas, bbase):
+        for k, (bc, bb) in enumerate(zip(bordas, bbase)):
             for i in range(len(bc) - 1):
-                m.f((bc[i], bb[i], bb[i + 1], bc[i + 1]), I_OSSO, P_OSSO)
+                q = (bc[i], bb[i], bb[i + 1], bc[i + 1])
+                m.f(q if k in (1, 2) else q[::-1], I_OSSO, P_OSSO)
+    arco = lambda t: 4 * t * (1 - t)                     # 0 nas pontas, 1 no meio
+    placa(lambda t: 0.136, lambda t: 0.114, 0.80, 2.34, 2, 3, 0.0016)                         # frontal
+    placa(lambda t: 0.110, lambda t: 0.076 - 0.012 * arco(t), 0.72, 2.42, 3, 4, 0.0018)        # parietal
+    for sg, (a0, a1) in ((1, (-0.80, 0.30)), (-1, (PI - 0.30, PI + 0.80))):
+        placa(lambda t: 0.131, lambda t: 0.111, *((-0.65, 0.08) if sg > 0 else (PI - 0.08, PI + 0.65)),
+              2, 2, 0.0014)                                                       # suborbital (abaixo do olho)
+        placa(lambda t: 0.101 + 0.006 * arco(t), lambda t: 0.072 - 0.013 * arco(t), a0, a1, 3, 3, 0.0016)  # opérculo
     # olhos: um disco claro (íris) rente à pele e o olho escuro por cima, logo acima da linha da boca
     for sg in (1, -1):
         c = Vector((0.118, 0.0238 * sg, H0 + 0.012))
@@ -231,7 +296,7 @@ def montar(nome, especie, origem=Vector((0, 0, 0)), giro=0.0):
                     {'corpo': 1.0}) for k in range(6)]
         for k in range(6):
             m.f((bord[k], bord[(k + 1) % 6], cc), I_IRIS, P_OLHO)
-        res = bmesh.ops.create_uvsphere(m.bm, u_segments=6 if JOGO_Q else 12, v_segments=3 if JOGO_Q else 8, radius=0.0052)
+        res = bmesh.ops.create_uvsphere(m.bm, u_segments=5 if JOGO_Q else 12, v_segments=3 if JOGO_Q else 8, radius=0.0052)
         for vv in res['verts']:
             vv.co = Vector((vv.co.x, vv.co.y * 0.62, vv.co.z)) + c + Vector((0, 0.0012 * sg, 0))
             m.pesos[vv] = {'corpo': 1.0}

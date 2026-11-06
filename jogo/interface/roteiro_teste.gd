@@ -3119,7 +3119,13 @@ func _roteiro_natureza7() -> void:
 				"ovos": 3, "ninhadas": 0, "t_visita": 1.0}
 		olhar.call(Vector2(w.obra) + Vector2(0.5, 1.4), 6.5))
 	em(640, func(): foto.call("7_ninho_no_poste"))
-	em(642, func():                                      # um rato roendo a ponta baixa do cabo
+	em(641, func():                                      # de perto, no topo do poste (no 2D a altura sobe na tela)
+		var e: Dictionary = (cena.mapa as MapaOcupacao).estruturas[w.poste]
+		var c := Grade.centro_da_area(e.minimo, e.area, e.rot)
+		var dois_d := get_viewport().disable_3d                 # (a versão 2D desliga o 3D)
+		olhar.call(c + (Vector2(0.0, 2.25 / tan(deg_to_rad(35.0))) if dois_d else Vector2.ZERO), 2.5))
+	em(644, func(): foto.call("7b_ninho_no_poste_perto"))
+	em(645, func():                                      # um rato roendo a ponta baixa do cabo
 		var r: Ratos = cena.ratos
 		r._d = r._d.duplicate(true)
 		r._d.roer.roer_s = [3.0, 3.0]

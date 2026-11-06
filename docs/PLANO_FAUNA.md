@@ -437,6 +437,43 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
     - no 2D a sombra do peixe pulando sobe junto com ele;
     - desempenho no celular com manada, matilha e enxame juntos não medido.
 
+## Ajustes do fim — rodada 1 (2026-11-05)
+- **Pedidos de Sapyst:**
+  - sons da fase 9: galope A e uivo A ficam; o alarme (nem A nem B se entendiam) foi refeito: entrou o C, balido de
+    alarme tipo antílope (o D, latido de cervo com voz, fica guardado); o pulo do peixe B sem o estalo do começo; o
+    enxame passou para o B (laço de 8 s com voos rasantes diferentes, para não se notar a repetição);
+  - 2D: a larva (baixa e chata) desenhava por cima da aranha. Agora ela fica numa subcamada abaixo de quem fica em
+    pé;
+  - 2D: a larva morta encolhia o sprite inteiro (vista de frente virava panqueca). Agora achata só a altura do
+    corpo, pela direção (`_achata_larva`). De resto, a vista 2D é a 35°: o que aponta norte–sul aparece mais curto,
+    como no 3D.
+- **Sons (auditoria de todos):**
+  - o fogo estalava no começo e no fim de cada toque (a cada 2,2 s);
+  - grilo, inseto do dia e moscas quase sumiam na emenda do laço; a batida do trilho do trem saía 3 dB mais forte;
+  - laço de ambiente agora entra em 0,5 s (`Som.tocar_loop_ambiente`);
+  - o gerador reproduz de novo os 84 arquivos do jogo (sementes deslocadas registradas em `SEMENTE_DESLOCADA`).
+- **Arte:**
+  - uivador com cabeça de canídeo (crânio largo, stop, focinho curto);
+  - coxas que se fundem ao flanco;
+  - peixe com nadadeiras grossas e couraça em placas;
+  - rabo do galhudo morto no chão;
+  - pés dos ratos sem afundar no chão;
+  - rabo do saltador no 2D como linha contínua;
+  - exportador do rato corrigido (o rato comia com a mão na orelha e o morto começava em pé);
+  - peixe desenhado 1,4× (sprite 2D também).
+- **Outros:**
+  - a revoada de migração parecia um X visto de cima (as vagas do bando caíam em riscos paralelos);
+  - o 2D desenha o raminho da bolsa;
+  - o ninho no poste aparece no 2D (o topo do poste parecia o ninho e vice-versa; a taça agora se ordena na frente
+    da fileira sul da estrutura);
+  - a sombra do peixe pulando fica na água no 2D.
+- **Ainda para depois:**
+  - coxa com vinco quando a perna vai muito para trás;
+  - uivador morto com a cabeça na orelha;
+  - nadadeiras peitorais finas;
+  - desempenho no celular não medido;
+  - o rato não sobe no poste.
+
 ---
 
 ## Resumo da ordem

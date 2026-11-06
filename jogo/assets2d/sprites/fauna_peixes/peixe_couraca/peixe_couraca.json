@@ -2,12 +2,12 @@
  "nome": "peixe_couraca",
  "categoria": "fauna/peixes",
  "quadro": [
-  26,
-  18
+  34,
+  24
  ],
  "ancora": [
-  10.7,
-  10.9
+  13.7,
+  14.7
  ],
  "fps": 12,
  "quadros": 8,
@@ -39,6 +39,7 @@
  "metros_por_pixel": 0.028749999999999998,
  "camera_elevacao_graus": 35,
  "cabos": 0,
+ "escala": 1.4,
  "animacao": "peixe",
  "avisos": []
 }

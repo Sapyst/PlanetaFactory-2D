@@ -36,6 +36,7 @@ var _fauna2d: Dictionary = {}      ## fase 9: chave do DesenhoFaunaGrande ("h3",
 var _afundando: Dictionary = {}     ## nó 3D da árvore dissolvendo (mundo._dissolver) → par de sprites
 var _passaros: Dictionary = {}      ## nó 3D do pássaro (DesenhoPassaros) → par de sprites "passaro_<espécie>"
 var _ninhos2d: Dictionary = {}      ## fase 6: nó 3D de cada ninho (DesenhoNinhosPassaros: pivô da taça/bolsa) → par
+var _raminhos2d: Dictionary = {}    ## pivô da bolsa → Line2D do raminho até a ponta do galho
 const ARVORE_MORTA := "arvore_morta"
 const COR_CORROIDA := Color(0.92, 0.86, 0.72)   ## madeira desbotada pelo ácido (puxa para a terra da cratera)
 const ARANHA := "aranha_animada"
@@ -43,6 +44,7 @@ const PASSO_ARANHA := 1.1           ## m que o corpo anda num ciclo da marcha (o
 const MORTE_ARANHA := 1.2           ## s até a carcaça começar a sumir (queda 0,6 + parada 0,6, como no 3D)
 const LARVA := "larva_acida"
 const PASSO_LARVA := 0.6            ## m andados por ciclo de contração (como no 3D: Larva.CICLO_M)
+const LARVA_DIMS := Vector3(1.63, 1.08, 0.66)   ## comprimento, largura, altura da larva (modelos.json): achatar só a altura
 var fantasmas := Node2D.new()
 var marcas := Node2D.new()
 var fios := Node2D.new()
@@ -550,6 +552,8 @@ func _sincronizar_aranhas(delta: float) -> void:
 			var p := _par(LARVA if larva else ARANHA)
 			if p.is_empty():
 				return
+			if larva:
+				(p.spr as Sprite2D).z_index = -1          # baixa e chata: sempre por baixo da aranha (e de quem fica em pé)
 			a = {"p": p, "fase": randf(), "ult": no.global_position, "rumo": no.rotation.y, "larva": larva, "no": no}
 			_aranhas[id] = a
 		var pos := no.global_position
@@ -585,7 +589,7 @@ func _sincronizar_aranhas(delta: float) -> void:
 		if m.larva:                                   # larva: murcha e achata no lugar (como o 3D), sem quadros de morte
 			_por(m.p, m.pos, m.linha, int(m.q), "andar")
 			var k := clampf(m.t / 0.5, 0.0, 1.0)
-			(m.p.spr as Sprite2D).scale = Vector2(1.0 + 0.15 * k, 1.0 - 0.6 * k)
+			(m.p.spr as Sprite2D).scale = Vector2(1.0 + 0.15 * k, _achata_larva(Catalogo2D.angulo_da_linha(m.p.m, int(m.linha)), 1.0 - 0.6 * k))
 			(m.p.som as Sprite2D).scale = Vector2(1.0 + 0.15 * k, 1.0)
 		else:
 			_por(m.p, m.pos, m.linha, mini(int(m.t * FPS), 11), "morte")
@@ -604,6 +608,16 @@ func _sincronizar_aranhas(delta: float) -> void:
 			(m.p.som as Sprite2D).scale = Vector2.ONE
 			_soltar(m.p)
 			_mortas.remove_at(i)
+
+
+## A folha é a larva em pé vista a 35°: a altura do sprite vem do comprimento dela no rumo norte-sul (× sen 35°) mais a
+## altura do corpo (× cos 35°). Achatar o corpo (`f` da altura) encolhe só a segunda parte — de lado ela achata muito,
+## de frente quase nada (antes o sprite inteiro encolhia igual e a larva de frente virava uma panqueca).
+static func _achata_larva(ang: float, f: float) -> float:
+	var ns := absf(cos(ang)) * LARVA_DIMS.x + absf(sin(ang)) * LARVA_DIMS.y
+	var chao := ns * sin(Camera2DJogo.ELEVACAO)
+	var alto := LARVA_DIMS.z * cos(Camera2DJogo.ELEVACAO)
+	return (chao + alto * maxf(f, 0.0)) / (chao + alto)
 
 
 ## Fase 4: sucata e carcaça (os nós 3D do DesenhoCarcacas). O sprite que morreu na tela continua o mesmo; ao carregar
@@ -635,6 +649,8 @@ func _sincronizar_corpos() -> void:
 			if p.is_empty():
 				continue
 			var ang := no.rotation.y - PI / 2.0 if rato != "" else no.rotation.y
+			if larva:
+				(p.spr as Sprite2D).z_index = -1
 			c = {"p": p, "linha": Catalogo2D.linha_do_angulo(p.m, ang), "q": 0 if larva or rato != "" or passaro != "" else 11,
 					"larva": larva, "no": no, "t0": _t}
 			_corpos[id] = c
@@ -651,7 +667,7 @@ func _sincronizar_corpos() -> void:
 		var afunda := float(no.get_meta("afunda", 0.0))
 		if larva:
 			var esc: Vector3 = no.get_meta("escala", Vector3.ONE)
-			spr.scale = Vector2(1.15 * esc.x, 0.4 * esc.y)
+			spr.scale = Vector2(1.15 * esc.x, _achata_larva(Catalogo2D.angulo_da_linha(c.p.m, int(c.linha)), 0.4 * esc.y))
 			(c.p.som as Sprite2D).scale = Vector2(1.15 * esc.x, 1.0)
 		for nome in ["ferrugem", "podre", "desligada"]:
 			mat.set_shader_parameter(nome, float(no.get_meta(nome, 0.0)))
@@ -738,9 +754,16 @@ func _sincronizar_fauna() -> void:
 		if anim != null and anim.current_animation != "" and anim.current_animation_length > 0.0:
 			q = int(anim.current_animation_position / anim.current_animation_length * 8.0) % 8
 		_por(r.p, no.global_position, Catalogo2D.linha_do_angulo(r.p.m, no.rotation.y - PI / 2.0), q, acao)
-		var esc := (n.mod as Node3D).scale.x
+		var peixe := String(n.tipo) == "f"
+		# (o filhote é menor; a folha do peixe já vem na escala dele)
+		var esc := (n.mod as Node3D).scale.x / (DesenhoFaunaGrande.ESCALA_PEIXE if peixe else 1.0)
 		(r.p.spr as Sprite2D).scale = Vector2.ONE * esc
 		(r.p.som as Sprite2D).scale = Vector2.ONE * esc
+		if peixe:                                          # a sombra do peixe pulando fica na água, não sobe com ele
+			var pos := no.global_position
+			var agua := Vector3(pos.x, Grade.altura_em(Vector2(pos.x, -pos.z)) - DesenhoFaunaGrande.SUPERFICIE, pos.z)
+			var cp := Camera2DJogo.projetar(Vector3(pos.x, 0.0, pos.z))
+			(r.p.som as Sprite2D).offset = -Vector2(r.p.m.ancora[0], r.p.m.ancora[1]) + Camera2DJogo.projetar(agua) - cp
 	for k in _fauna2d.keys():
 		if not vistos.has(k):
 			var p: Dictionary = _fauna2d[k].p
@@ -950,11 +973,13 @@ func _sincronizar_ninhos() -> void:
 		if not Catalogo2D.tem(nome):
 			continue
 		var ralo := 1.0
+		var em_estrutura := false
 		if rz[1] == "taca" and not bool(rz[2]):
 			var t3 := Grade.tile_de_mundo((raiz.get_child(0) as Node3D).global_position) if raiz.get_child_count() > 0 else Vector2i.ZERO
 			var o: Dictionary = mundo.gerador.distribuicao.obstaculo(t3)
 			if o.is_empty() or not Distribuicao.eh_arvore(String(o.nome)):
 				ralo = 1.0                                     # fase 7: ninho no alto do poste/silo, sempre à vista
+				em_estrutura = true
 			else:
 				var perfil := Ecossistema.perfil_folha(String(o.get("nome", "")))
 				ralo = 1.0 if est in COPA_RALA.get(perfil, []) else 0.0
@@ -971,16 +996,46 @@ func _sincronizar_ninhos() -> void:
 			var pos := piv.global_position
 			if rz[1] == "bolsa" and not bool(rz[2]):
 				pos.y -= 0.34 * piv.scale.y                   # a folha da bolsa foi feita 34 cm acima (ela pende da origem)
-			var z_o := pos.z + 0.06 if rz[1] == "taca" and not bool(rz[2]) else NAN   # a taça na frente do tronco
+			# a taça na frente do tronco; no poste/silo, na frente da fileira sul da estrutura (que é por onde ela se ordena:
+			# com só 6 cm o ninho ficava atrás do topo do poste e sumia)
+			var z_o := (pos.z + (0.6 if em_estrutura else 0.06)) if rz[1] == "taca" and not bool(rz[2]) else NAN
 			_por(pa, pos, Catalogo2D.linha_do_angulo(pa.m, piv.global_rotation.y), 0, "", z_o)
 			(pa.spr as Sprite2D).scale = Vector2.ONE * piv.scale.x * raiz.scale.x          # cresce na obra, some caído
 			(pa.spr as Sprite2D).visible = ralo > 0.5
 			(pa.som as Sprite2D).visible = ralo > 0.5 and bool(rz[2])                   # sombra só no chão
+			if piv.has_meta("raminho") and not bool(rz[2]):
+				_raminho_2d(piv, raiz, (pa.spr as Sprite2D).position)
 	for piv in _ninhos2d.keys():
 		if not vistos.has(piv):
 			(_ninhos2d[piv].spr as Sprite2D).scale = Vector2.ONE
 			_soltar(_ninhos2d[piv])
 			_ninhos2d.erase(piv)
+	for piv in _raminhos2d.keys():
+		if not vistos.has(piv) or not is_instance_valid(piv):
+			(_raminhos2d[piv] as Node).queue_free()
+			_raminhos2d.erase(piv)
+
+
+## O raminho fino da ponta do galho até a bolsa (no 3D um tubo de 4 lados), vergando no meio como lá: uma linha de
+## 1 px escura, ordenada junto com a bolsa (mesma posição de ordem, um tiquinho atrás).
+func _raminho_2d(piv: Node3D, raiz: Node3D, ordem: Vector2) -> void:
+	var ab: Array = piv.get_meta("raminho")
+	var a: Vector3 = ab[0]
+	var b: Vector3 = ab[1]
+	var meio := (a + b) * 0.5 + Vector3(0.0, -0.025 * a.distance_to(b) / 0.3, 0.0)
+	var l: Line2D = _raminhos2d.get(piv)
+	if l == null:
+		l = Line2D.new()
+		l.width = 1.0
+		l.default_color = Color(0.2, 0.15, 0.1)
+		l.antialiased = false
+		objetos.add_child(l)
+		_raminhos2d[piv] = l
+	l.position = ordem - Vector2(0, 0.01)
+	var pts := PackedVector2Array()
+	for p in [a, a.lerp(meio, 0.5), meio, meio.lerp(b, 0.5), b]:
+		pts.append(Camera2DJogo.projetar(raiz.global_transform * (p as Vector3)) - l.position)
+	l.points = pts
 
 
 ## Vida pequena (fase 1 do patch fauna): os mesmos pontos do 3D, na camada própria com o enquadramento do mundo.

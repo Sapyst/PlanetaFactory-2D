@@ -94,8 +94,11 @@ func _novo_passaro(esp: String, k: int, id: int, onde: Vector3) -> Dictionary:
 	add_child(raiz)
 	var h := float(hash(Vector2i(id, k)) % 1000) / 1000.0
 	var h2 := float(hash(Vector2i(k, id * 7)) % 1000) / 1000.0
-	raiz.position = onde + Vector3((h - 0.5) * 3.0, (h2 - 0.5), (h2 - 0.5) * 3.0)
-	return {"no": raiz, "anim": anim, "fase": h, "k": k, "vel": Vector3.ZERO, "vaga": Vector3(h - 0.5, h2 - 0.5, fposmod(h * 7.3, 1.0) - 0.5),
+	var h3 := float(hash(Vector2i(id * 13 + 5, k * 3 + 1)) % 1000) / 1000.0
+	raiz.position = onde + Vector3((h - 0.5) * 3.0, (h2 - 0.5), (h3 - 0.5) * 3.0)
+	# (cada eixo da vaga com o seu sorteio: com o lado tirado do mesmo número da frente, os pássaros caíam em 7 riscos
+	# paralelos e a revoada de migração, esticada no rumo, parecia um X visto de cima)
+	return {"no": raiz, "anim": anim, "fase": h, "k": k, "vel": Vector3.ZERO, "vaga": Vector3(h - 0.5, h2 - 0.5, h3 - 0.5),
 			"chao_off": Vector2.from_angle(h * TAU) * sqrt(h2), "t_troca": h * 4.0, "acao": "", "rumo": h * TAU,
 			"planando": 0.0, "pousado": false, "espera": 0.0, "estado_ant": -1, "come": false}
 

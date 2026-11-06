@@ -150,6 +150,7 @@ func _garantir(n: Dictionary) -> Dictionary:
 		if ps[k].has("galho"):                          # o raminho fino da ponta do galho até a bolsa (vergando)
 			var fim := piv.transform * Vector3(-0.0525, 0.0225, 0.0)
 			raiz.add_child(_raminho(tr * (ps[k].galho as Vector3), fim))
+			piv.set_meta("raminho", [tr * (ps[k].galho as Vector3), fim])   # (o 2D desenha o raminho: pontas na raiz)
 	r = {"no": raiz, "tipo": String(n.tipo), "n": int(n.n)}
 	nos[n.tile] = r
 	return r

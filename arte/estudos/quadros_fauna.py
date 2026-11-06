@@ -144,10 +144,11 @@ for act in acoes:
                 o.rotation_mode = 'XYZ'            # o importador de glTF deixa em quatérnio
                 o.rotation_euler = (0, 0, 0.0 if v == 'lado' else -0.75)
         ele = math.radians(6 if v == 'lado' else 30)
-        H_ = alt * 1.18 + 0.022 * NCOL * comp + (0.0 if v == 'lado' else 0.3 * alt)
+        H_ = alt * 1.18 + 0.022 * NCOL * comp + (0.0 if v == 'lado' else 0.3 * alt + 0.3 * comp)
         d = Vector((0, -math.cos(ele), math.sin(ele)))
-        alvo = Vector((cx, 0.0, (alt * 1.18 + 0.022 * NCOL * comp) * 0.5 - 0.05 * alt))
-        rot.location = (-comp * 0.45, -0.9 * comp, alt * 1.08 + (0.0 if v == 'lado' else 0.25 * alt))
+        alvo = Vector((cx, 0.0, (alt * 1.18 + 0.022 * NCOL * comp) * 0.5 - 0.05 * alt + (0.0 if v == 'lado' else 0.15 * comp)))
+        # o rótulo fica no plano do meio (y = 0), acima do bicho mais alto (na vista de 3/4, a cauda girada sobe)
+        rot.location = (-comp * 0.45, 0.0, alt * 1.08 + (0.0 if v == 'lado' else 0.25 * comp))
         rot.rotation_euler = (math.pi / 2 - ele, 0, 0)
         cam.location = alvo + d * 60.0
         cam.rotation_euler = (-d).to_track_quat('-Z', 'Y').to_euler()

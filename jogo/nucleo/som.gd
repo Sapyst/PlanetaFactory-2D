@@ -328,9 +328,19 @@ func tocar_loop_ambiente(nome: String, volume_linear: float) -> void:
 		add_child(player)
 		_loops_ambiente[nome] = player
 	if volume_linear > 0.02:
-		player.volume_db = linear_to_db(clampf(volume_linear, 0.0001, 1.0))
+		var alvo := linear_to_db(clampf(volume_linear, 0.0001, 1.0))
 		if not player.playing:
+			# começa baixo e sobe em 0,5 s: o laço pode começar no meio de um som (sem estalo se a cena já carrega com
+			# o volume cheio)
+			player.volume_db = -50.0
 			player.play()
+			var tw := player.create_tween()
+			tw.tween_property(player, "volume_db", alvo, 0.5)
+			player.set_meta("subindo", tw)
+		else:
+			var tw: Tween = player.get_meta("subindo", null)
+			if tw == null or not tw.is_valid() or not tw.is_running():
+				player.volume_db = alvo
 	elif player.playing:
 		player.stop()
 

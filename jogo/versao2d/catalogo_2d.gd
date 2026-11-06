@@ -53,3 +53,8 @@ static func regiao(m: Dictionary, linha: int, q: int) -> Rect2:
 static func linha_do_angulo(m: Dictionary, ang: float) -> int:
 	var n := int(m.linhas)
 	return posmod(int(round(ang / (TAU / n))), n)
+
+
+## O ângulo (rad) de uma linha: o contrário de `linha_do_angulo`.
+static func angulo_da_linha(m: Dictionary, linha: int) -> float:
+	return linha * TAU / maxf(1.0, float(m.linhas))

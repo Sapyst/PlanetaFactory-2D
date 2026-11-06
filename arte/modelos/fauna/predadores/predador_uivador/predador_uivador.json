@@ -20,11 +20,11 @@
   }
  ],
  "portas": [],
- "tris": 1340,
+ "tris": 1364,
  "dims": [
-  1.377,
-  0.2,
-  0.823
+  1.371,
+  0.227,
+  0.82
  ],
  "anima": true,
  "estudo": "estudo_fauna_grande.py"

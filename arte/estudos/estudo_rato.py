@@ -361,6 +361,7 @@ def pose_andar(arm, u):
         gira(arm, f'mao_{lado}', 0.3 * max(0.0, c))
     gira(arm, 'cabeca', 0.05 * math.sin(4 * PI * u))
     gira(arm, 'cauda1', 0.0, 0.12 * math.sin(2 * PI * u))
+    pes_no_chao(arm)
 
 
 def pose_correr(arm, u):
@@ -376,6 +377,7 @@ def pose_correr(arm, u):
     gira(arm, 'corpo', 0.12 * c)
     _o(arm, 'corpo').location = (0, 0, (0.03 if salta else 0.008) * max(0.0, -c))   # z do osso ≈ para cima
     gira(arm, 'cauda1', -0.25 * c if salta else 0.0)
+    pes_no_chao(arm)
 
 
 def pose_farejar(arm, u=0.0):
@@ -383,6 +385,7 @@ def pose_farejar(arm, u=0.0):
     pose_zero(arm)
     gira(arm, 'peito', -0.12)
     gira(arm, 'cabeca', -0.25 + 0.06 * math.sin(2 * PI * u * 6), 0.25)
+    pes_no_chao(arm)
 
 
 def pose_comer(arm, u=0.0):
@@ -406,6 +409,48 @@ def pose_comer(arm, u=0.0):
 def _mundo_de(arm, osso, ponta=True):
     pb = arm.pose.bones[osso]
     return arm.matrix_world @ (pb.tail if ponta else pb.head)
+
+
+def _zmin_de(arm, prefixos):
+    """Menor z (em relação à origem do rato) dos vértices cujo osso de maior peso começa com um destes prefixos."""
+    bpy.context.view_layer.update()
+    corpo = next(c for c in arm.children if c.type == 'MESH')
+    if 'idx_grupos' not in corpo:
+        gi = {g.index: g.name for g in corpo.vertex_groups}
+        corpo['idx_grupos'] = {n: [v.index for v in corpo.data.vertices
+                                   if v.groups and gi[max(v.groups, key=lambda g: g.weight).group] == n]
+                               for n in gi.values()}
+    idx = [i for n, l in corpo['idx_grupos'].items() if n.startswith(prefixos) for i in l]
+    ev = corpo.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    me = ev.to_mesh()
+    mw = arm.matrix_world.inverted() @ ev.matrix_world
+    z = min((mw @ me.vertices[i].co).z for i in idx) if idx else 0.0
+    ev.to_mesh_clear()
+    return z
+
+
+def pes_no_chao(arm):
+    """Passo, galope, farejar e cavar: nenhum pé abaixo do chão. Se o pé (ou a mão) de apoio entrou no chão, o corpo
+    sobe até ele encostar em z = 0 (nunca desce: no ar do pulo fica no ar); se a ponta da cauda ainda tocar abaixo, a
+    cauda levanta só o necessário."""
+    z = _zmin_de(arm, ('pe_', 'mao_', 'canela_', 'braco_', 'coxa_'))
+    pb = _o(arm, 'corpo')
+    if z < 0.0:
+        pb.location = (pb.location[0], pb.location[1], pb.location[2] - z)
+    if _zmin_de(arm, ('cauda',)) < 0.0:
+        c1 = _o(arm, 'cauda1')
+        q0 = c1.rotation_quaternion.copy()
+        eixo = c1.bone.matrix_local.to_3x3().inverted() @ Vector((0, 1, 0))
+        lo, hi = 0.0, 1.2
+        for _ in range(12):
+            mid = (lo + hi) / 2
+            c1.rotation_quaternion = q0 @ Quaternion(eixo, mid)
+            if _zmin_de(arm, ('cauda',)) < 0.0:
+                lo = mid
+            else:
+                hi = mid
+        c1.rotation_quaternion = q0 @ Quaternion(eixo, hi)
+    bpy.context.view_layer.update()
 
 
 def assentar(arm):
@@ -480,6 +525,7 @@ def pose_cavar(arm, u):
         c = math.sin(2 * PI * (u * 3 + fase))
         gira(arm, f'braco_{lado}', -0.2 + 0.6 * c)
         gira(arm, f'mao_{lado}', 0.4 * max(0.0, c))
+    pes_no_chao(arm)
 
 
 # ------------------------------------------------------------------ cena
