@@ -85,7 +85,7 @@ uma vez.
 4. ✅ Testes: fila, carga na saída, volta para buscar mais, fantasma sem recurso, remoção devolvendo, fabricar
    por 1 engrenagem, mordida, salvar e carregar.
 5. ✅ Vídeo de conferência no 3D.
-6. ⬜ Porte para o 2D, commit e push nos dois.
+6. ✅ Porte para o 2D, commit e push nos dois (3D f46ab92, 2D 084d01b).
 
 ## Limites desta primeira versão
 - Peça encostada numa obra ainda não construída não "enxerga" a vizinha. Exemplo: uma esteira arrastada colada
