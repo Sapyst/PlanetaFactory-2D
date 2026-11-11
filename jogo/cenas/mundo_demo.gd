@@ -1883,6 +1883,8 @@ func _tick_mundo(dt: float) -> void:
 							Lancador.RUMOS[lancador.rumo(ev.id)]])
 			"semente_pousou":
 				sincronizar(ev.rel)
+				if obras != null and construtor.fila_de_obras:
+					obras.fabricar(true, int(ev.id))              # o posto da semente já vem com 1 construtor
 				Som.tocar("impacto", Grade.ponto_mundo(ev.para, 0.5), 0.0)
 				if is_instance_valid(controle):
 					controle._avisar("🌱 A semente pousou: nasceu uma colônia (fabrica pacote gênese)" if ev.get("colonia", false)
@@ -2320,7 +2322,7 @@ func _detalhe_lancador(id: int, linhas: Array[String], opcoes: Array, botoes: Ar
 
 
 ## Painel do posto avançado (núcleo-filho): energia própria, estoque e o raio da obra que paga com ele.
-func _detalhe_posto(id: int, e: Dictionary, regra: Dictionary, linhas: Array[String], botoes_posto: Array, grade: Array) -> void:
+func _detalhe_posto(id: int, e: Dictionary, regra: Dictionary, linhas: Array[String], botoes_posto: Array, grade: Array, opcoes: Array = []) -> void:
 	_opcoes_filtro_bau(id, e, linhas, grade)
 	var b: Dictionary = fabrica.baus[id]
 	var n := 0
@@ -2341,6 +2343,8 @@ func _detalhe_posto(id: int, e: Dictionary, regra: Dictionary, linhas: Array[Str
 		linhas.append("COLÔNIA: fabrica 1 pacote gênese a cada %d s (próximo em %d s) → %s" % [int(Genese.cfg(e.nome).get("genese_s", 30)), ceili(genese.falta_s(id)),
 				"cápsula para o receptor a %d m" % roundi(genese.centro(rr).distance_to(genese.centro(id))) if rr >= 0
 				else "sem receptor de cápsulas com energia e lugar: %d esperando aqui" % genese.esperando(id)])
+	if obras != null and construtor.fila_de_obras:
+		_detalhe_construtores(linhas, opcoes, id)
 
 
 ## Painel do sensor de varredura: quantos chunks já revelou, o próximo, os ninhos marcados e (profunda) as jazidas.
@@ -2681,7 +2685,7 @@ func _detalhe() -> void:
 			linhas.append("Cada unidade gasta: %s" % ", ".join(tipos.map(func(t): return "1 " + Pesquisa.nome_tipo(t))))
 		opcoes.append({"texto": "⚗  Abrir a pesquisa", "acao": abrir_pesquisa})
 	elif Fabrica.eh_posto(e.nome) and fabrica.baus.has(id):
-		_detalhe_posto(id, e, regra, linhas, botoes, grade_filtro)
+		_detalhe_posto(id, e, regra, linhas, botoes, grade_filtro, opcoes)
 	elif fabrica.baus.has(id):
 		var n := 0
 		for k in fabrica.baus[id]:
@@ -3285,25 +3289,50 @@ func _eventos_obras(delta: float) -> void:
 		_solda_t[d.id] = st
 
 
-func _detalhe_construtores(linhas: Array[String], opcoes: Array) -> void:
-	var lista := obras.construtores()
+## Construtores da base (núcleo ou posto avançado): quantos moram nela, fabricar e, no posto, chamar/mandar.
+func _detalhe_construtores(linhas: Array[String], opcoes: Array, base := -1) -> void:
+	var b := obras.nucleo() if base < 0 else base
+	var no_posto := b != obras.nucleo()
+	var lista := obras.construtores_de(b)
 	var fora := 0
 	for d in lista:
 		if d.e != Drones.E.HANGAR and d.e != Drones.E.NASCENDO:
 			fora += 1
-	linhas.append("Drones construtores: %d de %d (%d trabalhando)%s" % [lista.size(), obras.frota_max(), fora,
-			"" if drones.pode_voar() else " — RAIOS: ficam no núcleo"])
-	if obras.pendentes() > 0:
-		var esp := obras.esperando()
-		linhas.append("Obras na fila: %d%s" % [obras.pendentes(), (" (%d esperando recurso)" % esp) if esp > 0 else ""])
-	var motivo := obras.pode_fabricar()
+	linhas.append("Drones construtores %s: %d de %d (%d fora)%s" % ["deste posto" if no_posto else "do núcleo", lista.size(),
+			obras.max_de(b), fora, "" if drones.pode_voar() else " — RAIOS: ficam em casa"])
+	if not no_posto:
+		var nos_postos := obras.construtores().size() - lista.size()
+		if nos_postos > 0:
+			linhas.append("Nos postos avançados: %d (cada obra vai para a base mais perto)" % nos_postos)
+		if obras.pendentes() > 0:
+			var esp := obras.esperando()
+			linhas.append("Obras na fila: %d%s" % [obras.pendentes(), (" (%d esperando recurso)" % esp) if esp > 0 else ""])
+	elif lista.is_empty():
+		linhas.append("Sem construtor aqui: as obras perto deste posto saem do núcleo ou de outro posto")
+	var motivo := obras.pode_fabricar(b)
 	var custo := _lista_itens(obras.custo_drone())
-	opcoes.append({"texto": "Fabricar drone construtor (%s)%s" % [custo, "" if motivo == "" else " — " + motivo],
+	opcoes.append({"texto": "Fabricar drone construtor (%s%s)%s" % [custo, " do estoque do posto" if no_posto else "",
+			"" if motivo == "" else " — " + motivo],
 			"acao": func():
-				if obras.fabricar() >= 0:
+				if obras.fabricar(false, b) >= 0:
 					Som.tocar("construir")
 				_detalhe(),
 			"secao": "acoes", "icone_txt": "✚ Drone"})
+	if no_posto:
+		var mc := obras.pode_chamar(b)
+		opcoes.append({"texto": "Chamar construtor do núcleo%s" % ("" if mc == "" else " — " + mc),
+				"acao": func():
+					if obras.chamar(b) == "":
+						Som.tocar("clique")
+					_detalhe(),
+				"secao": "acoes", "icone_txt": "⇠ Chamar"})
+		var mm := obras.pode_mandar(b)
+		opcoes.append({"texto": "Mandar construtor para o núcleo%s" % ("" if mm == "" else " — " + mm),
+				"acao": func():
+					if obras.mandar_ao_nucleo(b) == "":
+						Som.tocar("clique")
+					_detalhe(),
+				"secao": "acoes", "icone_txt": "⇢ Núcleo"})
 
 
 func _hud() -> void:

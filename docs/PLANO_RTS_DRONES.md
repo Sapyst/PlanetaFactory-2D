@@ -90,7 +90,36 @@ uma vez.
 ## Limites desta primeira versão
 - Peça encostada numa obra ainda não construída não "enxerga" a vizinha. Exemplo: uma esteira arrastada colada
   numa encomendada ainda não faz a curva sozinha. O traço inteiro de uma vez funciona normalmente.
-- Os postos avançados ainda não são base de construtor. Todos saem do núcleo. Fica para depois.
+- ~~Os postos avançados ainda não são base de construtor.~~ Feito em 2026-11-11 (ver abaixo).
+
+## Postos avançados como base (pedido de Sapyst, 2026-11-11) — ✅ regras aprovadas ("vai com elas") e feitas
+1. **Casa:** cada construtor mora no núcleo ou num posto avançado (colônia também). Parado, orbita a torre do posto
+   como orbita o cristal do núcleo.
+2. **Quem pega a obra:** a base com construtor mais perto da obra. Se todos os construtores dela estão fora, outra
+   base só pega a obra depois de 20 s de espera, para ninguém atravessar o mapa à toa.
+3. **Pagamento:** igual a hoje (o posto que cobre a obra paga primeiro, o resto sai do núcleo). Não muda a economia.
+4. **Volta:** a sobra da carga e os itens das remoções entram no estoque da base onde ele pousa. No posto, até lotar
+   os 3.200 itens; o que não cabe vai para o núcleo.
+5. **Fabricar no posto:** botão no painel do posto, 1 engrenagem (do estoque do posto; sem ela, do núcleo). Até 3 por
+   posto; as pesquisas de frota somam também.
+6. **Mudar de casa:** no painel do posto, "Chamar construtor" (um parado no núcleo voa até o posto e passa a morar
+   lá) e "Mandar para o núcleo".
+7. **Posto destruído ou desmontado:** os construtores dele voam para a base mais perto e passam a morar lá (não caem
+   como os drones de estação).
+8. **Cápsula do núcleo-semente:** o posto que nasce da cápsula já vem com 1 construtor (é a semente de uma base nova).
+9. **Igual a hoje:** raios, mordida das aranhas, desfazer e salvamento.
+
+**Como ficou no código:**
+- `Obras`: `bases()` (núcleo primeiro, depois postos e colônias), `max_de`, `construtores_de`, `alt_orbita`,
+  `base_mais_perto`, `nova_casa`, `chamar`/`mandar_ao_nucleo`, `_depositar`; `fabricar(gratis, base)` e
+  `pode_fabricar(base)`; cada obra conta `fila_s` (tempo na fila) para outra base poder pegar depois de `emprestar_s`.
+- `Drones`: o construtor usa a órbita da casa dele; casa que sumiu → `nova_casa` (não cai).
+- Números em `estruturas.json` → `nucleo.construtores`: `max_posto` 3, `alt_orbita_posto` 3,2 m (o posto tem 2,67 m),
+  `emprestar_s` 20.
+- Painel do posto: linha "Drones construtores deste posto", botões ✚ Drone, ⇠ Chamar, ⇢ Núcleo. Painel do núcleo
+  mostra quantos estão nos postos.
+- Cápsula do núcleo-semente: o posto nasce com 1 construtor (holograma de 4 s).
+- Testes: `test_obras_postos.gd`. Fotos: `-- roteiro postos novo` (user://fotos_postos).
 
 ## Pergunta antiga ainda sem resposta
 - O laser é um upgrade de torre existente ou uma torre nova?

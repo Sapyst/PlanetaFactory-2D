@@ -15,6 +15,11 @@ extends RefCounted
 ##  volta      fim do lote → núcleo; ao pousar, a carga (sobra e o que veio das remoções) entra no estoque. Obras que
 ##             ficaram com ele (raios, cancelada) voltam para a fila. Derrubado: a carga se perde, as obras voltam.
 ##  fabricar   botão no painel do núcleo: 1 engrenagem, nasce em holograma na órbita do cristal (até `max`).
+##  postos     (2026-11-11) o posto avançado (e a colônia) também é casa de construtor: fabrica (1 engrenagem do estoque
+##             dele, sem ela do núcleo; até `max_posto`), chama um do núcleo ou manda de volta. A obra é da base com
+##             construtor mais perto; outra base só pega depois de `emprestar_s` de espera. A sobra da carga entra no
+##             estoque da base onde ele pousa (posto até lotar, o resto no núcleo). Posto que some: os construtores
+##             dele mudam para a base mais perto (não caem).
 
 var mapa: MapaOcupacao
 var construtor: Construtor
@@ -34,6 +39,8 @@ var _t_tarefa := 0.0
 var _r: Dictionary
 var _nucleo := -1
 var _nucleo_versao := -1
+var _bases: Array[int] = []
+var _bases_versao := -1
 
 
 func _init(p_mapa: MapaOcupacao, p_construtor: Construtor, p_drones: Drones, p_inventario: Dictionary) -> void:
@@ -64,8 +71,157 @@ func construtores() -> Array:
 	return drones.drones.values().filter(func(d): return d.tipo == "construtor")
 
 
+## Máximo de construtores morando no núcleo.
 func frota_max() -> int:
 	return int(_r.get("max", 6)) + roundi(drones._b("construtores_frota"))
+
+
+# ------------------------------------------------------------------ bases (núcleo e postos avançados)
+func eh_base(id: int) -> bool:
+	if not mapa.estruturas.has(id):
+		return false
+	var nome: String = mapa.estruturas[id].nome
+	return nome == "nucleo" or Fabrica.eh_posto(nome)
+
+
+## O núcleo primeiro, depois os postos (e colônias).
+func bases() -> Array[int]:
+	if _bases_versao != mapa.versao:
+		_bases_versao = mapa.versao
+		_bases.clear()
+		for id in mapa.estruturas:
+			if Fabrica.eh_posto(mapa.estruturas[id].nome):
+				_bases.append(id)
+		_bases.sort()
+		if nucleo() >= 0:
+			_bases.push_front(nucleo())
+	return _bases
+
+
+func max_de(base: int) -> int:
+	if base == nucleo():
+		return frota_max()
+	return int(_r.get("max_posto", 3)) + roundi(drones._b("construtores_frota"))
+
+
+func construtores_de(base: int) -> Array:
+	return drones.drones.values().filter(func(d): return d.tipo == "construtor" and int(d.est) == base)
+
+
+## Altura da órbita parada: acima do cristal do núcleo ou da antena do posto.
+func alt_orbita(base: int) -> float:
+	if base == nucleo() or not mapa.estruturas.has(base):
+		return n("alt_orbita", 3.1)
+	return n("alt_orbita_posto", 3.2)
+
+
+## A base (núcleo ou posto) mais perto do ponto; `so_com` = só as que estão nesse conjunto (ids → true).
+func base_mais_perto(p: Vector2, so_com := {}, fora := -1) -> int:
+	var melhor := -1
+	var dm := INF
+	for b in bases():
+		if b == fora or (not so_com.is_empty() and not so_com.has(b)):
+			continue
+		var dd := drones.centro(b).distance_to(p)
+		if dd < dm:
+			dm = dd
+			melhor = b
+	return melhor
+
+
+## Bases com pelo menos um construtor (ids → true).
+func _bases_com_drone() -> Dictionary:
+	var com := {}
+	for d in construtores():
+		if eh_base(int(d.est)):
+			com[int(d.est)] = true
+	return com
+
+
+## A casa do construtor sumiu (posto destruído ou desmontado): muda para a base mais perto e voa para lá.
+func nova_casa(d: Dictionary) -> bool:
+	var b := base_mais_perto(d.pos)
+	if b < 0:
+		return false
+	d.est = b
+	if d.e in [Drones.E.HANGAR, Drones.E.NASCENDO, Drones.E.POUSANDO]:
+		d.e = Drones.E.VOLTANDO
+		d.t = 0.0
+	eventos.append({"tipo": "construtor_mudou", "id": d.id, "para": b})
+	return true
+
+
+func _parados_em(base: int) -> Array:
+	return construtores_de(base).filter(func(d): return d.e == Drones.E.HANGAR and float(d.vida) >= n("vida", 40.0) * 0.5)
+
+
+## Painel do posto: um construtor parado no núcleo vem morar no posto. "" = foi.
+func chamar(posto: int) -> String:
+	var mot := _pode_mudar(posto, nucleo(), posto)
+	if mot == "":
+		_mudar(_parados_em(nucleo())[0], posto)
+	return mot
+
+
+## Painel do posto: um construtor parado no posto volta a morar no núcleo. "" = foi.
+func mandar_ao_nucleo(posto: int) -> String:
+	var mot := _pode_mudar(posto, posto, nucleo())
+	if mot == "":
+		_mudar(_parados_em(posto)[0], nucleo())
+	return mot
+
+
+func pode_chamar(posto: int) -> String:
+	return _pode_mudar(posto, nucleo(), posto)
+
+
+func pode_mandar(posto: int) -> String:
+	return _pode_mudar(posto, posto, nucleo())
+
+
+func _pode_mudar(posto: int, de: int, para: int) -> String:
+	if not eh_base(posto) or posto == nucleo() or nucleo() < 0:
+		return "sem núcleo"
+	if construtores_de(para).size() >= max_de(para):
+		return "%s cheio" % ("núcleo" if para == nucleo() else "posto")
+	if _parados_em(de).is_empty():
+		return "nenhum parado no %s" % ("núcleo" if de == nucleo() else "posto")
+	return ""
+
+
+func _mudar(d: Dictionary, para: int) -> void:
+	d.est = para
+	d.obras = []
+	d.alvo = -1
+	d.e = Drones.E.VOLTANDO
+	d.t = 0.0
+	eventos.append({"tipo": "construtor_mudou", "id": d.id, "para": para})
+
+
+## Estoque do posto (o baú dele na fábrica), ou vazio.
+func _estoque_posto(base: int) -> Dictionary:
+	if base == nucleo() or drones.fabrica == null:
+		return {}
+	var b: Variant = drones.fabrica.baus.get(base)
+	return b if b is Dictionary else {}
+
+
+## A carga entra no estoque da base: no posto até lotar, o resto no núcleo.
+func _depositar(base: int, carga: Dictionary) -> void:
+	var est := _estoque_posto(base)
+	var livre := 0
+	if not est.is_empty() or (drones.fabrica != null and drones.fabrica.baus.has(base)):
+		livre = drones.fabrica.capacidade_bau(base) - _soma(est)
+	for k in carga:
+		var q := int(carga[k])
+		if q <= 0:
+			continue
+		var no_posto := clampi(q, 0, maxi(0, livre))
+		if no_posto > 0:
+			est[k] = int(est.get(k, 0)) + no_posto
+			livre -= no_posto
+		if q - no_posto > 0:
+			inventario[k] = int(inventario.get(k, 0)) + q - no_posto
 
 
 func custo_drone() -> Dictionary:
@@ -73,38 +229,46 @@ func custo_drone() -> Dictionary:
 
 
 # ------------------------------------------------------------------ fabricar
-func pode_fabricar() -> String:
-	if nucleo() < 0:
+## Pode fabricar um construtor nesta base (núcleo por padrão)? "" = pode.
+func pode_fabricar(base := -1) -> String:
+	var b := nucleo() if base < 0 else base
+	if nucleo() < 0 or not eh_base(b):
 		return "sem núcleo"
-	if construtores().size() >= frota_max():
+	if construtores_de(b).size() >= max_de(b):
 		return "frota cheia"
 	if cobrar:
 		var c := custo_drone()
+		var est := _estoque_posto(b)
 		for k in c:
-			if int(inventario.get(k, 0)) < int(c[k]):
+			if int(inventario.get(k, 0)) + int(est.get(k, 0)) < int(c[k]):
 				return "falta %s" % k
 	return ""
 
 
-## Fabrica um construtor (paga do núcleo). -1 se não pode.
-func fabricar(gratis := false) -> int:
-	if nucleo() < 0 or construtores().size() >= frota_max():
+## Fabrica um construtor na base (núcleo por padrão). Paga do estoque do posto primeiro, o resto do núcleo. -1 se não pode.
+func fabricar(gratis := false, base := -1) -> int:
+	var b := nucleo() if base < 0 else base
+	if nucleo() < 0 or not eh_base(b) or construtores_de(b).size() >= max_de(b):
 		return -1
 	if not gratis:
-		if pode_fabricar() != "":
+		if pode_fabricar(b) != "":
 			return -1
 		if cobrar:
 			var c := custo_drone()
+			var est := _estoque_posto(b)
 			for k in c:
-				inventario[k] = int(inventario[k]) - int(c[k])
-	var id := drones.novo(nucleo(), "construtor")
+				var do_posto := mini(int(c[k]), int(est.get(k, 0)))
+				if do_posto > 0:
+					est[k] = int(est[k]) - do_posto
+				inventario[k] = int(inventario.get(k, 0)) - (int(c[k]) - do_posto)
+	var id := drones.novo(b, "construtor")
 	var d: Dictionary = drones.drones[id]
 	d.vida = n("vida", 40.0)
 	d.bateria = INF
 	d.obras = []
 	d.carga = {}
 	d.pos = drones.berco(d)
-	d.alt = n("alt_orbita", 3.1)
+	d.alt = alt_orbita(b)
 	return id
 
 
@@ -113,7 +277,7 @@ func dar_iniciais() -> void:
 	if iniciais_dados or nucleo() < 0:
 		return
 	iniciais_dados = true
-	for i in int(_r.get("inicial", 2)) - construtores().size():
+	for i in int(_r.get("inicial", 2)) - construtores_de(nucleo()).size():
 		var id := fabricar(true)
 		if id >= 0:
 			drones.drones[id].e = Drones.E.HANGAR             # já chegam prontos (sem holograma)
@@ -158,7 +322,7 @@ func _nova(it: Dictionary, acao: String) -> void:
 	var item := it.duplicate(true)
 	var area: Vector2i = mapa.registro.area(item.nome)
 	var o := {"id": id, "acao": acao, "item": item, "nome": item.nome, "lote": _lote, "estado": "fila", "drone": -1,
-			"espera": false, "prog": 0.0, "custo": {}, "tiles": [], "altos": [], "pago_local": {}, "local_id": -1,
+			"espera": false, "prog": 0.0, "custo": {}, "tiles": [], "altos": [], "pago_local": {}, "local_id": -1, "fila_s": 0.0,
 			"pos": Grade.centro_da_area(item.minimo, area, item.rot)}
 	if acao == "colocar":
 		var troca: bool = item.get("acao", "") == "substituir" and int(item.get("classe", 1)) != int(item.get("classe_antiga", 1))
@@ -256,12 +420,19 @@ func tick(dt: float, voa: bool) -> void:
 	_conferir_remocoes()
 	if not voa or obras.is_empty():
 		return
+	for o in obras.values():                             # quanto tempo a obra espera na fila (para outra base pegar)
+		if o.estado == "fila":
+			o.fila_s = float(o.get("fila_s", 0.0)) + 0.5
+	var com := _bases_com_drone()
+	var sem_lote := {}                                   # base cujo drone não achou lote: os outros dela também não acham
 	for d in construtores():
-		if d.e != Drones.E.HANGAR or int(d.est) != nucleo() or float(d.vida) < n("vida", 40.0) * 0.5:
+		if d.e != Drones.E.HANGAR or not eh_base(int(d.est)) or float(d.vida) < n("vida", 40.0) * 0.5 \
+				or sem_lote.has(int(d.est)):
 			continue
-		var lote := _montar_lote(d)
+		var lote := _montar_lote(d, com)
 		if lote.is_empty():
-			break
+			sem_lote[int(d.est)] = true
+			continue
 		d.obras = lote
 		d.alvo = lote[0]
 		drones._decolar(d)
@@ -282,14 +453,21 @@ static func _soma(c: Dictionary) -> int:
 	return s
 
 
-func _montar_lote(d: Dictionary) -> Array:
+## A obra é desta base? (a base com construtor mais perto dela; outra só depois de `emprestar_s` na fila)
+func _da_base(o: Dictionary, base: int, com: Dictionary) -> bool:
+	if com.size() <= 1 or float(o.get("fila_s", 0.0)) >= n("emprestar_s", 20.0):
+		return true
+	return base_mais_perto(o.pos, com) == base
+
+
+func _montar_lote(d: Dictionary, com := {}) -> Array:
 	var out: Array = []
 	var soma := 0
 	var p0 := Vector2.INF
 	var carga := int(_r.get("carga", 30)) + roundi(drones._b("construtores_carga"))
 	for id in ordem:
 		var o: Dictionary = obras[id]
-		if o.estado != "fila":
+		if o.estado != "fila" or not _da_base(o, int(d.est), com):
 			continue
 		if out.size() >= int(_r.get("obras_lote", 12)):
 			break
@@ -307,6 +485,7 @@ func _montar_lote(d: Dictionary) -> Array:
 			o.espera = false
 			versao += 1
 		o.estado = "carregada"
+		o.fila_s = 0.0
 		o.drone = int(d.id)
 		out.append(int(id))
 		soma += s
@@ -452,9 +631,7 @@ func liberar(d: Dictionary, perdeu: bool) -> void:
 	d.alvo = -1
 	var carga: Dictionary = d.get("carga", {})
 	if not perdeu:
-		for k in carga:
-			if int(carga[k]) > 0:
-				inventario[k] = int(inventario.get(k, 0)) + int(carga[k])
+		_depositar(int(d.est), carga)
 	elif not carga.is_empty():
 		eventos.append({"tipo": "carga_perdida", "id": d.id, "carga": carga.duplicate()})
 	d.carga = {}

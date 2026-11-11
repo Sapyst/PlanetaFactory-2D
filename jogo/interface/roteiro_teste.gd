@@ -54,6 +54,7 @@ func _ready() -> void:
 		"clima": _roteiro_clima()
 		"drones": _roteiro_drones()
 		"obras": _roteiro_obras()
+		"postos": _roteiro_postos()
 		"vida": _roteiro_vida()
 		"plantas": _roteiro_plantas()
 		"frutos": _roteiro_frutos()
@@ -2722,6 +2723,91 @@ func _roteiro_obras() -> void:
 			var ob: Obras = cena.obras
 			var fora := ob.construtores().filter(func(d): return d.e != Drones.E.HANGAR).size()
 			print("OBRAS q=%d fila=%d esperando=%d drones_fora=%d" % [q, ob.pendentes(), ob.esperando(), fora]))
+
+
+## Patch RTS, postos como base (-- roteiro postos novo): um posto avançado a ~40 m do núcleo ganha um construtor fabricado e
+## outro chamado do núcleo; obras perto do posto saem dele, perto do núcleo saem do núcleo; o posto é destruído e os
+## construtores dele mudam para o núcleo. Fotos em user://fotos_postos; imprime POSTOS.
+func _roteiro_postos() -> void:
+	var w := {"o": Vector2i(9999, 0), "posto": -1}
+	var foto := func(nome: String) -> void:
+		DirAccess.make_dir_recursive_absolute("user://fotos_postos")
+		get_viewport().get_texture().get_image().save_png("user://fotos_postos/%s.png" % nome)
+		print("POSTOS foto ", nome)
+	var olhar := func(p: Vector2, dist: float) -> void:
+		var cam = cena.camera
+		cam.alvo = Grade.ponto_mundo(p)
+		cam.distancia = dist
+		cam.posicionar()
+	var estado := func(q: int) -> void:
+		var ob: Obras = cena.obras
+		var partes: Array[String] = []
+		for d in ob.construtores():
+			partes.append("%d@%s:%s" % [d.id, "N" if int(d.est) == ob.nucleo() else str(d.est), Drones.E.keys()[int(d.e)]])
+		print("POSTOS q=%d fila=%d drones=%s" % [q, ob.pendentes(), " ".join(partes)])
+	em(2, func():
+		Sessao.config.fps = false
+		var g := Grade.gerador
+		var m: MapaOcupacao = cena.mapa
+		for r in range(34, 60):
+			for k in 48:
+				if w.o.x != 9999:
+					break
+				var t: Vector2i = cena.NUCLEO_EM + Vector2i((Vector2.from_angle(k * TAU / 48.0) * r).round())
+				var ok := true
+				for i in range(0, 16):
+					for j in range(0, 12):
+						var q: Vector2i = t + Vector2i(i, j)
+						if g.terreno(q) != GeradorMundo.Terreno.TERRA or g.nivel(q) != g.nivel(t) or g.em_encosta(q) or m.tiles.has(q):
+							ok = false
+				if ok:
+					w.o = t
+		var o: Vector2i = w.o
+		print("POSTOS chão ", o)
+		_sem_ninhos(o)
+		var ks := {}
+		for i in range(-1, 17):
+			for j in range(-1, 13):
+				m.limpar_obstaculo(o + Vector2i(i, j))
+				ks[Grade.chunk_de(o + Vector2i(i, j))] = true
+		for k in ks:
+			cena._redesenhar_chunk(k)
+		w.posto = cena._instanciar_id("posto_avancado", o + Vector2i(1, 1), 0)
+		var ob: Obras = cena.obras
+		if not cena.fabrica.baus.has(w.posto):
+			cena.fabrica.baus[w.posto] = {}
+		cena.fabrica.baus[w.posto]["engrenagem"] = 3
+		for it in ["placa_ferro", "engrenagem", "placa_cobre", "pedra", "tijolo", "circuito", "barra_aco"]:
+			cena.inventario[it] = int(cena.inventario.get(it, 0)) + 200
+		print("POSTOS posto ", w.posto, " fabricou ", ob.fabricar(false, w.posto), " chamou '", ob.chamar(w.posto), "'")
+		olhar.call(Vector2(o) + Vector2(2.5, 2.5), 11.0))
+	em(170, func(): foto.call("1_posto_com_construtores"); estado.call(170))
+	em(180, func():
+		var o: Vector2i = w.o
+		var con: Construtor = cena.construtor
+		cena.encomendar(con.plano_linha("esteira", o + Vector2i(6, 2), o + Vector2i(15, 2), 0))
+		cena.encomendar(con.plano_peca("fornalha", o + Vector2i(7, 5), 0))
+		cena.encomendar(con.plano_peca("bau", o + Vector2i(11, 5), 0))
+		cena.encomendar(con.plano_peca("bau", cena.NUCLEO_EM + Vector2i(6, 0), 0))     # perto do núcleo: sai do núcleo
+		olhar.call(Vector2(o) + Vector2(8.0, 4.0), 18.0))
+	em(215, func(): foto.call("2_obras_saem_do_posto"); estado.call(215))
+	em(300, func(): estado.call(300))
+	em(420, func():
+		olhar.call(Vector2(w.o) + Vector2(2.5, 2.5), 14.0)
+		cena._sel = {"estrutura": w.posto}
+		cena._detalhe()
+		estado.call(420))
+	em(430, func(): foto.call("3_painel_do_posto"))
+	em(440, func():
+		cena._sel = {}
+		cena._detalhe()
+		cena._destruido(w.posto)                        # aranha derrubou o posto: os construtores mudam de casa
+		olhar.call(Vector2(w.o) + Vector2(-3.0, 2.5), 20.0))
+	em(452, func(): foto.call("4_posto_caiu_mudam_para_o_nucleo"); estado.call(452))
+	em(760, func(): estado.call(760))
+	em(770, func():
+		olhar.call(Vector2(cena.NUCLEO_EM) + Vector2(1.5, 1.5), 11.0))
+	em(780, func(): foto.call("5_no_nucleo"); get_tree().quit())
 
 
 ## Patch fauna, fase 6: ninhos (taça e bolsa) nas copas com um bando pousado, o planador descendo e comendo a carcaça,

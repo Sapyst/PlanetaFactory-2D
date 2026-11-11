@@ -134,7 +134,7 @@ func ponto_estacao(est: int, local: Vector2) -> Vector2:
 
 
 func berco(d: Dictionary) -> Vector2:
-	if d.tipo == "construtor":                         # parado: orbita o cristal do núcleo
+	if d.tipo == "construtor":                         # parado: orbita o cristal do núcleo (ou a torre do posto)
 		var a := float(d.id) * 2.39996 + _relogio * obras.n("giro_orbita", 0.35)
 		return centro(d.est) + Vector2.from_angle(a) * obras.n("orbita", 1.9)
 	var bs: Array = _r.get("bercos", [[0.5, 0.5], [0.5, -0.5]])
@@ -221,7 +221,9 @@ func novo(est: int, tipo := "") -> int:
 
 
 func _drone(d: Dictionary, dt: float, voa: bool) -> void:
-	if not mapa.estruturas.has(d.est):                 # estação desmontada/destruída: quem está fora cai
+	if not mapa.estruturas.has(d.est) and d.tipo == "construtor" and obras != null and obras.nova_casa(d):
+		pass                                           # posto que sumiu: o construtor muda para a base mais perto
+	elif not mapa.estruturas.has(d.est):               # estação desmontada/destruída: quem está fora cai
 		if d.e in [E.HANGAR, E.NASCENDO, E.POUSANDO, E.DECOLANDO]:
 			drones.erase(d.id)
 			return
@@ -229,13 +231,13 @@ func _drone(d: Dictionary, dt: float, voa: bool) -> void:
 			_derrubar(d)
 	if d.tipo == "construtor" and d.e in [E.HANGAR, E.NASCENDO]:
 		d.pos = berco(d)
-		d.alt = obras.n("alt_orbita", 3.1)
+		d.alt = obras.alt_orbita(d.est)
 		if d.e == E.NASCENDO:
 			d.t = float(d.t) + dt
 			if d.t >= obras.n("nascer_s", 4.0):
 				d.e = E.HANGAR
 		else:
-			d.vida = minf(obras.n("vida", 40.0), float(d.vida) + obras.n("vida", 40.0) / 15.0 * dt)   # o núcleo conserta
+			d.vida = minf(obras.n("vida", 40.0), float(d.vida) + obras.n("vida", 40.0) / 15.0 * dt)   # a base (núcleo ou posto) conserta
 		return
 	match int(d.e):
 		E.HANGAR:
@@ -259,7 +261,7 @@ func _drone(d: Dictionary, dt: float, voa: bool) -> void:
 			d.t = float(d.t) + dt
 			var alvo_alt := float(_r.get("alt_pouso", 0.97)) + (0.04 if d.tipo == "logistico" else 0.0)   # garra recolhida
 			if d.tipo == "construtor":
-				alvo_alt = obras.n("alt_orbita", 3.1)
+				alvo_alt = obras.alt_orbita(d.est)
 			d.alt = move_toward(float(d.alt), alvo_alt, 1.4 * dt)
 			d.pos = (d.pos as Vector2).move_toward(berco(d), 2.0 * dt)
 			if d.t >= float(_r.get("pousar_s", 1.0)) and absf(float(d.alt) - alvo_alt) < 0.02:
@@ -280,7 +282,7 @@ func _drone(d: Dictionary, dt: float, voa: bool) -> void:
 			obras.trabalhar(d, dt)
 		_mordidas(d, dt)
 		if d.e == E.VOLTANDO and drones.has(d.id) and d.e != E.CAINDO:
-			if _voar_para(d, berco(d), obras.n("alt_orbita", 3.1), dt):
+			if _voar_para(d, berco(d), obras.alt_orbita(d.est), dt):
 				d.e = E.POUSANDO
 				d.t = 0.0
 		return
@@ -352,7 +354,7 @@ func _decolar(d: Dictionary) -> void:
 	d.t = 0.0
 	d.pos = berco(d)
 	if d.tipo == "construtor":
-		d.alt = obras.n("alt_orbita", 3.1)
+		d.alt = obras.alt_orbita(d.est)
 		d.t = 1.0                                      # já está no ar: segue direto
 	else:
 		d.alt = float(_r.get("alt_pouso", 0.97))

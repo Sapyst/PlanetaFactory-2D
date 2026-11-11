@@ -260,6 +260,7 @@
                        "construtores": {"inicial": 2, "max": 6, "custo": {"engrenagem": 1}, "nascer_s": 4.0, "velocidade": 8.0,
                                         "carga": 30, "obras_lote": 12, "raio_lote": 20, "vida": 40, "alt_voo": 4.0,
                                         "orbita": 1.9, "alt_orbita": 3.1, "giro_orbita": 0.35, "acima": 0.55,
-                                        "construir_s": 0.6, "por_item_s": 0.05, "max_s": 5.0, "remover_s": 0.5},
-                       "_construtores": "patch RTS: drones construtores do núcleo (modelo drone_reparo). Parados orbitam o cristal (orbita m, alt_orbita m). Fabricar custa `custo`; levam até `carga` itens e `obras_lote` obras num raio de `raio_lote` m por viagem; construir leva construir_s + por_item_s × itens do custo (até max_s); remover_s para desmontar"}
+                                        "construir_s": 0.6, "por_item_s": 0.05, "max_s": 5.0, "remover_s": 0.5,
+                                        "max_posto": 3, "alt_orbita_posto": 3.2, "emprestar_s": 20.0},
+                       "_construtores": "patch RTS: drones construtores do núcleo (modelo drone_reparo). Parados orbitam o cristal (orbita m, alt_orbita m). Fabricar custa `custo`; levam até `carga` itens e `obras_lote` obras num raio de `raio_lote` m por viagem; construir leva construir_s + por_item_s × itens do custo (até max_s); remover_s para desmontar. Postos avançados (e colônias) também são casa: até max_posto cada, órbita a alt_orbita_posto m; a obra é da base com construtor mais perto, outra base só pega depois de emprestar_s s na fila"}
 }
