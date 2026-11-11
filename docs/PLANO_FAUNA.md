@@ -467,12 +467,28 @@ Custo no celular: **baixo** (efeito perto da câmera, sem lógica nova), **médi
   - o ninho no poste aparece no 2D (o topo do poste parecia o ninho e vice-versa; a taça agora se ordena na frente
     da fileira sul da estrutura);
   - a sombra do peixe pulando fica na água no 2D.
-- **Ainda para depois:**
-  - coxa com vinco quando a perna vai muito para trás;
-  - uivador morto com a cabeça na orelha;
-  - nadadeiras peitorais finas;
-  - desempenho no celular não medido;
-  - o rato não sobe no poste.
+- **Decidido por Sapyst (2026-11-11):**
+  - desempenho no celular: não medir;
+  - o rato não sobe no poste (fica assim);
+  - nadadeiras do peixe: ficam como estão (ninguém vê essa parte);
+  - foto do bote da fase 8: era só a foto de teste, sai da lista;
+  - vinco na coxa e cabeça do uivador morto: guardados abaixo, em "POSSIVEL FUTURO FIX PATCH 1 - FAUNA".
+
+---
+
+## POSSIVEL FUTURO FIX PATCH 1 - FAUNA
+Guardado a pedido de Sapyst (2026-11-11): "talvez abordaremos isso um dia". Não fazer sem ela pedir.
+- **Vinco na coxa ao correr (galhudo e uivador):** no fim do passo de galope a perna de trás estica para trás e a
+  malha dobra onde a coxa junta com o quadril (prega por uma fração de segundo, só de perto). Plano:
+  - pesos da pele: dividir a influência entre o quadril e a coxa numa faixa mais larga;
+  - mais uma volta de malha no encaixe da coxa;
+  - se ainda sobrar prega, uns poucos graus a menos de extensão no fim do passo (o galope continua igual).
+- **Uivador morto com a cabeça na orelha:** a pose de morto deixa a cabeça apoiada na orelha espetada no chão.
+  Plano: girar pescoço e cabeça para deitar na bochecha/maxilar, orelhas deitadas para trás, assentar no chão sem
+  atravessar; conferir o morto do galhudo junto.
+- **Depois:** reexportar (`arte/estudos/exportar_fauna.py`), refazer os sprites 2D dos dois (todas as direções e
+  ações, `sprite_modelo.py` ramo FAUNA), conferir quadro a quadro, fotos antes/depois, baterias e publicar nos dois
+  repos. Custo: mais ou menos uma tarde, quase toda de máquina (os sprites 2D são o mais demorado).
 
 ---
 
