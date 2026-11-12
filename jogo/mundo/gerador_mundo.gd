@@ -25,6 +25,7 @@ var _relevo := FastNoiseLite.new()
 var relevo_ativo := true
 var hidro: Hidrologia
 var _aplainado := {}                 ## tile → nível imposto pela Terraplenagem (sobrepõe o relevo)
+var versao_nivel := 0               ## muda quando o nível de um tile muda (aplainar, inundar): quem guarda alturas refaz
 var _superficie := {}                ## tile escavado e cheio d'água → nível da superfície (AguaJogo)
 const NIVEL_MAR := -2                ## superfície do mar (em níveis de relevo)            ## falso = mundo todo plano (testes de desempenho com fábricas enormes)
 var _niveis := {}                 ## chunk → PackedByteArray (nível + 8)
@@ -121,6 +122,7 @@ func nivel(tile: Vector2i) -> int:
 
 ## Água de jogo (AguaJogo): o tile escavado encheu até o nível `s` da água vizinha (null = secou).
 func inundar(tile: Vector2i, s: Variant) -> void:
+	versao_nivel += 1
 	_trava.lock()
 	if s == null:
 		_superficie.erase(tile)
@@ -140,6 +142,7 @@ func superficie_em(tile: Vector2i) -> Variant:
 
 ## Terraplenagem: impõe um nível ao tile (−1 = volta ao relevo natural).
 func aplainar(tile: Vector2i, nv: Variant) -> void:
+	versao_nivel += 1
 	_trava.lock()
 	if nv == null:
 		_aplainado.erase(tile)

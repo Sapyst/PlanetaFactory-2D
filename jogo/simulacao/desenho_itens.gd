@@ -17,6 +17,7 @@ var _mm: Dictionary = {}          ## item → MultiMeshInstance3D
 var _base: Dictionary = {}        ## item → quantas instâncias são itens de esteira (as das garras vêm depois delas)
 var custo_us := 0                 ## tempo do último quadro (medição)
 var _ultimo := ""                 ## passo da simulação + câmera do último desenho das esteiras
+var _geo: Dictionary = {}         ## índice do caminho → [caminho, versão do nível, altura do chão por tile, curva por tile]
 
 
 func _process(_d: float) -> void:
@@ -53,6 +54,9 @@ func _desenhar() -> void:
 			var oculto: Array = c.get("oculto", [])
 			var papel: Array = c.get("papel", [])
 			var lat := _laterais(ci, est.velocidade)
+			var geo := _geometria(ci, c)
+			var alt: PackedFloat64Array = geo[2]
+			var curvas: Array = geo[3]
 			var acum := 0.0
 			for i in est.itens.size():
 				acum += est.espacos[i]
@@ -78,7 +82,8 @@ func _desenhar() -> void:
 				elif sai == entra:
 					p = Vector2(t.x + 0.5, t.y + 0.5) + Vector2(Grade.DIRECOES[entra]) * (f - 0.5)
 				else:
-					p = Fabrica.ponto_no_tile(t, entra, sai, f)
+					var cv: Array = curvas[k]                     # = Fabrica.ponto_no_tile, com o arco guardado
+					p = (cv[0] as Vector2) + Vector2.from_angle(float(cv[1]) + float(cv[2]) * f) * 0.5
 				for j in lat:
 					if absf(acum - j.x) < 0.12:
 						p += j.dir * j.y                          # acabou de entrar pela lateral: termina de deslizar
@@ -90,8 +95,11 @@ func _desenhar() -> void:
 					tipos.append(item)
 				tipo.append(indice[item])
 				pos.append(p.x)
-				pos.append(0.16 + sobe + lerpf(nv.x, nv.y, f) * 0.5 + Grade.altura_chao(t))
+				pos.append(0.16 + sobe + lerpf(nv.x, nv.y, f) * 0.5 + alt[k])
 				pos.append(-p.y)
+	for ci in _geo.keys():
+		if ci >= fabrica.caminhos.size():
+			_geo.erase(ci)
 	# 2ª passada: um buffer por tipo. Os índices entram agrupados por tipo numa passada só (ordem de cada tipo mantida).
 	var nt := tipos.size()
 	var inicio := PackedInt32Array()
@@ -134,6 +142,38 @@ func _desenhar() -> void:
 	for item in _mm:
 		if not indice.has(item):
 			(_mm[item] as MultiMeshInstance3D).multimesh.visible_instance_count = 0
+
+
+## Desempenho (2026-11-11): o que não muda enquanto o caminho existe — a altura do chão de cada tile (antes uma
+## consulta com trava ao gerador por item, a cada passo) e o arco de cada curva — fica guardado por caminho. Refaz se
+## a Fabrica remontou (outro dicionário no índice) ou o nível de algum tile mudou (aplainar, água).
+func _geometria(ci: int, c: Dictionary) -> Array:
+	var v := Grade.gerador.versao_nivel if Grade.gerador != null else 0
+	var g: Array = _geo.get(ci, [])
+	if not g.is_empty() and is_same(g[0], c) and int(g[1]) == v:
+		return g
+	var alt := PackedFloat64Array()
+	var curvas := []
+	for k in c.tiles.size():
+		var t: Vector2i = c.tiles[k]
+		alt.append(Grade.altura_chao(t))
+		var entra: int = c.entra[k]
+		var sai: int = c.sai[k]
+		if sai < 0 or sai == entra:
+			curvas.append([])
+			continue
+		var centro := Vector2(t) + Vector2(0.5, 0.5)
+		var din := Vector2(Grade.DIRECOES[entra])
+		var a := centro - din * 0.5
+		var dout := Vector2(Grade.DIRECOES[sai])
+		var b := centro + dout * 0.5
+		var canto := a + dout * 0.5
+		var ang0 := (a - canto).angle()
+		var ang1 := (b - canto).angle()
+		curvas.append([canto, ang0, angle_difference(ang0, ang1)])
+	g = [c, v, alt, curvas]
+	_geo[ci] = g
+	return g
 
 
 ## O item que cada braço segura vai preso na garra (posição real do modelo animado): entra depois dos itens de
