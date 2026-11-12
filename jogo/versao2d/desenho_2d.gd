@@ -471,13 +471,32 @@ func _sincronizar_itens() -> void:
 				s.visible = true
 				s.texture = Catalogo2D.folha(item)
 				s.region_rect = Catalogo2D.regiao(m, 0, 0)
-				var pc := Camera2DJogo.projetar(Vector3(p.x, 0.0, p.z))
-				s.position = pc + Vector2(0, 0.6)          # fica na frente da esteira do mesmo tile
-				s.offset = -Vector2(m.ancora[0], m.ancora[1]) + Camera2DJogo.projetar(p) - pc - Vector2(0, 0.6)
+				var oz := p.z
+				if not rente and i < int(di._base.get(item, 0)):
+					oz = _ordem_item_elevado(p)
+				var pc := Camera2DJogo.projetar(Vector3(p.x, 0.0, oz)) + Vector2(0, 0.6)   # na frente da esteira do tile
+				s.position = pc
+				s.offset = -Vector2(m.ancora[0], m.ancora[1]) + Camera2DJogo.projetar(p) - pc
 	for j in range(k, _itens.size()):
 		_itens[j].visible = false
 	for j in range(kp, _itens_plano.size()):
 		_itens_plano[j].visible = false
+
+
+## Item na esteira elevada (ou rampa): o tablado do tile ao sul se desenha depois e cortava a metade de baixo do item
+## na esteira norte–sul. Se o tile ao sul também é esteira, o item se ordena logo depois dele (sempre por cima).
+func _ordem_item_elevado(p: Vector3) -> float:
+	var mapa: MapaOcupacao = mundo.get("mapa")
+	var sul := Grade.tile_de_mundo(p) + Vector2i(0, -1)
+	if mapa != null:
+		for id in mapa.ids_no_tile(sul):
+			if _de_esteira(String(mapa.estruturas[id].nome)):
+				return maxf(p.z, -(sul.y + 0.5) + 0.02)
+	return p.z
+
+
+static func _de_esteira(nome: String) -> bool:
+	return nome.begins_with("esteira") or nome.begins_with("rampa")
 
 
 # ------------------------------------------------------------------ trens, aranhas, ninhos, drones (nós que andam)
