@@ -288,6 +288,7 @@ func arvore_em(t: Vector2i) -> String:
 ## perde um pouco no inverno), 3 acácia (seca e perde no verão), 4 caduca amarela (bétula).
 const PERFIS := {"arv_carvalho": 1, "arv_betula": 4, "arv_salgueiro": 2, "arv_acacia": 3, "arv_pinheiro": 0}
 var _veg_cache := {}             ## "arvore|raio" / "arbusto|raio" → {chave, lista}
+var _veg_chunks := {}            ## chunk → {tile: [nome, é arbusto, dims]}: vegetação do gerador (_veg_estatica)
 
 
 static func perfil_folha(nome: String) -> int:
@@ -316,7 +317,7 @@ func arbustos_perto(c: Vector2, raio: float) -> Array:
 
 
 func _vegetacao_perto(c: Vector2, raio: float, arbusto: bool) -> Array:
-	var k := "%s|%d" % ["arbusto" if arbusto else "arvore", int(raio)]
+	var k := "%s|%s" % ["arbusto" if arbusto else "arvore", raio]     # raio exato (1,2 e 1,5 não dividem a vaga)
 	var chave := "%s|%d|%d|%d" % [str(Vector2i((c / 3.0).floor())), mapa.versao, mapa.arvores.size(), mapa.limpos.size()]
 	var cc: Dictionary = _veg_cache.get(k, {})
 	if cc.get("chave", "") == chave:
@@ -324,28 +325,65 @@ func _vegetacao_perto(c: Vector2, raio: float, arbusto: bool) -> Array:
 	var out: Array = []
 	var r := int(ceil(raio))
 	var ct := Vector2i(c.round())
-	for y in range(-r, r + 1):
-		for x in range(-r, r + 1):
-			var t := ct + Vector2i(x, y)
-			if Vector2(x, y).length() > raio or mapa.limpos.has(t) or mapa.tiles.has(t):
-				continue
+	if r <= 6:                                                  # busca pequena: tile a tile (consulta guardada)
+		for y in range(-r, r + 1):
+			for x in range(-r, r + 1):
+				var t := ct + Vector2i(x, y)
+				if Vector2(x, y).length() > raio:
+					continue
+				var v: Array = _veg_estatica(Grade.chunk_de(t)).get(t, [])
+				if not v.is_empty():
+					_veg_entrar(out, t, v, arbusto)
+	else:                                                       # busca grande: a lista de cada chunk que o círculo toca
+		var a := Grade.chunk_de(ct - Vector2i(r, r))
+		var b := Grade.chunk_de(ct + Vector2i(r, r))
+		for cy in range(a.y, b.y + 1):
+			for cx in range(a.x, b.x + 1):
+				var est := _veg_estatica(Vector2i(cx, cy))
+				for t: Vector2i in est:
+					var d := t - ct
+					if absi(d.x) > r or absi(d.y) > r or Vector2(d).length() > raio:
+						continue
+					_veg_entrar(out, t, est[t], arbusto)
+		out.sort_custom(func(p, q): return p.tile.y < q.tile.y or (p.tile.y == q.tile.y and p.tile.x < q.tile.x))
+	_veg_cache[k] = {"chave": chave, "lista": out}
+	return out
+
+
+## Põe em `out` a planta do tile t se ela é do tipo pedido e está de pé agora (não limpa, sem construção, viva).
+func _veg_entrar(out: Array, t: Vector2i, v: Array, arbusto: bool) -> void:
+	if bool(v[1]) != arbusto or mapa.limpos.has(t) or mapa.tiles.has(t) or not mapa.arvores.get(t, {}).is_empty():
+		return
+	var dims: Array = v[2]
+	var perfil := perfil_folha(v[0])
+	out.append({"tile": t, "pos": Vector2(t) + Vector2(0.5, 0.5), "nome": v[0], "alto": float(dims[2]),
+			"copa": maxf(float(dims[0]), float(dims[1])) * 0.5, "perfil": perfil, "caduca": perfil >= 1})
+
+
+## Desempenho (2026-11-11): a vegetação que o gerador pôs num chunk nunca muda (o que muda — limpo, ocupado, queimada,
+## caída — é olhado na hora). Guardada por chunk na 1ª consulta: tile → [nome, é arbusto, dims]. Antes a busca das
+## árvores perto da câmera consultava o gerador em ~2 500 tiles a cada mudança do mapa ou 3 m de câmera (17–45 ms).
+func _veg_estatica(k: Vector2i) -> Dictionary:
+	if _veg_chunks.has(k):
+		return _veg_chunks[k]
+	var d := {}
+	var base := k * Grade.TAM_CHUNK
+	for y in Grade.TAM_CHUNK:
+		for x in Grade.TAM_CHUNK:
+			var t := base + Vector2i(x, y)
 			var o := gerador.distribuicao.obstaculo(t)
 			if o.is_empty() or Vector2i(o.ancora) != t:
 				continue
 			var nome := String(o.nome)
 			var md: Dictionary = Registro.modelos.get(nome, {})
-			if md.get("categoria", "") != "mapa/vegetacao" or nome.begins_with("arbusto") != arbusto:
+			if md.get("categoria", "") != "mapa/vegetacao" or nome == "arvore_morta":
 				continue
+			var arbusto := nome.begins_with("arbusto")
 			if not arbusto and not nome.begins_with("arv"):          # "arv_*" e "arvore_*"
 				continue
-			if nome == "arvore_morta" or not mapa.arvores.get(t, {}).is_empty():
-				continue
-			var dims: Array = md.get("dims", [1, 1, 2])
-			var perfil := perfil_folha(nome)
-			out.append({"tile": t, "pos": Vector2(t) + Vector2(0.5, 0.5), "nome": nome, "alto": float(dims[2]),
-					"copa": maxf(float(dims[0]), float(dims[1])) * 0.5, "perfil": perfil, "caduca": perfil >= 1})
-	_veg_cache[k] = {"chave": chave, "lista": out}
-	return out
+			d[t] = [nome, arbusto, md.get("dims", [1, 1, 2])]
+	_veg_chunks[k] = d
+	return d
 
 
 # ------------------------------------------------------------------ recuperação em etapas (fase 7)
