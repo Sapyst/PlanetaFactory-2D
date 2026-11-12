@@ -23,6 +23,8 @@ var chunks: Dictionary = {}
 var fabrica: Fabrica
 var _desenho_itens: DesenhoItens
 var _fabrica_suja := false
+var _suja_esteiras := false            ## obra só de peças de esteira: remonta só os caminhos (Fabrica.reconstruir)
+var _suja_resto := false               ## obra sem peça de esteira: os caminhos e os itens ficam
 var poluicao: Poluicao
 var clima: Clima
 var ambiente: AmbienteVivo
@@ -1032,7 +1034,18 @@ func sincronizar(rel: Dictionary) -> void:
 	if malha_mudou:
 		_remontar_trilhos()
 	if not (rel.colocados.is_empty() and rel.removidos.is_empty()):
-		_fabrica_suja = true                    # remonta uma vez no próximo tick (vários eventos no mesmo quadro)
+		# remonta uma vez no próximo tick (vários eventos no mesmo quadro); só a metade que a obra tocou
+		var de_esteira := 0
+		for id in rel.colocados:
+			de_esteira += int(Fabrica.eh_peca_esteira(mapa.estruturas[id].nome))
+		for e in rel.removidos:
+			de_esteira += int(Fabrica.eh_peca_esteira(String(e.nome)))
+		if not rel.aplainados.is_empty() or (de_esteira > 0 and de_esteira < rel.colocados.size() + rel.removidos.size()):
+			_fabrica_suja = true
+		elif de_esteira > 0:
+			_suja_esteiras = true
+		else:
+			_suja_resto = true
 	for t in rel.trens:
 		if not criar_trem(t.tile, t.get("nome", "trem")):
 			construtor.devolver(t.get("nome", "trem"))
@@ -1300,6 +1313,8 @@ func _montar_fabrica() -> void:
 	_instanciar("fornalha", Vector2i(9, -4), 0, true)
 	fabrica.reconstruir()
 	_fabrica_suja = false
+	_suja_esteiras = false
+	_suja_resto = false
 	construtor._historico.clear()                 # a demo não entra no desfazer do jogador
 	obras.dar_iniciais()
 	if g >= 0:
@@ -1742,9 +1757,11 @@ func _tick_mundo(dt: float) -> void:
 				fabrica.chuva_maq[id] = clima_local.chuva_em(Grade.centro_da_area(ec.minimo, ec.area, ec.rot), fabrica.chuva)
 	poluicao.vento = clima.direcao_vento * float(clima.valores.vento)
 	poluicao.vento_chunks = clima_local.vento_chunks()
-	if _fabrica_suja:
-		fabrica.reconstruir()
+	if _fabrica_suja or _suja_esteiras or _suja_resto:
+		fabrica.reconstruir("" if _fabrica_suja or (_suja_esteiras and _suja_resto) else ("esteiras" if _suja_esteiras else "resto"))
 		_fabrica_suja = false
+		_suja_esteiras = false
+		_suja_resto = false
 	poluicao.fator = maxf(0.1, 1.0 + pesquisa.bonus("poluicao_global"))     # Simbiose: −50%
 	var fator_trem := 1.0 + pesquisa.bonus("velocidade_trens")              # Velocidade de frota N
 	for t in trens:

@@ -179,6 +179,16 @@ Resultado na fábrica grande: parado média 23 → 5 ms (pior 673 → 50 ms); de
 59 ms); câmera pulando 45 m 50 → 12 ms (pior 944 → 164 ms). Cada mudança tem teste de equivalência contra o jeito
 antigo (test_larvas, test_infestacao, test_vegetacao_perto, test_desenho_itens_geo).
 
-Ficou: `fabrica.reconstruir` incremental (~36 ms por peça posta, o maior custo restante de uma construção); índice por
+**Remontagem por partes (12/11):** `Fabrica.reconstruir(so)` remonta só a metade que a obra tocou — "esteiras" (só
+peças de esteira: máquinas, energia e fluidos ficam) ou "resto" (nenhuma esteira: caminhos e itens ficam); o mundo
+escolhe pelo relatório da obra (`_suja_esteiras`/`_suja_resto`), terraplenagem ou obra mista remonta tudo. Rede de
+segurança: `_assinatura_esteiras` (peças de esteira e `versao_nivel`) — se mudou por fora, remonta tudo. E o trecho de
+esteira idêntico ao da montagem anterior volta com a mesma `EsteiraCaminho` (itens no lugar exato); só os itens dos
+trechos que mudaram são guardados e devolvidos. Banco com 1 525 peças de esteira, mesma carga: antes 36–40 ms por obra;
+agora só esteiras 18,5 ms, sem esteiras 19 ms, tudo 33 ms. test_reconstruir_partes: dois mundos com as mesmas obras,
+um por partes e outro tudo, terminam idênticos.
+
+Ficou: remontagem realmente local (só os caminhos e redes que a obra tocou; hoje cada metade ainda percorre todas as
+estruturas); índice por
 nome no mapa (~5 ms por construção; cuidado: `fiacao.gd` tira e repõe um id e `construtor.gd` renomeia peças direto em
 `estruturas`); medir no celular.

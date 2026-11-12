@@ -145,6 +145,8 @@ func _medir_cena(cena: Node, nome: String) -> void:
 		soma_rec += x
 	print("PERFIL %s: fabrica.reconstruir %.1f ms = esteiras %.1f + máquinas %.1f + energia %.1f + pontas %.1f + portas %.1f + braços %.1f + fluidos %.1f + lógica %.1f + guardar itens %.1f + restaurar itens e resto %.1f" % ([nome, t_rec] + partes_rec + [t_rec - soma_rec]))
 	f.reconstruir()
+	print("PERFIL %s: fabrica.reconstruir por partes (obra de uma metade): só esteiras %.1f ms · sem esteiras %.1f ms" % [nome,
+			_ms(f.reconstruir.bind("esteiras"), 3), _ms(f.reconstruir.bind("resto"), 3)])
 	print("PERFIL %s: fabrica.tick %.2f ms · _tick_mundo %.2f ms = ambiente._passo (1×/s) %.2f + clima.tick %.2f + raios.tick %.2f + agua.tick %.2f + poluicao.tick %.2f + clima_local.atualizar %.2f" % [nome,
 			_ms(f.tick.bind(DT), 30), _ms(cena._tick_mundo.bind(DT), 30), _ms(cena.ambiente._passo.bind(f, cena.clima), 5), _ms(cena.clima.tick.bind(DT), 30),
 			_ms(cena.raios.tick.bind(cena.clima), 30), _ms(cena.agua.tick.bind(DT), 30), _ms(cena.poluicao.tick.bind(DT), 30), _ms(cena.clima_local.atualizar, 30)])

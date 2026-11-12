@@ -77,6 +77,7 @@ var distribuidores: Dictionary = {}    ## id (divisor/junção) → {buffer: Arr
 var _saidas_dist: Dictionary = {}      ## id → Array[{caminho, idx}]
 var _no_tile: Dictionary = {}          ## tile → [caminho, índice do tile no caminho] (só esteira no chão)
 var _no_nivel: Dictionary = {}         ## Vector3i(x, y, nível de entrada) → [caminho, índice]
+var _esteiras_de := 0                 ## _assinatura_esteiras() da última montagem dos caminhos
 var _saidas_portas: Array[Dictionary] = []   ## {origem: Object, tile: Vector2i}
 var _membros: Dictionary = {}          ## id → membro da rede (dict)
 var acumulado: Dictionary = {}         ## id do acumulador → MJ guardados
@@ -108,17 +109,30 @@ func _init(p_mapa: MapaOcupacao) -> void:
 
 
 # ------------------------------------------------------------------ montar
-func reconstruir() -> void:
-	var guardados := _guardar_itens()
-	var fluido_salvo := _guardar_fluidos()
-	caminhos.clear()
-	_no_tile.clear()
-	_no_nivel.clear()
+func reconstruir(so := "") -> void:
+	# Desempenho (2026-11-12): `so` diz o que a obra mudou. "esteiras": só peças de esteira (máquinas, energia e
+	# fluidos ficam como estão); "resto": nenhuma peça de esteira (os caminhos e os itens ficam). "" remonta tudo.
+	# As ligações que juntam as duas metades (pontas, portas, braços, lógica) são refeitas sempre.
+	if so == "resto" and _assinatura_esteiras() != _esteiras_de:
+		so = ""                                # rede de segurança: alguma esteira mudou por fora (girou, virou curva…)
+	var com_esteiras := so != "resto"
+	var com_resto := so != "esteiras"
+	var antigos: Array[Dictionary] = caminhos.duplicate() if com_esteiras else ([] as Array[Dictionary])
+	var fluido_salvo := _guardar_fluidos() if com_resto else {}
+	if com_esteiras:
+		caminhos.clear()
+		_no_tile.clear()
+		_no_nivel.clear()
+		juncoes.clear()
+	else:
+		for c in caminhos:                     # a ponta de cada caminho é religada abaixo (o destino pode ter saído)
+			if (c.esteira as EsteiraCaminho).proximo == null:
+				(c.esteira as EsteiraCaminho).saida = Callable()
 	_saidas_portas.clear()
-	_membros.clear()
-	juncoes.clear()
 	var rede_antiga := rede
-	rede = RedeEnergia.new()
+	if com_resto:
+		_membros.clear()
+		rede = RedeEnergia.new()
 	var vivos := {}
 	for id in mapa.estruturas:
 		vivos[id] = true
@@ -126,26 +140,56 @@ func reconstruir() -> void:
 		for id in d.keys():
 			if not vivos.has(id):
 				d.erase(id)
-	_montar_esteiras()
-	_montar_maquinas()
-	_montar_energia()
-	rede.herdar_origem(rede_antiga)
-	_montar_trilhos_energizados()
+	var guardados: Array[Dictionary] = []
+	if com_esteiras:
+		# o trecho que não mudou volta com a mesma esteira (os itens ficam onde estão); só os itens dos trechos que
+		# mudaram são guardados e devolvidos pelos tiles
+		var refeitos := _montar_esteiras(antigos)
+		guardados = _guardar_itens(antigos.filter(func(c): return not refeitos.has(c.esteira)))
+	if com_resto:
+		_montar_maquinas()
+		_montar_energia()
+		rede.herdar_origem(rede_antiga)
+		_montar_trilhos_energizados()
 	_ligar_pontas()
 	_montar_portas()
 	_montar_bracos()
-	_montar_fluidos()
+	if com_resto:
+		_montar_fluidos()
 	_montar_logica()
-	_restaurar_fluidos(fluido_salvo)
-	_restaurar_itens(guardados)
+	if com_resto:
+		_restaurar_fluidos(fluido_salvo)
+	if com_esteiras:
+		_restaurar_itens(guardados)
 	_melhorias_de = ""                     # velocidades voltaram à base: módulos e melhorias se reaplicam no próximo tick
+
+
+## É peça de esteira (entra nos caminhos)? Pelo nome: as famílias de esteira, a rampa e as passagens subterrâneas.
+static func eh_peca_esteira(nome: String) -> bool:
+	return nome in Construtor.FAMILIA_ESTEIRA or nome == "esteira_rampa" or nome in Construtor.TUNEIS
+
+
+## O que define os caminhos: cada peça de esteira (id, nome, giro, nível, rampa, classe) e o relevo. Guardada ao
+## montar as esteiras; a remontagem "resto" confere e remonta tudo se mudou.
+func _assinatura_esteiras() -> int:
+	var a: Array = [mapa.gerador.versao_nivel if mapa.gerador != null else 0]
+	for id in mapa.estruturas:
+		var e: Dictionary = mapa.estruturas[id]
+		if eh_peca_esteira(e.nome):
+			a.append([id, e.nome, e.rot, e.minimo, e.get("nivel", 0), e.get("desce", false), e.get("classe", 1)])
+	return hash(a)
 
 
 ## Nós de esteira chaveados por (tile, nível de entrada): esteira elevada e rampa (sobe/desce) entram na mesma
 ## conta — um caminho pode subir e descer. `_no_tile` (braços, portas) só vê o que está no chão.
 ## Classes diferentes (básica → rápida) não se juntam num caminho só: cada trecho anda na velocidade da sua classe e o
 ## fim de um entrega na entrada do outro (`elos`). A passagem subterrânea só liga entrada e saída da mesma classe.
-func _montar_esteiras() -> void:
+func _montar_esteiras(antigos: Array[Dictionary] = []) -> Dictionary:
+	_esteiras_de = _assinatura_esteiras()
+	var por_chave := {}                     # trecho igual a um da montagem anterior → reaproveita a esteira dele
+	for c in antigos:
+		por_chave[_chave_caminho(c)] = c
+	var reaproveitadas := {}                # EsteiraCaminho reaproveitada → true
 	var cinta := {}       # Vector3i(x, y, n_entrada) → {tile, entra, sai, n_in, n_out, chao, classe}
 	var elos := {}        # chave do último tile de um trecho → chave do primeiro do trecho seguinte (troca de classe)
 	for id in mapa.estruturas:
@@ -233,8 +277,18 @@ func _montar_esteiras() -> void:
 				k = n
 			# rampa de junção: o caminho segue EXTRA_JUNCAO além da borda, por cima do trilho da vizinha
 			var lateral: bool = cinta[k].nome == "esteira_juncao"
-			var est := EsteiraCaminho.new(float(tiles.size()) + (EXTRA_JUNCAO if lateral else 0.0),
-					float(Construtor.regra_esteira("esteira_reta", cinta[k0].classe).get("velocidade", 1.875)))
+			var velho: Dictionary = por_chave.get(_chave_caminho({"tiles": tiles, "entra": entra, "sai": sai, "niveis": niveis,
+					"oculto": oculto, "papel": papel, "lateral": lateral, "classe": cinta[k0].classe}), {})
+			var est: EsteiraCaminho
+			if not velho.is_empty() and not reaproveitadas.has(velho.esteira) and velho.tiles == tiles and velho.entra == entra \
+					and velho.sai == sai and velho.niveis == niveis:
+				est = velho.esteira
+				est.proximo = null                  # as ligações são refeitas abaixo e em _ligar_pontas
+				est.saida = Callable()
+				reaproveitadas[est] = true
+			else:
+				est = EsteiraCaminho.new(float(tiles.size()) + (EXTRA_JUNCAO if lateral else 0.0),
+						float(Construtor.regra_esteira("esteira_reta", cinta[k0].classe).get("velocidade", 1.875)))
 			comeco[k0] = caminhos.size()
 			final[k] = caminhos.size()
 			var caixa := Rect2(Vector2(tiles[0]), Vector2.ONE)
@@ -255,6 +309,12 @@ func _montar_esteiras() -> void:
 	for k in elos:
 		if final.has(k) and comeco.has(elos[k]):
 			caminhos[final[k]].esteira.proximo = caminhos[comeco[elos[k]]].esteira
+	return reaproveitadas
+
+
+## O que faz um trecho ser o mesmo de antes: tiles, sentidos, níveis, passagens, junção lateral e classe.
+static func _chave_caminho(c: Dictionary) -> int:
+	return hash([c.tiles, c.entra, c.sai, c.niveis, c.oculto, c.papel, c.lateral, c.classe])
 
 
 func _montar_maquinas() -> void:
@@ -315,24 +375,25 @@ func _montar_maquinas() -> void:
 	_irradiadores.clear()
 	for id in mapa.estruturas:
 		var e: Dictionary = mapa.estruturas[id]
-		if Registro.estruturas.get(e.nome, {}).has("irradiador"):
+		var r: Dictionary = Registro.estruturas.get(e.nome, {})          # (uma consulta por peça, não seis)
+		if r.has("irradiador"):
 			_irradiadores.append(id)
-		if (Registro.estruturas.get(e.nome, {}).get("grupo", "") == "armazem" or eh_posto(e.nome)) and not baus.has(id):
+		if (r.get("grupo", "") == "armazem" or eh_posto(e.nome)) and not baus.has(id):
 			baus[id] = {}                                      # (o posto avançado guarda o estoque próprio como um baú)
 			if e.has("kit_inicial"):                           # colônia: nasce com o kit da semente
 				baus[id] = (e.kit_inicial as Dictionary).duplicate()
 				e.erase("kit_inicial")
 		if (e.nome == "gerador" or eh_gerador_fluido(e.nome) or eh_reator(e.nome)) and not combustivel.has(id):
 			combustivel[id] = 0.0
-		if Registro.estruturas.get(e.nome, {}).has("agua_por_mj") and not agua_reator.has(id):
+		if r.has("agua_por_mj") and not agua_reator.has(id):
 			agua_reator[id] = 0.0
-		if Registro.estruturas.get(e.nome, {}).get("grupo", "") == "laboratorio" and not laboratorios.has(id):
+		if r.get("grupo", "") == "laboratorio" and not laboratorios.has(id):
 			laboratorios[id] = {"pacotes": {}, "t": 0.0, "energia": 0.0}
 		if e.nome in DISTRIBUIDORES and not distribuidores.has(id):
 			distribuidores[id] = {"buffer": [], "vez": 0}
-		if Registro.estruturas.get(e.nome, {}).has("acumula_mj") and not acumulado.has(id):
+		if r.has("acumula_mj") and not acumulado.has(id):
 			acumulado[id] = 0.0
-		if Registro.estruturas.get(e.nome, {}).has("carga_mj") and not carga_torre.has(id):
+		if r.has("carga_mj") and not carga_torre.has(id):
 			carga_torre[id] = 0.0
 	_jazida_estrutura.clear()
 	for id in maquinas:
@@ -2040,9 +2101,9 @@ func _restaurar_maquina(m: Maquina, s: Dictionary) -> void:
 
 
 # ------------------------------------------------------------------ guardar/restaurar itens das esteiras
-func _guardar_itens() -> Array[Dictionary]:
+func _guardar_itens(lista: Variant = null) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for c in caminhos:
+	for c in (caminhos if lista == null else lista):
 		var est: EsteiraCaminho = c.esteira
 		var ps := est.posicoes()
 		var n: int = c.tiles.size()
