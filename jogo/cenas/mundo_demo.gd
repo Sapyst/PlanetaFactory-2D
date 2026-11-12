@@ -56,8 +56,7 @@ var _desenho_fauna: DesenhoFaunaGrande
 var _desenho_ninhos: DesenhoNinhosPassaros
 var _desenho_passaros: DesenhoPassaros
 var _raios_passaros := 0
-var _teia_versao := -1
-var _teia_chunks: Dictionary = {}        ## chunk → nó DesenhoChunk que já recebeu a infestação (o nó pode ser refeito)
+var _teia_chunks: Dictionary = {}        ## chunk → [id do nó DesenhoChunk que já recebeu a infestação, assinatura dela]
 var _t_teia := 0.0
 var drones: Drones                      ## drones das estações (reparo, combate, logística)
 var _desenho_drones: DesenhoDrones
@@ -825,7 +824,7 @@ func _atualizar_chunks() -> void:
 				ambiente.sujos.erase(k)
 			if infestacao != null and infestacao.chunks().has(k):
 				d.atualizar_teia(infestacao.imagem(k))     # já nasce com teia/corrosão (redesenho não pisca o chão limpo)
-				_teia_chunks[k] = d.get_instance_id()
+				_teia_chunks[k] = [d.get_instance_id(), infestacao.assinatura(k)]
 	# encomenda os que faltam, do centro para fora
 	if _em_preparo.size() >= TAREFAS:
 		return
@@ -1361,12 +1360,12 @@ func _process(delta: float) -> void:
 	_atualizar_chunks()
 
 
-## Infestação no chão: refaz a imagem dos chunks que ela toca (e dos que ela deixou) quando muda ou o chunk é novo.
+## Infestação no chão: refaz a imagem dos chunks que ela toca (e dos que ela deixou) só quando o que aquele chunk
+## mostra mudou (`Infestacao.assinatura`) ou o chunk é novo.
 func _desenhar_teia() -> void:
 	var atuais := infestacao.chunks()
 	var tocados := atuais.duplicate()
-	var mudou := infestacao.versao != _teia_versao
-	_teia_versao = infestacao.versao
+	var fs := infestacao.fontes()
 	for k in _teia_chunks.keys():
 		if not tocados.has(k):
 			tocados[k] = true                    # saiu da infestação: limpa uma vez
@@ -1375,10 +1374,12 @@ func _desenhar_teia() -> void:
 		if d == null or not is_instance_valid(d):
 			_teia_chunks.erase(k)
 			continue
-		if not mudou and _teia_chunks.get(k) == d.get_instance_id():
+		var assin := infestacao.assinatura(k, fs)
+		var antes: Array = _teia_chunks.get(k, [])
+		if not antes.is_empty() and antes[0] == d.get_instance_id() and antes[1] == assin:
 			continue
 		d.atualizar_teia(infestacao.imagem(k))
-		_teia_chunks[k] = d.get_instance_id()
+		_teia_chunks[k] = [d.get_instance_id(), assin]
 	for k in _teia_chunks.keys():
 		if not atuais.has(k):
 			_teia_chunks.erase(k)            # já limpo acima

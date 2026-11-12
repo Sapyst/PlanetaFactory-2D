@@ -25,6 +25,7 @@ var _ruido := FastNoiseLite.new()
 var eventos: Array = []            ## {tipo: "arvores_mudaram", tiles} e {tipo: "arvore_dissolvida", tile, nome, tiles, silencioso}
 var _corroendo: Dictionary = {}    ## tile da árvore → s de ácido acumulados
 var _acc := 0.0
+var _veg: Dictionary = {}           ## centro da cratera → {alc, lista}: vegetação comível em volta (_vegetacao_em_volta)
 
 
 func _init(p_colonia: Colonia = null, semente := 11) -> void:
@@ -79,44 +80,76 @@ func _consumir(passo: float, silencioso := false, so_centro := Vector2.INF) -> v
 	var mapa: MapaOcupacao = colonia.mapa
 	var fs := fontes()
 	var mudaram: Array = []
+	var vistos := {}
 	for f in fs:
 		if not bool(f[3]):
 			continue
 		var c: Vector2 = f[0]
+		vistos[c] = true
 		if so_centro != Vector2.INF and c != so_centro:
 			continue
 		var alcance := int(ceil(float(f[1]) * 1.3 + BORDA))
-		for y in range(int(c.y) - alcance, int(c.y) + alcance + 1):
-			for x in range(int(c.x) - alcance, int(c.x) + alcance + 1):
-				var t := Vector2i(x, y)
-				if mapa.limpos.has(t):
-					continue
-				var o := mapa.gerador.distribuicao.obstaculo(t)
-				if o.is_empty() or Vector2i(o.ancora) != t:
-					continue
-				var arvore := Distribuicao.eh_arvore(o.nome)
-				if not arvore and Registro.modelos.get(o.nome, {}).get("categoria", "") != "mapa/vegetacao":
-					continue                                 # pedra, cristal…: o ácido não come
-				var v := _valor(Vector2(t) + Vector2(0.5, 0.5), fs, true)
-				if v < ARVORE_MIN:
-					continue
-				var e: String = mapa.arvores.get(t, {}).get("e", "")
-				if e == "caida":
-					continue
-				var acc: float = float(_corroendo.get(t, 0.0)) + passo * v
-				if acc >= (DISSOLVE_S if arvore else CORROI_S):   # arbusto, cogumelo: sem fase de pé, só afunda
-					_corroendo.erase(t)
-					mapa.arvores.erase(t)
-					mapa.limpar_obstaculo(t)
-					eventos.append({"tipo": "arvore_dissolvida", "tile": t, "nome": o.nome, "silencioso": silencioso,
-							"tiles": Grade.tiles_da_area(o.ancora, o.area, 0)})
-					continue
-				_corroendo[t] = acc
-				if acc >= CORROI_S and e != "corroida":
-					mapa.arvores[t] = {"e": "corroida"}
-					mudaram.append(t)
+		var perto := _larvas_perto(c, alcance, fs)
+		for veg: Array in _vegetacao_em_volta(c, alcance, mapa):
+			var t: Vector2i = veg[0]
+			if mapa.limpos.has(t):
+				continue
+			var arvore: bool = veg[2]
+			var v := _valor(Vector2(t) + Vector2(0.5, 0.5), perto, true)
+			if v < ARVORE_MIN:
+				continue
+			var e: String = mapa.arvores.get(t, {}).get("e", "")
+			if e == "caida":
+				continue
+			var acc: float = float(_corroendo.get(t, 0.0)) + passo * v
+			if acc >= (DISSOLVE_S if arvore else CORROI_S):   # arbusto, cogumelo: sem fase de pé, só afunda
+				_corroendo.erase(t)
+				mapa.arvores.erase(t)
+				mapa.limpar_obstaculo(t)
+				eventos.append({"tipo": "arvore_dissolvida", "tile": t, "nome": veg[1], "silencioso": silencioso,
+						"tiles": Grade.tiles_da_area(t, veg[3], 0)})
+				continue
+			_corroendo[t] = acc
+			if acc >= CORROI_S and e != "corroida":
+				mapa.arvores[t] = {"e": "corroida"}
+				mudaram.append(t)
+	for c in _veg.keys():
+		if not vistos.has(c):
+			_veg.erase(c)                                    # cratera que sumiu: a lista dela também
 	if not mudaram.is_empty():
 		eventos.append({"tipo": "arvores_mudaram", "tiles": mudaram})
+
+
+## Vegetação que o ácido pode comer em volta da cratera (âncora no tile, árvore ou mapa/vegetacao), na ordem da varredura
+## (linha por linha). O obstáculo do gerador nunca muda (só some, e `limpos` é olhado a cada passo), então a lista é
+## feita uma vez por cratera e alcance: antes o gerador era consultado em ~500 tiles por cratera a cada segundo
+## (~130 ms de quadro com 19 crateras).
+func _vegetacao_em_volta(c: Vector2, alcance: int, mapa: MapaOcupacao) -> Array:
+	var cache: Dictionary = _veg.get(c, {})
+	if not cache.is_empty() and int(cache.alc) == alcance:
+		return cache.lista
+	var lista := []
+	for y in range(int(c.y) - alcance, int(c.y) + alcance + 1):
+		for x in range(int(c.x) - alcance, int(c.x) + alcance + 1):
+			var t := Vector2i(x, y)
+			var o := mapa.gerador.distribuicao.obstaculo(t)
+			if o.is_empty() or Vector2i(o.ancora) != t:
+				continue
+			var arvore := Distribuicao.eh_arvore(o.nome)
+			if not arvore and Registro.modelos.get(o.nome, {}).get("categoria", "") != "mapa/vegetacao":
+				continue                                 # pedra, cristal…: o ácido não come
+			lista.append([t, o.nome, arvore, o.area])
+	_veg[c] = {"alc": alcance, "lista": lista}
+	return lista
+
+
+## Só as crateras de larva que alcançam o quadrado varrido em volta de c (as outras não mudam o valor de nenhum tile dele).
+func _larvas_perto(c: Vector2, alcance: int, fs: Array) -> Array:
+	var out := []
+	for f in fs:
+		if bool(f[3]) and (f[0] as Vector2).distance_to(c) <= alcance * 1.5 + float(f[1]) * 1.4 + BORDA:
+			out.append(f)
+	return out
 
 
 ## (centro, raio, força, larva) de cada fonte: toca viva = força 1; resto sumindo = força caindo até 0.
@@ -168,10 +201,38 @@ func chunks() -> Dictionary:
 	return out
 
 
+## Fontes que alcançam o chunk k (com a moldura de 1 tile da imagem): o resto do mapa não muda nenhum pixel dele.
+func fontes_do_chunk(k: Vector2i, fs: Array = []) -> Array:
+	if fs.is_empty():
+		fs = fontes()
+	var r0 := Vector2(k * T - Vector2i.ONE)
+	var r1 := r0 + Vector2(T + 2, T + 2)
+	var out := []
+	for f in fs:
+		var c: Vector2 = f[0]
+		var a := float(f[1]) * 1.4 + BORDA
+		if c.x + a < r0.x or c.x - a > r1.x or c.y + a < r0.y or c.y - a > r1.y:
+			continue
+		out.append(f)
+	return out
+
+
+## Assinatura do que o chunk k mostra: só muda quando uma fonte que alcança o chunk mudou de verdade (raio ou força em
+## passos de 1%). O desenho refaz a imagem só então (antes refazia todos os chunks a cada segundo: ~0,8 s de quadro
+## numa fábrica com muitas tocas).
+func assinatura(k: Vector2i, fs: Array = []) -> String:
+	var partes: PackedStringArray = []
+	for f in fontes_do_chunk(k, fs):
+		partes.append("%.1f,%.1f,%.2f,%.2f,%d" % [f[0].x, f[0].y, f[1], f[2], int(f[3])])
+	return ";".join(partes)
+
+
 ## Imagem do chunk (T+2 de lado, a mesma moldura do mapa do ambiente): R = teia (aranhas), G = corrosão (larvas).
 func imagem(k: Vector2i) -> Image:
 	var img := Image.create(T + 2, T + 2, false, Image.FORMAT_RG8)
-	var fs := fontes()
+	var fs := fontes_do_chunk(k)
+	if fs.is_empty():
+		return img
 	var base: Vector2i = k * T - Vector2i.ONE
 	for j in T + 2:
 		for i in T + 2:

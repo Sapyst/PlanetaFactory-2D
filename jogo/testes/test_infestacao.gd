@@ -56,3 +56,35 @@ func test_imagem_do_chunk() -> void:
 	var img := inf.imagem(Vector2i(0, 0))
 	igual(img.get_width(), Grade.TAM_CHUNK + 2, "mesma moldura do mapa do ambiente")
 	verificar(img.get_pixel(1, 1).r > 0.9, "tile (0,0) tomado na imagem")
+
+
+## Desempenho (2026-11-11): a imagem só usa as fontes que alcançam o chunk; tem que sair igual à de todas as fontes.
+func test_imagem_igual_com_fontes_do_chunk() -> void:
+	var c := _cenario()
+	var col: Colonia = c.colonia
+	var inf: Infestacao = c.inf
+	col._criar_ninho(Vector2i(-1, -1), 1.0)
+	col._criar_ninho(Vector2i(28, 4), 1.0)
+	col._criar_ninho(Vector2i(-40, -30), 1.0, "larva")
+	inf.tick(1.0)
+	var fs := inf.fontes()
+	var conferidos := 0
+	for k in inf.chunks():
+		var img := inf.imagem(k)
+		var base: Vector2i = k * Grade.TAM_CHUNK - Vector2i.ONE
+		var ref := Image.create(Grade.TAM_CHUNK + 2, Grade.TAM_CHUNK + 2, false, Image.FORMAT_RG8)   # o jeito antigo
+		for j in Grade.TAM_CHUNK + 2:
+			for i in Grade.TAM_CHUNK + 2:
+				var p := Vector2(base + Vector2i(i, j)) + Vector2(0.5, 0.5)
+				var v := inf._valor(p, fs, false)
+				var g := inf._valor(p, fs, true)
+				if v > 0.0 or g > 0.0:
+					ref.set_pixel(i, j, Color(v, g, 0))
+		verificar(img.get_data() == ref.get_data(), "chunk %s igual ao de todas as fontes" % k)
+		conferidos += 1
+	verificar(conferidos >= 3, "conferiu os chunks tocados (%d)" % conferidos)
+	var k0 := Grade.chunk_de(Vector2i(-1, -1))
+	var assin := inf.assinatura(k0, fs)
+	inf.tick(1.0)
+	igual(inf.assinatura(k0, inf.fontes()), assin, "nada mudou: a assinatura do chunk fica igual (não redesenha)")
+	verificar(inf.assinatura(Grade.chunk_de(Vector2i(-40, -30)), fs) != assin, "outro chunk, outra assinatura")
