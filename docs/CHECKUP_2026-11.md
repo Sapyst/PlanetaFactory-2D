@@ -161,3 +161,24 @@ Todos os 204 .gd têm cabeçalho `##`. Nenhum .gd sem referência (código morto
 - Chamadas de `load()` ficam onde estão (preload só nos shaders): os modelos são carregados sob demanda e as malhas do
   mapa assadas uma vez em `DesenhoChunk.aquecer` (de propósito, na abertura, para não engasgar durante o jogo).
 - Medir com janela (GPU) no PC e no celular depois destas mudanças: sem janela não dá para ver o custo de desenho.
+
+## Rodada de desempenho (2026-11-11/12)
+Medido com `ferramentas/perfil.gd` (fábrica grande: 1 705 estruturas, 5 334 itens; só CPU, PC). O pior quadro vinha de
+coisas fora da fábrica:
+- **Teia/corrosão no chão** (`mundo_demo._desenhar_teia`): refazia a imagem de todos os chunks tocados a cada segundo,
+  cada pixel olhando todas as tocas — ~0,8 s de quadro. Agora só as tocas que alcançam o chunk, e só quando a
+  `Infestacao.assinatura` do chunk muda.
+- **Ácido das larvas** (`Infestacao._consumir`): consultava o gerador em ~500 tiles por cratera a cada segundo (até
+  ~130 ms). Agora a vegetação em volta de cada cratera fica guardada e só as crateras vizinhas entram na conta.
+- **Vegetação perto** (`Ecossistema._vegetacao_perto`): ~2 500 consultas ao gerador a cada mudança do mapa ou 3 m de
+  câmera (17–82 ms). Agora guardada por chunk (`_veg_estatica`).
+- **Itens das esteiras** (`DesenhoItens`): altura do chão (consulta com trava) e arco das curvas guardados por
+  caminho (`_geometria`): 7,7 → 3,9 ms.
+
+Resultado na fábrica grande: parado média 23 → 5 ms (pior 673 → 50 ms); depois de construir 22 → 6 ms (pior 641 →
+59 ms); câmera pulando 45 m 50 → 12 ms (pior 944 → 164 ms). Cada mudança tem teste de equivalência contra o jeito
+antigo (test_larvas, test_infestacao, test_vegetacao_perto, test_desenho_itens_geo).
+
+Ficou: `fabrica.reconstruir` incremental (~36 ms por peça posta, o maior custo restante de uma construção); índice por
+nome no mapa (~5 ms por construção; cuidado: `fiacao.gd` tira e repõe um id e `construtor.gd` renomeia peças direto em
+`estruturas`); medir no celular.
